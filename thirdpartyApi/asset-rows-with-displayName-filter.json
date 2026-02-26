@@ -1,0 +1,1365 @@
+Request URL: https://api-test.rise-x.io/api/v3/data-grid/asset-rows
+Payload: {
+    "filterProperties": [
+        {
+            "key": "displayName",
+            "isDefaultProperty": false,
+            "valuePaths": [
+                "$.data.displayName"
+            ],
+            "displayNamePath": "",
+            "selectedValues": [
+                "HMAS Adelaide"
+            ],
+            "type": "ENUM"
+        }
+    ],
+    "flowOriginIds": [
+        "6ffaffbd-c9ac-42a6-ab19-8fa7a30752ca",
+        "c87625d0-74b4-4bef-8ab2-eb2cd65fa833",
+        "f7ee94cf-b2e7-4321-9a21-2a179b3830ee"
+    ],
+    "additionalProperties": [
+        {
+            "key": "1.1BackgroundandScope",
+            "displayName": "1.1 Background and Scope",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.backgroundAndScope",
+            "valuePaths": [
+                "$.bfmpProperties.backgroundAndScope"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "1.2SafetyandTrainingConsiderations",
+            "displayName": "1.2 Safety and Training Considerations",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.safetyTraining",
+            "valuePaths": [
+                "$.bfmpProperties.safetyTraining"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "10.ReferencesandBibliography",
+            "displayName": "10. References and Bibliography",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.refsBibliography",
+            "valuePaths": [
+                "$.bfmpProperties.refsBibliography"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "11.SafetyProceduresfortheShipandCrew",
+            "displayName": "11. Safety Procedures for the Ship and Crew",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.oceanProSafetyProc",
+            "valuePaths": [
+                "$.bfmpProperties.oceanProSafetyProc"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "12.DisposalofBiologicalWaste",
+            "displayName": "12. Disposal of Biological Waste",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.oceanProDisposal",
+            "valuePaths": [
+                "$.bfmpProperties.oceanProDisposal"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "13.RecordingRequirements",
+            "displayName": "13. Recording Requirements",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.oceanProRecRequirements",
+            "valuePaths": [
+                "$.bfmpProperties.oceanProRecRequirements"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "14.CrewTrainingandFamiliarization",
+            "displayName": "14. Crew Training and Familiarization",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.oceanProCrew",
+            "valuePaths": [
+                "$.bfmpProperties.oceanProCrew"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "15.RegulationsGoverningBiofoulingRequirements",
+            "displayName": "15. Regulations Governing Biofouling Requirements",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.oceanProRegulationsPtOne",
+            "valuePaths": [
+                "$.bfmpProperties.oceanProRegulationsPtOne"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "2.Introduction",
+            "displayName": "2. Introduction",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.oceanProIntroduction",
+            "valuePaths": [
+                "$.bfmpProperties.oceanProIntroduction"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "2.1Overview",
+            "displayName": "2.1 Overview",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.overview",
+            "valuePaths": [
+                "$.bfmpProperties.overview"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "2.2Australia",
+            "displayName": "2.2 Australia",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.australia",
+            "valuePaths": [
+                "$.bfmpProperties.australia"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "2.3NewZealand",
+            "displayName": "2.3 New Zealand",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.newZealand",
+            "valuePaths": [
+                "$.bfmpProperties.newZealand"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "2.4California",
+            "displayName": "2.4 California",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.california",
+            "valuePaths": [
+                "$.bfmpProperties.california"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "2.5Summary",
+            "displayName": "2.5 Summary",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.summaryTwo",
+            "valuePaths": [
+                "$.bfmpProperties.summaryTwo"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "3.Definitions",
+            "displayName": "3. Definitions",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.oceanProDefinitions",
+            "valuePaths": [
+                "$.bfmpProperties.oceanProDefinitions"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "3.1Legislation,RegulationsandComplianceObligations",
+            "displayName": "3.1 Legislation, Regulations and Compliance Obligations",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.legislation",
+            "valuePaths": [
+                "$.bfmpProperties.legislation"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "3.2DefenceReferences",
+            "displayName": "3.2 Defence References",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.defenceRef",
+            "valuePaths": [
+                "$.bfmpProperties.defenceRef"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "3.3NavyReferences",
+            "displayName": "3.3 Navy References",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.navyRef",
+            "valuePaths": [
+                "$.bfmpProperties.navyRef"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "3.4OtherReferencesandStandards",
+            "displayName": "3.4 Other References and Standards",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.otherRef",
+            "valuePaths": [
+                "$.bfmpProperties.otherRef"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "4.Purpose",
+            "displayName": "4. Purpose",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.oceanProPurpose",
+            "valuePaths": [
+                "$.bfmpProperties.oceanProPurpose"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "4.1Background",
+            "displayName": "4.1 Background",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.backgroundPtOne",
+            "valuePaths": [
+                "$.bfmpProperties.backgroundPtOne"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "4.2BiofoulingNiches",
+            "displayName": "4.2 Biofouling Niches",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.bfNiches",
+            "valuePaths": [
+                "$.bfmpProperties.bfNiches"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "4.2.1Externalniches",
+            "displayName": "4.2.1 External niches",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.externalNiches",
+            "valuePaths": [
+                "$.bfmpProperties.externalNiches"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "4.2.2Abovewaterfittingsandequipment",
+            "displayName": "4.2.2 Above water fittings and equipment",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.aboveWater",
+            "valuePaths": [
+                "$.bfmpProperties.aboveWater"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "4.2.3Internalseawatersystems",
+            "displayName": "4.2.3 Internal sea water systems",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.internalSea",
+            "valuePaths": [
+                "$.bfmpProperties.internalSea"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "4.2.4Welldock",
+            "displayName": "4.2.4 Well dock",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.wellDock",
+            "valuePaths": [
+                "$.bfmpProperties.wellDock"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "4.2.5Summary",
+            "displayName": "4.2.5 Summary",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.summaryDiagram",
+            "valuePaths": [
+                "$.bfmpProperties.summaryDiagram"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "4.3BiofoulingandIMSTransferRiskExposures",
+            "displayName": "4.3 Biofouling and IMS Transfer Risk Exposures",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.bfAndIms",
+            "valuePaths": [
+                "$.bfmpProperties.bfAndIms"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "5.1.1AFC",
+            "displayName": "5.1.1 AFC",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.afc",
+            "valuePaths": [
+                "$.bfmpProperties.afc"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "5.1.2BiofoulingMaintenanceandCleaning",
+            "displayName": "5.1.2 Biofouling Maintenance and Cleaning",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.bfMaintenance",
+            "valuePaths": [
+                "$.bfmpProperties.bfMaintenance"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "5.2.1MGPS",
+            "displayName": "5.2.1 MGPS",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.mgps",
+            "valuePaths": [
+                "$.bfmpProperties.mgps"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "5.2.2BiofoulingMaintenance,CleaningandInspection",
+            "displayName": "5.2.2 Biofouling Maintenance, Cleaning and Inspection",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.bfMaintenanceCleaning",
+            "valuePaths": [
+                "$.bfmpProperties.bfMaintenanceCleaning"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "5.3FloatingandImmersibleEquipment",
+            "displayName": "5.3 Floating and Immersible Equipment",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.floating",
+            "valuePaths": [
+                "$.bfmpProperties.floating"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "5.4WellDock",
+            "displayName": "5.4 Well Dock",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.wellDockFive",
+            "valuePaths": [
+                "$.bfmpProperties.wellDockFive"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "6.BiofoulingCleaningandInspection–SchedulingandConduct",
+            "displayName": "6. Biofouling Cleaning and Inspection – Scheduling and Conduct",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.wellDockFive",
+            "valuePaths": [
+                "$.bfmpProperties.wellDockFive"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "6.DescriptionoftheAnti-FoulingSystems",
+            "displayName": "6. Description of the Anti-Fouling Systems",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.oceanProDescAfsPtOne",
+            "valuePaths": [
+                "$.bfmpProperties.oceanProDescAfsPtOne"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "6.1Drydock",
+            "displayName": "6.1 Drydock",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.dryDock",
+            "valuePaths": [
+                "$.bfmpProperties.dryDock"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "6.2.1Scheduling",
+            "displayName": "6.2.1 Scheduling",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.scheduling",
+            "valuePaths": [
+                "$.bfmpProperties.scheduling"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "6.2.2Conduct",
+            "displayName": "6.2.2 Conduct",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.underWaterConduct",
+            "valuePaths": [
+                "$.bfmpProperties.underWaterConduct"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "6.3InternalSeaWaterSystems",
+            "displayName": "6.3 Internal Sea Water Systems",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.internalSWS",
+            "valuePaths": [
+                "$.bfmpProperties.internalSWS"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "6.4FloatingandImmersibleEquipment",
+            "displayName": "6.4 Floating and Immersible Equipment",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.floatingImmersible",
+            "valuePaths": [
+                "$.bfmpProperties.floatingImmersible"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "6.5DisposalofBiologicalWaste",
+            "displayName": "6.5 Disposal of Biological Waste",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.disposal",
+            "valuePaths": [
+                "$.bfmpProperties.disposal"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "7.EntriesintheBiofoulingRecordBook",
+            "displayName": "7. Entries in the Biofouling Record Book",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.entries",
+            "valuePaths": [
+                "$.bfmpProperties.entries"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "8.DescriptionofAreasontheShipSusceptibletoBiofouling",
+            "displayName": "8. Description of Areas on the Ship Susceptible to Biofouling",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.oceanProDescAreasSusPtOne",
+            "valuePaths": [
+                "$.bfmpProperties.oceanProDescAreasSusPtOne"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "8.ReviewandAmendment",
+            "displayName": "8. Review and Amendment",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.reviewAmendment",
+            "valuePaths": [
+                "$.bfmpProperties.reviewAmendment"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "9.DescriptionoftheAnti-FoulingSystem",
+            "displayName": "9. Description of the Anti-Fouling System",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.oceanProDescAAfsSecPtOne",
+            "valuePaths": [
+                "$.bfmpProperties.oceanProDescAAfsSecPtOne"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "9.Glossary",
+            "displayName": "9. Glossary",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.glossary",
+            "valuePaths": [
+                "$.bfmpProperties.glossary"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "aEField",
+            "displayName": "AE Field",
+            "displayNamePath": null,
+            "valuePath": "$.aeField",
+            "valuePaths": [
+                "$.aeField"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "actiontobetakenincaseofMGPSFailures:",
+            "displayName": "Action to be taken in case of MGPS Failures:",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.oceanProAction",
+            "valuePaths": [
+                "$.bfmpProperties.oceanProAction"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "allowSectionRename",
+            "displayName": "Allow Section Rename",
+            "displayNamePath": null,
+            "valuePath": "$.isRepeaterSectionRenameAllowed",
+            "valuePaths": [
+                "$.isRepeaterSectionRenameAllowed"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "attachmentsandPhotos",
+            "displayName": "Attachments and Photos",
+            "displayNamePath": "$.displayName",
+            "valuePath": "$.attachments",
+            "valuePaths": [
+                "$.attachments"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "beam",
+            "displayName": "Beam",
+            "displayNamePath": null,
+            "valuePath": "$.beam",
+            "valuePaths": [
+                "$.beam"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "bfmpPropertiesRiskRating",
+            "displayName": "BfmpProperties RiskRating",
+            "displayNamePath": null,
+            "valuePath": "$.data.bfmpProperties.riskRating",
+            "valuePaths": [
+                "$.data.bfmpProperties.riskRating"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "bfmpPropertiesRiskRatingMessage",
+            "displayName": "BfmpProperties RiskRatingMessage",
+            "displayNamePath": null,
+            "valuePath": "$.data.bfmpProperties.riskRatingMessage",
+            "valuePaths": [
+                "$.data.bfmpProperties.riskRatingMessage"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "bfmpPropertiesRiskThresholds",
+            "displayName": "BfmpProperties RiskThresholds",
+            "displayNamePath": null,
+            "valuePath": "$.data.bfmpProperties.riskThresholds",
+            "valuePaths": [
+                "$.data.bfmpProperties.riskThresholds"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "bfmpPropertiesRiskThresholdsHigh",
+            "displayName": "BfmpProperties RiskThresholds High",
+            "displayNamePath": null,
+            "valuePath": "$.data.bfmpProperties.riskThresholds.High",
+            "valuePaths": [
+                "$.data.bfmpProperties.riskThresholds.High"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "bfmpPropertiesRiskThresholdsHighGreenThresholdDays",
+            "displayName": "BfmpProperties RiskThresholds High GreenThresholdDays",
+            "displayNamePath": null,
+            "valuePath": "$.data.bfmpProperties.riskThresholds.High.greenThresholdDays",
+            "valuePaths": [
+                "$.data.bfmpProperties.riskThresholds.High.greenThresholdDays"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "bfmpPropertiesRiskThresholdsHighKey",
+            "displayName": "BfmpProperties RiskThresholds High Key",
+            "displayNamePath": null,
+            "valuePath": "$.data.bfmpProperties.riskThresholds.High.key",
+            "valuePaths": [
+                "$.data.bfmpProperties.riskThresholds.High.key"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "bfmpPropertiesRiskThresholdsHighOrangeThresholdDays",
+            "displayName": "BfmpProperties RiskThresholds High OrangeThresholdDays",
+            "displayNamePath": null,
+            "valuePath": "$.data.bfmpProperties.riskThresholds.High.orangeThresholdDays",
+            "valuePaths": [
+                "$.data.bfmpProperties.riskThresholds.High.orangeThresholdDays"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "bfmpPropertiesRiskThresholdsLow",
+            "displayName": "BfmpProperties RiskThresholds Low",
+            "displayNamePath": null,
+            "valuePath": "$.data.bfmpProperties.riskThresholds.Low",
+            "valuePaths": [
+                "$.data.bfmpProperties.riskThresholds.Low"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "bfmpPropertiesRiskThresholdsLowGreenThresholdDays",
+            "displayName": "BfmpProperties RiskThresholds Low GreenThresholdDays",
+            "displayNamePath": null,
+            "valuePath": "$.data.bfmpProperties.riskThresholds.Low.greenThresholdDays",
+            "valuePaths": [
+                "$.data.bfmpProperties.riskThresholds.Low.greenThresholdDays"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "bfmpPropertiesRiskThresholdsLowOrangeThresholdDays",
+            "displayName": "BfmpProperties RiskThresholds Low OrangeThresholdDays",
+            "displayNamePath": null,
+            "valuePath": "$.data.bfmpProperties.riskThresholds.Low.orangeThresholdDays",
+            "valuePaths": [
+                "$.data.bfmpProperties.riskThresholds.Low.orangeThresholdDays"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "bfmpPropertiesRiskThresholdsStandard",
+            "displayName": "BfmpProperties RiskThresholds Standard",
+            "displayNamePath": null,
+            "valuePath": "$.data.bfmpProperties.riskThresholds.Standard",
+            "valuePaths": [
+                "$.data.bfmpProperties.riskThresholds.Standard"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "bfmpPropertiesRiskThresholdsStandardGreenThresholdDays",
+            "displayName": "BfmpProperties RiskThresholds Standard GreenThresholdDays",
+            "displayNamePath": null,
+            "valuePath": "$.data.bfmpProperties.riskThresholds.Standard.greenThresholdDays",
+            "valuePaths": [
+                "$.data.bfmpProperties.riskThresholds.Standard.greenThresholdDays"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "bfmpPropertiesRiskThresholdsStandardOrangeThresholdDays",
+            "displayName": "BfmpProperties RiskThresholds Standard OrangeThresholdDays",
+            "displayNamePath": null,
+            "valuePath": "$.data.bfmpProperties.riskThresholds.Standard.orangeThresholdDays",
+            "valuePaths": [
+                "$.data.bfmpProperties.riskThresholds.Standard.orangeThresholdDays"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "biofoulingManagementActionPlan",
+            "displayName": "Biofouling Management Action Plan",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.bioFoulingMxActionPlan",
+            "valuePaths": [
+                "$.bfmpProperties.bioFoulingMxActionPlan"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "biofoulingRecordBookInstructionsandRequirements",
+            "displayName": "Biofouling Record Book Instructions and Requirements",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.appendixOne",
+            "valuePaths": [
+                "$.bfmpProperties.appendixOne"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "callSign",
+            "displayName": "Call Sign",
+            "displayNamePath": null,
+            "valuePath": "$.callSign",
+            "valuePaths": [
+                "$.callSign"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "chapter1-ChapterOverview",
+            "displayName": "Chapter 1 - Chapter Overview",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.chapterOverview",
+            "valuePaths": [
+                "$.bfmpProperties.chapterOverview"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "chapter6-TimingofOperationalandMaintenanceActivities",
+            "displayName": "Chapter 6 - Timing of Operational and Maintenance Activities",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.timingofoperational",
+            "valuePaths": [
+                "$.bfmpProperties.timingofoperational"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "chapter7-DisposalofBiologicalWaste",
+            "displayName": "Chapter 7 - Disposal of Biological Waste",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.disposalBioWaste",
+            "valuePaths": [
+                "$.bfmpProperties.disposalBioWaste"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "chapter8-RecordingandReportingRequirements",
+            "displayName": "Chapter 8 - Recording and Reporting Requirements",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.recordingRequirements",
+            "valuePaths": [
+                "$.bfmpProperties.recordingRequirements"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "chapter9-CrewTrainingandFamiliarisation",
+            "displayName": "Chapter 9 - Crew Training and Familiarisation",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.crewTraining",
+            "valuePaths": [
+                "$.bfmpProperties.crewTraining"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "class",
+            "displayName": "Class",
+            "displayNamePath": null,
+            "valuePath": "$.class",
+            "valuePaths": [
+                "$.class"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "commissioned",
+            "displayName": "Commissioned",
+            "displayNamePath": null,
+            "valuePath": "$.commissioned",
+            "valuePaths": [
+                "$.commissioned"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "crewTrainingandFamiliarisation",
+            "displayName": "Crew Training and Familiarisation",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.crewTraining",
+            "valuePaths": [
+                "$.bfmpProperties.crewTraining"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "dataBfmpPropertiesRiskRating",
+            "displayName": "Data BfmpProperties RiskRating",
+            "displayNamePath": null,
+            "valuePath": "$.data.bfmpProperties.riskRating",
+            "valuePaths": [
+                "$.data.bfmpProperties.riskRating"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "dataBfmpPropertiesRiskRatingMessage",
+            "displayName": "Data BfmpProperties RiskRatingMessage",
+            "displayNamePath": null,
+            "valuePath": "$.data.bfmpProperties.riskRatingMessage",
+            "valuePaths": [
+                "$.data.bfmpProperties.riskRatingMessage"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "dataCallSign",
+            "displayName": "Data CallSign",
+            "displayNamePath": null,
+            "valuePath": "$.data.callSign",
+            "valuePaths": [
+                "$.data.callSign"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "dataFlag",
+            "displayName": "Data Flag",
+            "displayNamePath": null,
+            "valuePath": "$.data.flag",
+            "valuePaths": [
+                "$.data.flag"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "dataIconColor",
+            "displayName": "Data Icon Color",
+            "displayNamePath": null,
+            "valuePath": "$.data.icon.color",
+            "valuePaths": [
+                "$.data.icon.color"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "dataIconIcon",
+            "displayName": "Data Icon Icon",
+            "displayNamePath": null,
+            "valuePath": "$.data.icon.icon",
+            "valuePaths": [
+                "$.data.icon.icon"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "dataIconImageUrl",
+            "displayName": "Data Icon ImageUrl",
+            "displayNamePath": null,
+            "valuePath": "$.data.icon.imageUrl",
+            "valuePaths": [
+                "$.data.icon.imageUrl"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "dataSubType",
+            "displayName": "Data SubType",
+            "displayNamePath": null,
+            "valuePath": "$.data.subType",
+            "valuePaths": [
+                "$.data.subType"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "dataType",
+            "displayName": "Data Type",
+            "displayNamePath": null,
+            "valuePath": "$.data.type",
+            "valuePaths": [
+                "$.data.type"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "daysSinceLastClean",
+            "displayName": "Days Since Last Clean",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.daysSinceLastClean",
+            "valuePaths": [
+                "$.bfmpProperties.daysSinceLastClean"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "descriptionOfAreasOfTheShipSusceptibleToBiofouling",
+            "displayName": "Description Of Areas Of The Ship Susceptible To Biofouling",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.areasDescription",
+            "valuePaths": [
+                "$.bfmpProperties.areasDescription"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "displacement",
+            "displayName": "Displacement",
+            "displayNamePath": null,
+            "valuePath": "$.grossTonnage",
+            "valuePaths": [
+                "$.grossTonnage"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "disposalOfBiologicalWaste",
+            "displayName": "Disposal Of Biological Waste",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.disposalWaste",
+            "valuePaths": [
+                "$.bfmpProperties.disposalWaste"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "diveSupervisorComments",
+            "displayName": "Dive Supervisor Comments",
+            "displayNamePath": null,
+            "valuePath": "@diveSupervisorComments",
+            "valuePaths": [
+                "@diveSupervisorComments"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "expertInspectorComments",
+            "displayName": "Expert Inspector Comments",
+            "displayNamePath": null,
+            "valuePath": "@expertInspectorComments",
+            "valuePaths": [
+                "@expertInspectorComments"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "firstName",
+            "displayName": "FirstName",
+            "displayNamePath": null,
+            "valuePath": "$.data.firstName",
+            "valuePaths": [
+                "$.data.firstName"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "flag",
+            "displayName": "Flag",
+            "displayNamePath": null,
+            "valuePath": "$.flag",
+            "valuePaths": [
+                "$.flag"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "glossaryofTerms",
+            "displayName": "Glossary of Terms",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.glossary",
+            "valuePaths": [
+                "$.bfmpProperties.glossary"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "hello",
+            "displayName": "Hello",
+            "displayNamePath": null,
+            "valuePath": "$.data.hello",
+            "valuePaths": [
+                "$.data.hello"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "iMO",
+            "displayName": "IMO",
+            "displayNamePath": null,
+            "valuePath": "$.imo",
+            "valuePaths": [
+                "$.imo"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "in-WaterCleaningAndMaintenanceProcedures",
+            "displayName": "In-Water Cleaning And Maintenance Procedures",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.inWater",
+            "valuePaths": [
+                "$.bfmpProperties.inWater"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "in-WaterCleaningandMaintenanceProceduresforareasrequiringmaintenanceotherthanonboardtreatment:",
+            "displayName": "In-Water Cleaning and Maintenance Procedures for areas requiring maintenance other than on board treatment:",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.oceanProIwc",
+            "valuePaths": [
+                "$.bfmpProperties.oceanProIwc"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "introduction",
+            "displayName": "Introduction",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.introduction",
+            "valuePaths": [
+                "$.bfmpProperties.introduction"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "lastCleanDate",
+            "displayName": "Last Clean Date",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.lastCleanDate.date",
+            "valuePaths": [
+                "$.bfmpProperties.lastCleanDate.date"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "lastCleanLocation",
+            "displayName": "Last Clean Location",
+            "displayNamePath": null,
+            "valuePath": "$.data.bfmpProperties.lastCleanLocation",
+            "valuePaths": [
+                "$.data.bfmpProperties.lastCleanLocation"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "lastName",
+            "displayName": "LastName",
+            "displayNamePath": null,
+            "valuePath": "$.data.lastName",
+            "valuePaths": [
+                "$.data.lastName"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "length",
+            "displayName": "Length",
+            "displayNamePath": null,
+            "valuePath": "$.length",
+            "valuePaths": [
+                "$.length"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "mMSINumber",
+            "displayName": "MMSI Number",
+            "displayNamePath": null,
+            "valuePath": "$.mmsiNumber",
+            "valuePaths": [
+                "$.mmsiNumber"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "managementPlan",
+            "displayName": "Management Plan",
+            "displayNamePath": null,
+            "valuePath": "$.biofoulingMangementPlan",
+            "valuePaths": [
+                "$.biofoulingMangementPlan"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "marineGrowthPreventionSystem(MGPS)Description",
+            "displayName": "Marine Growth Prevention System (MGPS) Description",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.mgpsDescription",
+            "valuePaths": [
+                "$.bfmpProperties.mgpsDescription"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "nextCleanRequestedLocation",
+            "displayName": "Next Clean Requested Location",
+            "displayNamePath": null,
+            "valuePath": "$.data.bfmpProperties.nextCleanRequestedLocation",
+            "valuePaths": [
+                "$.data.bfmpProperties.nextCleanRequestedLocation"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "nextCleanRequestedWindow",
+            "displayName": "Next Clean Requested Window",
+            "displayNamePath": null,
+            "valuePath": "$.data.bfmpProperties.nextCleanRequestedWindow.from.date",
+            "valuePaths": [
+                "$.data.bfmpProperties.nextCleanRequestedWindow.from.date"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "nextCleanScheduledLocation",
+            "displayName": "Next Clean Scheduled Location",
+            "displayNamePath": null,
+            "valuePath": "$.data.bfmpProperties.nextCleanScheduledLocation",
+            "valuePaths": [
+                "$.data.bfmpProperties.nextCleanScheduledLocation"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "nextCleanScheduledWindow",
+            "displayName": "Next Clean Scheduled Window",
+            "displayNamePath": null,
+            "valuePath": "$.data.bfmpProperties.nextCleanScheduledWindow.from.date",
+            "valuePaths": [
+                "$.data.bfmpProperties.nextCleanScheduledWindow.from.date"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "observationsandFindings",
+            "displayName": "Observations and Findings",
+            "displayNamePath": "$.displayName",
+            "valuePath": "@frRatingData",
+            "valuePaths": [
+                "@frRatingData"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "operationOfOn-BoardTreatmentProcesses",
+            "displayName": "Operation Of On-Board Treatment Processes",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.operationOnboard",
+            "valuePaths": [
+                "$.bfmpProperties.operationOnboard"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "operationofonboardtreatmentProcess:",
+            "displayName": "Operation of onboard treatment Process:",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.oceanProOpOnboard",
+            "valuePaths": [
+                "$.bfmpProperties.oceanProOpOnboard"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "pennant",
+            "displayName": "Pennant",
+            "displayNamePath": null,
+            "valuePath": "$.pennant",
+            "valuePaths": [
+                "$.pennant"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "placeholderTitleforAdvancedText",
+            "displayName": "Placeholder Title for Advanced Text",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.maintenanceAfs",
+            "valuePaths": [
+                "$.bfmpProperties.maintenanceAfs"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "portofRegistry",
+            "displayName": "Port of Registry",
+            "displayNamePath": null,
+            "valuePath": "$.portOfRegistry",
+            "valuePaths": [
+                "$.portOfRegistry"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "preface",
+            "displayName": "Preface",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.preface",
+            "valuePaths": [
+                "$.bfmpProperties.preface"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "purpose",
+            "displayName": "Purpose",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.purpose",
+            "valuePaths": [
+                "$.bfmpProperties.purpose"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "displayName",
+            "displayName": "RAN Vessel",
+            "displayNamePath": null,
+            "valuePath": "$.data.displayName",
+            "valuePaths": [
+                "$.data.displayName"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "recordingRequirements",
+            "displayName": "Recording Requirements",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.recordingRequirements",
+            "valuePaths": [
+                "$.bfmpProperties.recordingRequirements"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "riskProfile",
+            "displayName": "Risk Profile",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.riskProfile",
+            "valuePaths": [
+                "$.bfmpProperties.riskProfile"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "safetyProceduresForTheShipAndCrew",
+            "displayName": "Safety Procedures For The Ship And Crew",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.safetyProcedures",
+            "valuePaths": [
+                "$.bfmpProperties.safetyProcedures"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "shipType",
+            "displayName": "Ship Type",
+            "displayNamePath": null,
+            "valuePath": "$.type",
+            "valuePaths": [
+                "$.type"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "timingOfOperationalAndMaintenanceActivites",
+            "displayName": "Timing Of Operational And Maintenance Activites",
+            "displayNamePath": null,
+            "valuePath": "$.bfmpProperties.operationMaintenanceAfs",
+            "valuePaths": [
+                "$.bfmpProperties.operationMaintenanceAfs"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "vesselDraft",
+            "displayName": "Vessel Draft",
+            "displayNamePath": null,
+            "valuePath": "$.vesselDraft",
+            "valuePaths": [
+                "$.vesselDraft"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "title",
+            "displayNamePath": null,
+            "valuePaths": [
+                "$.displayName"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "subTitle",
+            "displayNamePath": null,
+            "valuePaths": [
+                "$.data.type"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "secondaryValue",
+            "displayNamePath": null,
+            "valuePaths": [
+                "$.data.subType"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "statusText",
+            "displayNamePath": null,
+            "valuePaths": [
+                "$.data.bfmpProperties.riskRatingMessage"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "statusClassName",
+            "displayNamePath": null,
+            "valuePaths": [
+                "$.data.bfmpProperties.riskRating"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "statusChain",
+            "displayNamePath": null,
+            "valuePaths": [
+                "$.chains.pop"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "Flag",
+            "displayNamePath": null,
+            "valuePaths": [
+                "$.data.flag"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "Call Sign",
+            "displayNamePath": null,
+            "valuePaths": [
+                "$.data.callSign"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "imageUrl",
+            "displayNamePath": null,
+            "valuePaths": [
+                "$.data.icon.imageUrl"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "color",
+            "displayNamePath": null,
+            "valuePaths": [
+                "$.data.icon.color"
+            ],
+            "isExpandedProperty": false
+        },
+        {
+            "key": "shape",
+            "displayNamePath": null,
+            "valuePaths": [
+                "$.data.icon.icon"
+            ],
+            "isExpandedProperty": false
+        }
+    ],
+    "skip": 0,
+    "activeStepIds": [],
+    "customViewQueries": []
+}

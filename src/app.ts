@@ -39,8 +39,17 @@ app.get('/api/v1/health', async (_req, res) => {
 
 // Security
 app.use(helmet({ contentSecurityPolicy: false }));
+const allowedOrigin = process.env.APP_URL || 'http://localhost:5173';
 app.use(cors({
-  origin: process.env.APP_URL || 'http://localhost:5173',
+  origin: (origin, cb) => {
+    // No origin (e.g. same-origin, Postman) — allow
+    if (!origin) return cb(null, true);
+    // Allow configured frontend URL
+    if (origin === allowedOrigin) return cb(null, true);
+    // In development, allow any localhost port (Vite may use 5174, 5175, etc.)
+    if (process.env.NODE_ENV !== 'production' && /^https?:\/\/localhost(:\d+)?$/.test(origin)) return cb(null, true);
+    cb(null, false);
+  },
   credentials: true,
 }));
 

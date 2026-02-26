@@ -2,6 +2,13 @@ import prisma from '../config/database';
 import { AppError } from '../middleware/error';
 import { auditService } from './audit.service';
 
+const ENTRY_UPDATE_FIELDS = [
+  'condition', 'foulingRating', 'foulingType', 'coverage',
+  'measurementType', 'measurementValue', 'measurementUnit',
+  'coatingCondition', 'corrosionType', 'corrosionSeverity',
+  'notes', 'recommendation', 'actionRequired', 'attachments', 'status',
+] as const;
+
 export const workFormService = {
   // Generate form entries from vessel components when starting a work order
   async generateForm(workOrderId: string, userId: string) {
@@ -56,7 +63,12 @@ export const workFormService = {
     const existing = await prisma.workFormEntry.findUnique({ where: { id: entryId } });
     if (!existing) throw new AppError(404, 'NOT_FOUND', 'Form entry not found');
 
-    const updateData: any = { ...data, updatedAt: new Date() };
+    const updateData: Record<string, unknown> = { updatedAt: new Date() };
+    for (const key of ENTRY_UPDATE_FIELDS) {
+      if (key in data) {
+        updateData[key] = data[key];
+      }
+    }
     if (data.status === 'COMPLETED' && !existing.completedAt) {
       updateData.completedAt = new Date();
       updateData.completedBy = userId;

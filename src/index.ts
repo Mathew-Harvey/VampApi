@@ -9,15 +9,26 @@ import { workOrderService } from './services/work-order.service';
 
 const PORT = env.PORT;
 
-async function main() {
-  // Test database connection
-  try {
-    await prisma.$connect();
-    console.log('Database connected successfully');
-  } catch (error) {
-    console.error('Failed to connect to database:', error);
-    process.exit(1);
+async function connectWithRetry(maxRetries = 5, delayMs = 3000) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      await prisma.$connect();
+      console.log('Database connected successfully');
+      return;
+    } catch (error) {
+      console.error(`Database connection attempt ${attempt}/${maxRetries} failed:`, error instanceof Error ? error.message : error);
+      if (attempt === maxRetries) {
+        throw new Error('Could not connect to database after maximum retries');
+      }
+      console.log(`Retrying in ${delayMs / 1000}s...`);
+      await new Promise((r) => setTimeout(r, delayMs));
+      delayMs = Math.min(delayMs * 2, 30000);
+    }
   }
+}
+
+async function main() {
+  await connectWithRetry();
 
   // Create HTTP server and attach Socket.IO for WebRTC signaling
   const httpServer = http.createServer(app);

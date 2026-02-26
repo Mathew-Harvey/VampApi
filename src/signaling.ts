@@ -46,7 +46,12 @@ async function hasWorkOrderAccess(workOrderId: string, organisationId: string, u
 export function initSignaling(httpServer: HTTPServer) {
   const io = new SocketIOServer(httpServer, {
     cors: {
-      origin: process.env.APP_URL || 'http://localhost:5173',
+      origin: (origin, cb) => {
+        const allowed = process.env.APP_URL || 'http://localhost:5173';
+        if (!origin || origin === allowed) return cb(null, true);
+        if (process.env.NODE_ENV !== 'production' && /^https?:\/\/localhost(:\d+)?$/.test(origin)) return cb(null, true);
+        cb(null, false);
+      },
       credentials: true,
     },
     path: '/socket.io',

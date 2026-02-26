@@ -141,6 +141,32 @@ router.put('/form-entries/:entryId', authenticate, async (req: Request, res: Res
   }
 });
 
+// PATCH update form entry by workOrderId + entryId (used by frontend persistence layer)
+router.patch('/work-orders/:workOrderId/form/entries/:entryId', authenticate, async (req: Request, res: Response) => {
+  try {
+    const existing = await prisma.workFormEntry.findUnique({
+      where: { id: req.params.entryId as string },
+      select: { workOrderId: true },
+    });
+    if (!existing || existing.workOrderId !== req.params.workOrderId) {
+      res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Form entry not found' } });
+      return;
+    }
+
+    const canEditByOrg = hasAnyPermission(req.user, 'WORK_ORDER_EDIT');
+    const canWriteAsCollaborator = await workOrderService.canWriteAsCollaborator(existing.workOrderId, req.user!.userId);
+    if (!canEditByOrg && !canWriteAsCollaborator) {
+      res.status(403).json({ success: false, error: { code: 'FORBIDDEN', message: 'Insufficient permissions' } });
+      return;
+    }
+
+    const entry = await workFormService.updateEntry(req.params.entryId as string, req.body, req.user!.userId);
+    res.json({ success: true, data: entry });
+  } catch (error: any) {
+    res.status(error.statusCode || 500).json({ success: false, error: { code: error.code || 'ERROR', message: error.message } });
+  }
+});
+
 // Update a single field on a form entry (for real-time collaboration)
 router.patch('/form-entries/:entryId/field', authenticate, async (req: Request, res: Response) => {
   try {

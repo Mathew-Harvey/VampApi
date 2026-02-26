@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: vamp-api
+    runtime: node
+    region: singapore
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm run db:migrate:deploy && npm start
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        value: postgresql://marinestream_user:XPLEWX6Lofnt5CpFx7IaZ4UTRUL7kNsp@dpg-d2vu158dl3ps739j09t0-a/marinestream
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRY
+        value: 15m
+      - key: REFRESH_TOKEN_EXPIRY
+        value: 7d
+      - key: APP_URL
+        sync: false
+      - key: API_URL
+        sync: false
+      - key: EMAIL_FROM
+        value: no-reply@marinestream.io
+      - key: RESEND_API_KEY
+        sync: false

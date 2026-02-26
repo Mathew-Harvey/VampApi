@@ -184,6 +184,8 @@ function parseAttachmentArray(raw: unknown): unknown[] {
 }
 
 function extractMediaId(value: unknown): string | null {
+  const unwrapped = unwrapMediaRef(value);
+  if (unwrapped !== value) return extractMediaId(unwrapped);
   if (typeof value === 'string') return isLikelyMediaId(value) ? value : null;
   if (!value || typeof value !== 'object') return null;
   const candidate = (value as any).mediaId ?? (value as any).id;
@@ -262,11 +264,24 @@ function mergeReportConfig(rawMetadata: unknown, reportConfig: ReportConfig): Re
   };
 }
 
+function unwrapMediaRef(value: unknown): unknown {
+  if (!value || typeof value !== 'object') return value;
+  const obj = value as Record<string, unknown>;
+  if (obj.data && typeof obj.data === 'object') return obj.data;
+  if (obj.media && typeof obj.media === 'object') return obj.media;
+  return value;
+}
+
 function resolveAttachmentSource(
   source: unknown,
   mediaMap: Map<string, MediaInfo>,
   defaultTitle?: string
 ): { url: string; idSuffix?: string; title?: string; path?: string } | null {
+  const unwrappedSource = unwrapMediaRef(source);
+  if (unwrappedSource !== source) {
+    return resolveAttachmentSource(unwrappedSource, mediaMap, defaultTitle);
+  }
+
   if (typeof source === 'string') {
     if (isLikelyUrl(source)) {
       return { url: normalizeMediaUrl(source), title: defaultTitle };
@@ -302,6 +317,14 @@ function resolveAttachmentSource(
     title: typeof sourceObj.title === 'string' ? sourceObj.title : buildTimestampFilename(media),
     path: typeof sourceObj.path === 'string' ? sourceObj.path : undefined,
   };
+}
+
+function pickConfiguredImage(config: ReportConfig, keys: string[]): unknown {
+  for (const key of keys) {
+    const value = (config as any)[key];
+    if (value != null && value !== '') return value;
+  }
+  return null;
 }
 
 /** Map form data + photoPages into the report template context (data.*, createdBy, attachments, etc.) */
@@ -441,9 +464,15 @@ async function buildInspectionReportContext(
   };
 
   const pinnedAttachments = [
-    reportConfig.coverImage ? { path: 'ReportCover', attachment: reportConfig.coverImage, title: 'Report Cover' } : null,
-    reportConfig.clientLogo ? { path: 'ClientLogo', attachment: reportConfig.clientLogo, title: 'Client Logo' } : null,
-    reportConfig.generalArrangementImage ? { path: 'GeneralArrangement', attachment: reportConfig.generalArrangementImage, title: 'General Arrangement' } : null,
+    pickConfiguredImage(reportConfig, ['coverImage', 'coverPhoto', 'reportCover', 'reportCoverImage', 'coverImageMediaId'])
+      ? { path: 'ReportCover', attachment: pickConfiguredImage(reportConfig, ['coverImage', 'coverPhoto', 'reportCover', 'reportCoverImage', 'coverImageMediaId']), title: 'Report Cover' }
+      : null,
+    pickConfiguredImage(reportConfig, ['clientLogo', 'logo', 'clientLogoImage', 'clientLogoMediaId'])
+      ? { path: 'ClientLogo', attachment: pickConfiguredImage(reportConfig, ['clientLogo', 'logo', 'clientLogoImage', 'clientLogoMediaId']), title: 'Client Logo' }
+      : null,
+    pickConfiguredImage(reportConfig, ['generalArrangementImage', 'gaImage', 'generalArrangement', 'gaImageMediaId'])
+      ? { path: 'GeneralArrangement', attachment: pickConfiguredImage(reportConfig, ['generalArrangementImage', 'gaImage', 'generalArrangement', 'gaImageMediaId']), title: 'General Arrangement' }
+      : null,
   ].filter(Boolean) as Array<{ path: string; attachment: unknown; title?: string }>;
 
   const attachments = await buildAttachments(entries, pinnedAttachments);

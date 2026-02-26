@@ -47,6 +47,42 @@ router.post('/work-orders/:workOrderId/invite', authenticate, async (req: Reques
   }
 });
 
+// Resolve invite link metadata (for invite landing page)
+router.get('/invites/work-orders/resolve', async (req: Request, res: Response) => {
+  try {
+    const token = String(req.query.token || '');
+    if (!token) {
+      res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'token query parameter is required' } });
+      return;
+    }
+    const result = await inviteService.getWorkOrderInvitationDetails(token);
+    res.json({ success: true, data: result });
+  } catch (error: any) {
+    res.status(error.statusCode || 500).json({ success: false, error: { code: error.code || 'ERROR', message: error.message } });
+  }
+});
+
+// Redeem an invitation by URL token or invite code
+router.post('/invites/work-orders/redeem', authenticate, async (req: Request, res: Response) => {
+  try {
+    const token = typeof req.body.token === 'string' ? req.body.token : undefined;
+    const code = typeof req.body.code === 'string' ? req.body.code : undefined;
+    if (!token && !code) {
+      res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Provide token or code' } });
+      return;
+    }
+
+    const result = await inviteService.redeemWorkOrderInvitation({
+      userId: req.user!.userId,
+      token,
+      code,
+    });
+    res.json({ success: true, data: result });
+  } catch (error: any) {
+    res.status(error.statusCode || 500).json({ success: false, error: { code: error.code || 'ERROR', message: error.message } });
+  }
+});
+
 // Change collaborator permission
 router.patch('/work-orders/:workOrderId/collaborators/:userId/permission', authenticate, async (req: Request, res: Response) => {
   try {

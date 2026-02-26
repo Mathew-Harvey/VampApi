@@ -25,6 +25,7 @@ const envSchema = z.object({
   SMTP_PASS: z.string().default(''),
   EMAIL_FROM: z.string().default('onboarding@resend.dev'),
   RESEND_API_KEY: z.string().default(''),
+  SENDGRID_API_KEY: z.string().default(''),
   APP_URL: z.string().default('http://localhost:5173'),
   API_URL: z.string().default('http://localhost:3001'),
   // Optional: Rise-X third-party API sync (script only)

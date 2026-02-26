@@ -1,6 +1,17 @@
 import nodemailer from 'nodemailer';
 import { env } from '../config/env';
 
+type EmailSendResult = {
+  sent: boolean;
+  id?: string;
+  error?: string;
+  provider?: 'smtp' | 'resend' | 'sendgrid';
+};
+
+export function inviteCodeFromToken(token: string): string {
+  return token.replace(/-/g, '').slice(0, 6).toUpperCase();
+}
+
 // SMTP transporter (Gmail or any SMTP provider)
 let transporter: nodemailer.Transporter | null = null;
 
@@ -13,15 +24,21 @@ if (env.SMTP_HOST && env.SMTP_USER && env.SMTP_PASS) {
   });
   console.log(`[EMAIL] SMTP configured: ${env.SMTP_HOST} as ${env.SMTP_USER}`);
 } else {
-  console.warn('[EMAIL] No SMTP configured. Emails will not be sent.');
+  console.warn('[EMAIL] SMTP not configured.');
 }
 
-async function sendEmail(to: string, subject: string, html: string): Promise<{ sent: boolean; id?: string; error?: string }> {
-  if (!transporter) {
-    console.error(`[EMAIL] Cannot send - no SMTP configured. To: ${to}, Subject: ${subject}`);
-    return { sent: false, error: 'No email provider configured. Set SMTP_HOST, SMTP_USER, SMTP_PASS in .env' };
-  }
+if (env.RESEND_API_KEY) {
+  console.log('[EMAIL] Resend configured.');
+}
+if (env.SENDGRID_API_KEY) {
+  console.log('[EMAIL] SendGrid configured.');
+}
+if (!transporter && !env.RESEND_API_KEY && !env.SENDGRID_API_KEY) {
+  console.warn('[EMAIL] No email provider configured. Configure SMTP, Resend, or SendGrid.');
+}
 
+async function sendViaSmtp(to: string, subject: string, html: string): Promise<EmailSendResult> {
+  if (!transporter) return { sent: false, error: 'SMTP not configured' };
   try {
     const info = await transporter.sendMail({
       from: `"MarineStream" <${env.EMAIL_FROM}>`,
@@ -29,11 +46,82 @@ async function sendEmail(to: string, subject: string, html: string): Promise<{ s
       subject,
       html,
     });
-    console.log(`[EMAIL] Sent to ${to}: "${subject}" (messageId: ${info.messageId})`);
-    return { sent: true, id: info.messageId };
+    return { sent: true, id: info.messageId, provider: 'smtp' };
   } catch (err: any) {
-    console.error(`[EMAIL] Failed to send to ${to}:`, err.message);
     return { sent: false, error: err.message };
+  }
+}
+
+async function sendViaResend(to: string, subject: string, html: string): Promise<EmailSendResult> {
+  if (!env.RESEND_API_KEY) return { sent: false, error: 'Resend not configured' };
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: env.EMAIL_FROM,
+        to: [to],
+        subject,
+        html,
+      }),
+    });
+    const body: any = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      return { sent: false, error: body?.message || body?.error || `Resend HTTP ${response.status}` };
+    }
+    return { sent: true, id: body?.id, provider: 'resend' };
+  } catch (err: any) {
+    return { sent: false, error: err.message };
+  }
+}
+
+async function sendViaSendGrid(to: string, subject: string, html: string): Promise<EmailSendResult> {
+  if (!env.SENDGRID_API_KEY) return { sent: false, error: 'SendGrid not configured' };
+  try {
+    const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${env.SENDGRID_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        personalizations: [{ to: [{ email: to }] }],
+        from: { email: env.EMAIL_FROM, name: 'MarineStream' },
+        subject,
+        content: [{ type: 'text/html', value: html }],
+      }),
+    });
+    if (!response.ok) {
+      const body = await response.text().catch(() => '');
+      return { sent: false, error: body || `SendGrid HTTP ${response.status}` };
+    }
+    return { sent: true, id: response.headers.get('x-message-id') || undefined, provider: 'sendgrid' };
+  } catch (err: any) {
+    return { sent: false, error: err.message };
+  }
+}
+
+async function sendEmail(to: string, subject: string, html: string): Promise<EmailSendResult> {
+  const attempts: EmailSendResult[] = [];
+  const providers = [sendViaSmtp, sendViaResend, sendViaSendGrid];
+
+  for (const sendWithProvider of providers) {
+    const result = await sendWithProvider(to, subject, html);
+    if (result.sent) {
+      console.log(`[EMAIL] Sent via ${result.provider} to ${to}: "${subject}" (${result.id || 'no-id'})`);
+      return result;
+    }
+    attempts.push(result);
+  }
+
+  const attemptErrors = attempts.map((a) => a.error).filter(Boolean).join(' | ');
+  console.error(`[EMAIL] Failed to send to ${to}. ${attemptErrors}`);
+  return {
+    sent: false,
+    error: 'No email provider succeeded. Configure SMTP_HOST/SMTP_USER/SMTP_PASS or RESEND_API_KEY or SENDGRID_API_KEY.',
   }
 }
 
@@ -82,17 +170,21 @@ export const emailService = {
     vesselName: string;
     permission: string;
     isNewUser: boolean;
+    actionUrl?: string;
+    actionLabel?: string;
+    inviteCode?: string;
+    inviteUrl?: string;
   }) {
     const permLabel = params.permission === 'ADMIN' ? 'Admin (full access)' :
       params.permission === 'WRITE' ? 'Read & Write' : 'Read Only';
 
-    const actionUrl = params.isNewUser
+    const actionUrl = params.actionUrl || (params.isNewUser
       ? `${env.APP_URL}/register`
-      : `${env.APP_URL}/work-orders`;
+      : `${env.APP_URL}/work-orders`);
 
-    const actionLabel = params.isNewUser
+    const actionLabel = params.actionLabel || (params.isNewUser
       ? 'Create Your Account'
-      : 'View Work Order';
+      : 'View Work Order');
 
     const html = wrapEmail(`
       <h2 style="margin: 0 0 8px; color: #0f172a; font-size: 20px;">You've been invited to collaborate</h2>
@@ -140,6 +232,24 @@ export const emailService = {
           ${actionLabel}
         </a>
       </div>
+
+      ${params.inviteCode ? `
+        <div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 14px; margin-top: 18px; text-align: center;">
+          <p style="margin: 0 0 6px; color: #64748b; font-size: 12px;">Manual join code</p>
+          <p style="margin: 0; color: #0f172a; font-size: 20px; letter-spacing: 1px; font-weight: 700;">${params.inviteCode}</p>
+        </div>
+      ` : ''}
+
+      ${params.inviteUrl ? `
+        <div style="background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 14px; margin-top: 12px;">
+          <p style="margin: 0 0 6px; color: #9a3412; font-size: 12px; font-weight: 600;">
+            Manual invite URL
+          </p>
+          <p style="margin: 0; color: #7c2d12; font-size: 12px; word-break: break-all;">
+            ${params.inviteUrl}
+          </p>
+        </div>
+      ` : ''}
 
       <p style="color: #94a3b8; font-size: 12px; margin-top: 24px; text-align: center;">
         If you didn't expect this invitation, you can safely ignore this email.

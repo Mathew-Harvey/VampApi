@@ -1,0 +1,587 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// ORGANISATIONS & USERS
+// ============================================================
+
+model Organisation {
+  id           String   @id @default(cuid())
+  name         String
+  type         String   // OrganisationType stored as string
+  abn          String?
+  contactEmail String?
+  contactPhone String?
+  address      String?
+  logoUrl      String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  users       OrganisationUser[]
+  vessels     Vessel[]
+  workOrders  WorkOrder[]
+  invitations Invitation[]
+
+  @@map("organisations")
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  phone        String?
+  avatarUrl    String?
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  organisations        OrganisationUser[]
+  workOrderAssignments WorkOrderAssignment[]
+  taskSubmissions      TaskSubmission[]
+  mediaUploads         Media[]
+  auditEntries         AuditEntry[]    @relation("AuditActor")
+  notifications        Notification[]
+  comments             Comment[]
+  passwordResets       PasswordReset[]
+
+  @@map("users")
+}
+
+model OrganisationUser {
+  id             String  @id @default(cuid())
+  userId         String
+  organisationId String
+  role           String  // UserRole
+  permissions    String  @default("[]") // JSON array of Permission strings
+  isDefault      Boolean @default(false)
+  joinedAt       DateTime @default(now())
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organisationId])
+  @@map("organisation_users")
+}
+
+model Invitation {
+  id             String    @id @default(cuid())
+  email          String
+  organisationId String
+  role           String    // UserRole
+  workOrderId    String?
+  assignmentRole String?
+  token          String    @unique
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+  createdAt      DateTime  @default(now())
+
+  organisation Organisation @relation(fields: [organisationId], references: [id])
+
+  @@map("invitations")
+}
+
+model PasswordReset {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("password_resets")
+}
+
+// ============================================================
+// VESSELS (ASSETS)
+// ============================================================
+
+model Vessel {
+  id                    String   @id @default(cuid())
+  organisationId        String
+  externalId            String?  @unique // e.g. Rise-X asset id for sync
+  source                String?  // e.g. 'RISE_X' for read-only fleet data
+  name                  String
+  imoNumber             String?
+  mmsi                  String?
+  callSign              String?
+  flagState             String?
+  vesselType            String   // VesselType
+  grossTonnage          Float?
+  lengthOverall         Float?
+  beam                  Float?
+  maxDraft              Float?
+  minDraft              Float?
+  yearBuilt             Int?
+  homePort              String?
+  classificationSociety String?
+  afsCoatingType        String?
+  afsManufacturer       String?
+  afsProductName        String?
+  afsApplicationDate    DateTime?
+  afsServiceLife        Int?
+  lastDrydockDate       DateTime?
+  nextDrydockDate       DateTime?
+  typicalSpeed          Float?
+  tradingRoutes         String?
+  operatingArea         String?
+  climateZones          String   @default("[]") // JSON array
+  status                String   @default("ACTIVE")
+  complianceStatus      String   @default("COMPLIANT")
+  bfmpDocumentUrl       String?
+  bfmpRevision          String?
+  bfmpRevisionDate      DateTime?
+  metadata              String?  // JSON
+  isDeleted             Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  organisation Organisation     @relation(fields: [organisationId], references: [id])
+  workOrders   WorkOrder[]
+  inspections  Inspection[]
+  nicheAreas   NicheArea[]
+  components   VesselComponent[]
+  media        Media[]
+  documents    Document[]
+
+  @@map("vessels")
+}
+
+model NicheArea {
+  id        String   @id @default(cuid())
+  vesselId  String
+  name      String
+  location  String?
+  afsType   String?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  vessel             Vessel              @relation(fields: [vesselId], references: [id], onDelete: Cascade)
+  inspectionFindings InspectionFinding[]
+
+  @@map("niche_areas")
+}
+
+// General Arrangement - underwater components making up the digital twin
+model VesselComponent {
+  id           String   @id @default(cuid())
+  vesselId     String
+  name         String   // e.g. "Sea Chest Port 1", "Bow Thruster", "Rudder"
+  category     String   // e.g. "HULL", "SEA_CHEST", "THRUSTER", "RUDDER", "PROPELLER", "KEEL", "ANODES", "INTAKE"
+  location     String?  // descriptive location on vessel
+  description  String?
+  sortOrder    Int      @default(0)
+  coatingType  String?
+  material     String?
+  lastInspected DateTime?
+  condition    String?  // GOOD, FAIR, POOR, CRITICAL
+  metadata     String?  // JSON - flexible extra fields
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  vessel          Vessel          @relation(fields: [vesselId], references: [id], onDelete: Cascade)
+  workFormEntries WorkFormEntry[]
+
+  @@map("vessel_components")
+}
+
+// Data captured per-component during a work order
+model WorkFormEntry {
+  id               String   @id @default(cuid())
+  workOrderId      String
+  vesselComponentId String
+  // Inspection data
+  condition        String?  // GOOD, FAIR, POOR, CRITICAL
+  foulingRating    Int?     // 0-5 IMO scale
+  foulingType      String?
+  coverage         Float?   // 0-100 percentage
+  // Measurements
+  measurementType  String?
+  measurementValue Float?
+  measurementUnit  String?
+  // Coating / corrosion
+  coatingCondition String?
+  corrosionType    String?
+  corrosionSeverity String?
+  // Notes
+  notes            String?
+  recommendation   String?
+  actionRequired   Boolean  @default(false)
+  // Attachments stored as JSON array of media IDs
+  attachments      String   @default("[]") // JSON array of media ids
+  // Status
+  status           String   @default("PENDING") // PENDING, COMPLETED, FLAGGED
+  completedAt      DateTime?
+  completedBy      String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  workOrder       WorkOrder       @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  vesselComponent VesselComponent @relation(fields: [vesselComponentId], references: [id])
+
+  @@unique([workOrderId, vesselComponentId])
+  @@map("work_form_entries")
+}
+
+// WebRTC video rooms for work order collaboration
+model VideoRoom {
+  id          String   @id @default(cuid())
+  workOrderId String   @unique
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+
+  @@map("video_rooms")
+}
+
+// ============================================================
+// WORK ORDERS
+// ============================================================
+
+model WorkOrder {
+  id              String   @id @default(cuid())
+  referenceNumber String   @unique
+  vesselId        String
+  organisationId  String
+  workflowId      String?
+  title           String
+  description     String?
+  type            String   // WorkOrderType
+  priority        String   @default("NORMAL")
+  status          String   @default("DRAFT")
+  location        String?
+  latitude        Float?
+  longitude       Float?
+  scheduledStart  DateTime?
+  scheduledEnd    DateTime?
+  actualStart     DateTime?
+  actualEnd       DateTime?
+  currentStepId   String?
+  currentTaskId   String?
+  regulatoryRef   String?
+  complianceFramework String @default("[]") // JSON array
+  metadata        String?  // JSON
+  isDeleted       Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  completedAt     DateTime?
+
+  vessel          Vessel              @relation(fields: [vesselId], references: [id])
+  organisation    Organisation        @relation(fields: [organisationId], references: [id])
+  workflow        Workflow?           @relation(fields: [workflowId], references: [id])
+  assignments     WorkOrderAssignment[]
+  inspections     Inspection[]
+  taskSubmissions TaskSubmission[]
+  formEntries     WorkFormEntry[]
+  videoRoom       VideoRoom?
+  media           Media[]
+  comments        Comment[]
+  documents       Document[]
+
+  @@map("work_orders")
+}
+
+model WorkOrderAssignment {
+  id          String   @id @default(cuid())
+  workOrderId String
+  userId      String
+  role        String   // AssignmentRole
+  assignedAt  DateTime @default(now())
+
+  workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@unique([workOrderId, userId])
+  @@map("work_order_assignments")
+}
+
+// ============================================================
+// INSPECTIONS
+// ============================================================
+
+model Inspection {
+  id              String   @id @default(cuid())
+  workOrderId     String
+  vesselId        String
+  type            String   // InspectionType
+  status          String   @default("IN_PROGRESS")
+  inspectorName   String
+  inspectorOrg    String?
+  inspectorCert   String?
+  waterTemp       Float?
+  waterVisibility Float?
+  waterSalinity   Float?
+  weatherConditions String?
+  seaState        String?
+  tideState       String?
+  location        String?
+  latitude        Float?
+  longitude       Float?
+  overallRating   Int?
+  summary         String?
+  recommendations String?
+  startedAt       DateTime @default(now())
+  completedAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  workOrder WorkOrder           @relation(fields: [workOrderId], references: [id])
+  vessel    Vessel              @relation(fields: [vesselId], references: [id])
+  findings  InspectionFinding[]
+  media     Media[]
+
+  @@map("inspections")
+}
+
+model InspectionFinding {
+  id                String   @id @default(cuid())
+  inspectionId      String
+  nicheAreaId       String?
+  area              String
+  foulingRating     Int?
+  foulingType       String?
+  coverage          Float?
+  condition         String?
+  measurementType   String?
+  measurementValue  Float?
+  measurementUnit   String?
+  referenceStandard String?
+  coatingCondition  String?
+  corrosionType     String?
+  corrosionSeverity String?
+  description       String?
+  recommendation    String?
+  actionRequired    Boolean  @default(false)
+  priority          String   @default("NORMAL")
+  metadata          String?  // JSON
+  createdAt         DateTime @default(now())
+
+  inspection Inspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+  nicheArea  NicheArea? @relation(fields: [nicheAreaId], references: [id])
+  media      Media[]
+
+  @@map("inspection_findings")
+}
+
+// ============================================================
+// WORKFLOW ENGINE
+// ============================================================
+
+model Workflow {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  version     Int      @default(1)
+  isActive    Boolean  @default(true)
+  isTemplate  Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  steps      WorkflowStep[]
+  workOrders WorkOrder[]
+
+  @@map("workflows")
+}
+
+model WorkflowStep {
+  id                 String   @id @default(cuid())
+  workflowId         String
+  name               String
+  description        String?
+  order              Int
+  type               String   // StepType
+  requiredRole       String?  // UserRole
+  requiredPermission String?  // Permission
+  autoAdvance        Boolean  @default(false)
+  createdAt          DateTime @default(now())
+
+  workflow Workflow       @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  tasks    WorkflowTask[]
+
+  @@unique([workflowId, order])
+  @@map("workflow_steps")
+}
+
+model WorkflowTask {
+  id          String   @id @default(cuid())
+  stepId      String
+  name        String
+  description String?
+  order       Int
+  isRequired  Boolean  @default(true)
+  taskType    String   // TaskType
+  config      String?  // JSON
+  createdAt   DateTime @default(now())
+
+  step        WorkflowStep     @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  submissions TaskSubmission[]
+
+  @@unique([stepId, order])
+  @@map("workflow_tasks")
+}
+
+model TaskSubmission {
+  id          String    @id @default(cuid())
+  taskId      String
+  workOrderId String
+  userId      String
+  status      String    @default("PENDING")
+  data        String    @default("{}") // JSON
+  notes       String?
+  signature   String?
+  submittedAt DateTime?
+  reviewedAt  DateTime?
+  reviewedBy  String?
+  reviewNotes String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  task      WorkflowTask @relation(fields: [taskId], references: [id])
+  workOrder WorkOrder    @relation(fields: [workOrderId], references: [id])
+  user      User         @relation(fields: [userId], references: [id])
+  media     Media[]
+
+  @@map("task_submissions")
+}
+
+// ============================================================
+// MEDIA & DOCUMENTS
+// ============================================================
+
+model Media {
+  id           String    @id @default(cuid())
+  uploaderId   String
+  vesselId     String?
+  workOrderId  String?
+  inspectionId String?
+  findingId    String?
+  submissionId String?
+  filename     String
+  originalName String
+  mimeType     String
+  size         Int
+  storageKey   String
+  url          String
+  thumbnailUrl String?
+  capturedAt   DateTime?
+  latitude     Float?
+  longitude    Float?
+  deviceInfo   String?
+  tags         String    @default("[]") // JSON array
+  createdAt    DateTime  @default(now())
+
+  uploader   User               @relation(fields: [uploaderId], references: [id])
+  vessel     Vessel?            @relation(fields: [vesselId], references: [id])
+  workOrder  WorkOrder?         @relation(fields: [workOrderId], references: [id])
+  inspection Inspection?        @relation(fields: [inspectionId], references: [id])
+  finding    InspectionFinding? @relation(fields: [findingId], references: [id])
+  submission TaskSubmission?    @relation(fields: [submissionId], references: [id])
+
+  @@map("media")
+}
+
+model Document {
+  id            String   @id @default(cuid())
+  vesselId      String?
+  workOrderId   String?
+  name          String
+  type          String   // DocumentType
+  version       Int      @default(1)
+  storageKey    String
+  url           String
+  size          Int
+  mimeType      String
+  generatedFrom String?  // JSON
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  vessel    Vessel?    @relation(fields: [vesselId], references: [id])
+  workOrder WorkOrder? @relation(fields: [workOrderId], references: [id])
+
+  @@map("documents")
+}
+
+// ============================================================
+// COMMENTS
+// ============================================================
+
+model Comment {
+  id          String   @id @default(cuid())
+  workOrderId String
+  authorId    String
+  parentId    String?
+  content     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  author    User      @relation(fields: [authorId], references: [id])
+  replies   Comment[] @relation("CommentReplies")
+  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
+
+  @@map("comments")
+}
+
+// ============================================================
+// AUDIT TRAIL (IMMUTABLE LEDGER)
+// ============================================================
+
+model AuditEntry {
+  id            String   @id @default(cuid())
+  sequence      Int      @unique
+  actorId       String?
+  actorEmail    String?
+  actorOrg      String?
+  entityType    String
+  entityId      String
+  action        String   // AuditAction
+  description   String
+  previousData  String?  // JSON
+  newData       String?  // JSON
+  changedFields String   @default("[]") // JSON array
+  hash          String
+  previousHash  String?
+  ipAddress     String?
+  userAgent     String?
+  latitude      Float?
+  longitude     Float?
+  createdAt     DateTime @default(now())
+
+  actor User? @relation("AuditActor", fields: [actorId], references: [id])
+
+  @@map("audit_entries")
+}
+
+// ============================================================
+// NOTIFICATIONS
+// ============================================================
+
+model Notification {
+  id         String   @id @default(cuid())
+  userId     String
+  type       String   // NotificationType
+  title      String
+  message    String
+  entityType String?
+  entityId   String?
+  isRead     Boolean  @default(false)
+  readAt     DateTime?
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}

@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+.env.local
+*.log
+coverage/
+uploads/
+email-previews/
+*.tsbuildinfo
+*.db

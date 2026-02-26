@@ -1,6 +1,9 @@
 import prisma from '../config/database';
 import { AppError } from '../middleware/error';
 import { auditService } from './audit.service';
+import path from 'path';
+import fs from 'fs/promises';
+import { randomUUID } from 'crypto';
 
 const ENTRY_UPDATE_FIELDS = [
   'condition', 'foulingRating', 'foulingType', 'coverage',
@@ -183,13 +186,35 @@ export const workFormService = {
     });
   },
 
-  // Append a screenshot (base64 data URL) to a form entry's attachments
-  async addScreenshot(entryId: string, dataUrl: string) {
+  // Persist screenshot as media file and attach media ID to the form entry
+  async addScreenshot(entryId: string, dataUrl: string, userId: string, workOrderId?: string) {
     const entry = await prisma.workFormEntry.findUnique({ where: { id: entryId } });
     if (!entry) throw new AppError(404, 'NOT_FOUND', 'Form entry not found');
 
+    const parsedScreenshot = parseScreenshotDataUrl(dataUrl);
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = `screenshot-${timestamp}-${randomUUID()}${parsedScreenshot.ext}`;
+    const uploadsDir = path.join(process.cwd(), 'uploads');
+    const storagePath = path.join(uploadsDir, filename);
+    await fs.mkdir(uploadsDir, { recursive: true });
+    await fs.writeFile(storagePath, parsedScreenshot.buffer);
+
+    const media = await prisma.media.create({
+      data: {
+        uploaderId: userId,
+        workOrderId: workOrderId ?? entry.workOrderId,
+        filename,
+        originalName: `Screenshot-${timestamp}${parsedScreenshot.ext}`,
+        mimeType: parsedScreenshot.mimeType,
+        size: parsedScreenshot.buffer.length,
+        storageKey: filename,
+        url: `/uploads/${filename}`,
+        tags: JSON.stringify(['screenshot']),
+      },
+    });
+
     const attachments = JSON.parse(entry.attachments || '[]');
-    attachments.push(dataUrl);
+    attachments.push(media.id);
 
     return prisma.workFormEntry.update({
       where: { id: entryId },
@@ -229,3 +254,26 @@ export const workFormService = {
     });
   },
 };
+
+function parseScreenshotDataUrl(dataUrl: string): { mimeType: string; ext: string; buffer: Buffer } {
+  const match = /^data:(image\/(?:png|jpeg|jpg|webp));base64,(.+)$/i.exec(dataUrl || '');
+  if (!match) {
+    throw new AppError(400, 'INVALID_IMAGE', 'Screenshot must be a valid base64 image data URL');
+  }
+
+  const mimeType = match[1].toLowerCase();
+  const extMap: Record<string, string> = {
+    'image/png': '.png',
+    'image/jpeg': '.jpg',
+    'image/jpg': '.jpg',
+    'image/webp': '.webp',
+  };
+  const ext = extMap[mimeType] || '.png';
+  const buffer = Buffer.from(match[2], 'base64');
+
+  if (!buffer.length) {
+    throw new AppError(400, 'INVALID_IMAGE', 'Screenshot payload is empty');
+  }
+
+  return { mimeType, ext, buffer };
+}

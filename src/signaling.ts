@@ -210,22 +210,6 @@ export function initSignaling(httpServer: HTTPServer) {
       }
     });
 
-    // Add screenshot to a form entry (persists to DB and broadcasts)
-    socket.on('form:screenshot', async ({ workOrderId, entryId, dataUrl }: { workOrderId: string; entryId: string; dataUrl: string }) => {
-      try {
-        const updated = await workFormService.addScreenshot(entryId, dataUrl, user.userId, workOrderId);
-        const formRoomId = `form-${workOrderId}`;
-        // Broadcast to ALL users including sender (they need the updated attachments array)
-        io.to(formRoomId).emit('form:screenshot-added', {
-          workOrderId, entryId,
-          attachments: updated.attachments,
-          userId: user.userId,
-        });
-      } catch (err: any) {
-        socket.emit('form:error', { code: 'SCREENSHOT_FAILED', message: err.message });
-      }
-    });
-
     // Attach an already-uploaded screenshot media ID (fast path, no base64 over socket)
     socket.on('form:screenshot-media', async ({ workOrderId, entryId, mediaId }: { workOrderId: string; entryId: string; mediaId: string }) => {
       try {

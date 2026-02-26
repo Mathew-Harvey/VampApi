@@ -6,15 +6,26 @@ import { loginSchema, registerSchema, forgotPasswordSchema, resetPasswordSchema 
 
 const router = Router();
 
+function setAuthCookies(res: Response, accessToken: string, refreshToken: string) {
+  const isProd = process.env.NODE_ENV === 'production';
+  res.cookie('accessToken', accessToken, {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: 'lax',
+    maxAge: 24 * 60 * 60 * 1000,
+  });
+  res.cookie('refreshToken', refreshToken, {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
+}
+
 router.post('/register', validate(registerSchema), async (req: Request, res: Response) => {
   try {
     const result = await authService.register(req.body);
-    res.cookie('refreshToken', result.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    setAuthCookies(res, result.accessToken, result.refreshToken);
     res.status(201).json({
       success: true,
       data: {
@@ -33,12 +44,7 @@ router.post('/login', validate(loginSchema), async (req: Request, res: Response)
   try {
     const { email, password, organisationId } = req.body;
     const result = await authService.login(email, password, organisationId);
-    res.cookie('refreshToken', result.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    setAuthCookies(res, result.accessToken, result.refreshToken);
     res.json({ success: true, data: { accessToken: result.accessToken, user: result.user, organisation: result.organisation } });
   } catch (error: any) {
     const status = error.statusCode || 500;
@@ -74,12 +80,7 @@ router.post('/refresh', async (req: Request, res: Response) => {
       return;
     }
     const result = await authService.refreshAccessToken(refreshToken);
-    res.cookie('refreshToken', result.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    setAuthCookies(res, result.accessToken, result.refreshToken);
     res.json({ success: true, data: { accessToken: result.accessToken } });
   } catch (error: any) {
     const status = error.statusCode || 500;
@@ -88,6 +89,7 @@ router.post('/refresh', async (req: Request, res: Response) => {
 });
 
 router.post('/logout', optionalAuth, (_req: Request, res: Response) => {
+  res.clearCookie('accessToken');
   res.clearCookie('refreshToken');
   res.json({ success: true, data: { message: 'Logged out' } });
 });

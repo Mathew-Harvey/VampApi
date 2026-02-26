@@ -11,12 +11,15 @@ declare global {
 
 export function authenticate(req: Request, res: Response, next: NextFunction): void {
   const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith('Bearer ')) {
+  const headerToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+  const cookieToken = req.cookies?.accessToken;
+  const token = headerToken || cookieToken;
+
+  if (!token) {
     res.status(401).json({ success: false, error: { code: 'UNAUTHORIZED', message: 'Missing or invalid authorization header' } });
     return;
   }
 
-  const token = authHeader.substring(7);
   try {
     const payload = verifyToken(token);
     req.user = payload;
@@ -28,12 +31,16 @@ export function authenticate(req: Request, res: Response, next: NextFunction): v
 
 export function optionalAuth(req: Request, _res: Response, next: NextFunction): void {
   const authHeader = req.headers.authorization;
-  if (authHeader?.startsWith('Bearer ')) {
-    try {
-      req.user = verifyToken(authHeader.substring(7));
-    } catch {
-      // Ignore invalid tokens for optional auth
-    }
+  const headerToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+  const cookieToken = req.cookies?.accessToken;
+  const token = headerToken || cookieToken;
+
+  if (token) {
+      try {
+        req.user = verifyToken(token);
+      } catch {
+        // Ignore invalid tokens for optional auth
+      }
   }
   next();
 }

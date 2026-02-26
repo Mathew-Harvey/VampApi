@@ -103,6 +103,7 @@ export const workFormService = {
       workOrder: {
         referenceNumber: workOrder.referenceNumber,
         title: workOrder.title,
+        description: workOrder.description,
         type: workOrder.type,
         status: workOrder.status,
         location: workOrder.location,

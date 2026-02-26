@@ -6,6 +6,30 @@ import { workOrderService } from '../services/work-order.service';
 
 const router = Router();
 
+async function assertReportAccess(req: Request, res: Response): Promise<boolean> {
+  const workOrderId = req.params.workOrderId as string;
+  const hasOrgPermission = hasAnyPermission(req.user, 'REPORT_VIEW');
+  const hasAccess = await workOrderService.canViewWorkOrder(
+    workOrderId,
+    req.user!.userId,
+    req.user!.organisationId,
+    hasOrgPermission,
+  );
+  if (!hasAccess) {
+    res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Work order not found' } });
+    return false;
+  }
+
+  if (!hasOrgPermission) {
+    const collaboratorRole = await workOrderService.getAssignmentRole(workOrderId, req.user!.userId);
+    if (!collaboratorRole) {
+      res.status(403).json({ success: false, error: { code: 'FORBIDDEN', message: 'Insufficient permissions' } });
+      return false;
+    }
+  }
+  return true;
+}
+
 router.post('/generate', authenticate, requirePermission('REPORT_GENERATE'), async (req: Request, res: Response) => {
   try {
     const { type, workOrderId } = req.body;
@@ -34,25 +58,7 @@ router.post('/generate', authenticate, requirePermission('REPORT_GENERATE'), asy
 // Serve rendered HTML report for preview / print
 router.get('/preview/:workOrderId', authenticate, async (req: Request, res: Response) => {
   try {
-    const hasOrgPermission = hasAnyPermission(req.user, 'REPORT_VIEW');
-    const hasAccess = await workOrderService.canViewWorkOrder(
-      req.params.workOrderId as string,
-      req.user!.userId,
-      req.user!.organisationId,
-      hasOrgPermission,
-    );
-    if (!hasAccess) {
-      res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Work order not found' } });
-      return;
-    }
-
-    if (!hasOrgPermission) {
-      const collaboratorRole = await workOrderService.getAssignmentRole(req.params.workOrderId as string, req.user!.userId);
-      if (!collaboratorRole) {
-        res.status(403).json({ success: false, error: { code: 'FORBIDDEN', message: 'Insufficient permissions' } });
-        return;
-      }
-    }
+    if (!(await assertReportAccess(req, res))) return;
 
     const report = await reportService.generateInspectionReport(req.params.workOrderId as string);
     if (report.html) {
@@ -61,6 +67,18 @@ router.get('/preview/:workOrderId', authenticate, async (req: Request, res: Resp
     } else {
       res.json({ success: true, data: report });
     }
+  } catch (error: any) {
+    res.status(error.statusCode || 500).json({ success: false, error: { code: error.code || 'ERROR', message: error.message } });
+  }
+});
+
+// Return the exact Handlebars context payload used for rendering
+router.get('/context/:workOrderId', authenticate, async (req: Request, res: Response) => {
+  try {
+    if (!(await assertReportAccess(req, res))) return;
+
+    const data = await reportService.getInspectionReportContext(req.params.workOrderId as string);
+    res.json({ success: true, data });
   } catch (error: any) {
     res.status(error.statusCode || 500).json({ success: false, error: { code: error.code || 'ERROR', message: error.message } });
   }

@@ -13,35 +13,79 @@ Handlebars.registerHelper('ifEquals', function (this: any, a: any, b: any, optio
 });
 
 const PHOTOS_PER_PAGE = 16; // 2 columns x 8 rows
+const REPORT_TEMPLATE_NAME = 'RAN_FUSBiofouling18 (1).hbs';
+
+type ReportAttachment = {
+  path: string;
+  fullApiUrl: string;
+  fullUri?: string;
+  id?: string;
+  title?: string;
+};
+
+type FrRatingDataRow = {
+  description: string;
+  levelOfFoulingLoF?: string | null;
+  foulingRatingType?: string | null;
+  foulingCoverage?: string | null;
+  pdrRating?: string | null;
+  Comments?: string | null;
+};
 
 /** Build attachments list for template: path + fullApiUrl per image, keyed by component or special labels */
-function buildAttachments(entries: Array<{ component: string; attachments: unknown }>): Array<{ path: string; fullApiUrl: string; fullUri?: string; id?: string; title?: string }> {
-  const list: Array<{ path: string; fullApiUrl: string; fullUri?: string; id?: string; title?: string }> = [];
+async function buildAttachments(entries: Array<{ component: string; attachments: unknown }>): Promise<ReportAttachment[]> {
+  const list: ReportAttachment[] = [];
   let reportCoverAdded = false;
+  const mediaIdSet = new Set<string>();
+  const parsedByEntry = new Map<string, unknown[]>();
 
   for (const entry of entries) {
-    let urls: string[] = [];
-    try {
-      const raw = entry.attachments;
-      urls = typeof raw === 'string' ? JSON.parse(raw) : Array.isArray(raw) ? raw : [];
-    } catch {
-      /* ignore */
+    const parsed = parseAttachmentArray(entry.attachments);
+    parsedByEntry.set(entry.component, parsed);
+    for (const value of parsed) {
+      const maybeId = extractMediaId(value);
+      if (maybeId) mediaIdSet.add(maybeId);
     }
+  }
+
+  const mediaMap = new Map<string, { url: string; originalName: string | null }>();
+  const mediaIds = Array.from(mediaIdSet);
+  if (mediaIds.length > 0) {
+    const mediaRecords = await prisma.media.findMany({
+      where: { id: { in: mediaIds } },
+      select: { id: true, url: true, originalName: true },
+    });
+    for (const media of mediaRecords) {
+      mediaMap.set(media.id, { url: media.url, originalName: media.originalName });
+    }
+  }
+
+  for (const entry of entries) {
+    const sourceItems = parsedByEntry.get(entry.component) ?? [];
     const componentPath = (entry.component || '').trim();
     const slug = componentPath.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '') || 'section';
     let index = 0;
-    for (const url of urls) {
-      if (typeof url !== 'string') continue;
+
+    for (const sourceItem of sourceItems) {
+      const resolved = resolveAttachmentSource(sourceItem, mediaMap);
+      if (!resolved?.url) continue;
+
       const item = {
-        path: componentPath,
-        fullApiUrl: url,
-        fullUri: url,
-        id: `${slug}-${index}`,
-        title: componentPath || 'Photo',
+        path: resolved.path || componentPath,
+        fullApiUrl: resolved.url,
+        fullUri: resolved.url,
+        id: `${slug}-${index}${resolved.idSuffix ? `-${resolved.idSuffix}` : ''}`,
+        title: resolved.title || componentPath || 'Photo',
       };
       list.push(item);
       if (!reportCoverAdded) {
-        list.push({ path: 'ReportCover', fullApiUrl: url, fullUri: url, id: 'report-cover', title: 'Report Cover' });
+        list.push({
+          path: 'ReportCover',
+          fullApiUrl: resolved.url,
+          fullUri: resolved.url,
+          id: 'report-cover',
+          title: 'Report Cover',
+        });
         reportCoverAdded = true;
       }
       index += 1;
@@ -51,8 +95,82 @@ function buildAttachments(entries: Array<{ component: string; attachments: unkno
   return list;
 }
 
+function parseAttachmentArray(raw: unknown): unknown[] {
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw !== 'string') return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function extractMediaId(value: unknown): string | null {
+  if (typeof value === 'string') return isLikelyMediaId(value) ? value : null;
+  if (!value || typeof value !== 'object') return null;
+  const candidate = (value as any).mediaId ?? (value as any).id;
+  return typeof candidate === 'string' && isLikelyMediaId(candidate) ? candidate : null;
+}
+
+function isLikelyMediaId(value: string): boolean {
+  return /^[a-zA-Z0-9_-]{16,}$/.test(value) && !isLikelyUrl(value);
+}
+
+function isLikelyUrl(value: string): boolean {
+  return /^(https?:\/\/|data:|blob:|\/)/i.test(value);
+}
+
+function normalizeMediaUrl(url: string): string {
+  if (!url) return url;
+  if (isLikelyUrl(url)) return url;
+  if (url.startsWith('uploads/')) return `/${url}`;
+  return url;
+}
+
+function resolveAttachmentSource(
+  source: unknown,
+  mediaMap: Map<string, { url: string; originalName: string | null }>
+): { url: string; idSuffix?: string; title?: string; path?: string } | null {
+  if (typeof source === 'string') {
+    if (isLikelyUrl(source)) {
+      return { url: normalizeMediaUrl(source) };
+    }
+    const media = mediaMap.get(source);
+    if (!media) return null;
+    return {
+      url: normalizeMediaUrl(media.url),
+      idSuffix: source.slice(0, 8),
+      title: media.originalName ?? undefined,
+    };
+  }
+
+  if (!source || typeof source !== 'object') return null;
+  const sourceObj = source as Record<string, unknown>;
+  const explicitUrl = [sourceObj.fullApiUrl, sourceObj.fullUri, sourceObj.url]
+    .find((v) => typeof v === 'string') as string | undefined;
+  if (explicitUrl) {
+    return {
+      url: normalizeMediaUrl(explicitUrl),
+      title: typeof sourceObj.title === 'string' ? sourceObj.title : undefined,
+      path: typeof sourceObj.path === 'string' ? sourceObj.path : undefined,
+    };
+  }
+
+  const mediaId = [sourceObj.mediaId, sourceObj.id].find((v) => typeof v === 'string') as string | undefined;
+  if (!mediaId) return null;
+  const media = mediaMap.get(mediaId);
+  if (!media) return null;
+  return {
+    url: normalizeMediaUrl(media.url),
+    idSuffix: mediaId.slice(0, 8),
+    title: typeof sourceObj.title === 'string' ? sourceObj.title : media.originalName ?? undefined,
+    path: typeof sourceObj.path === 'string' ? sourceObj.path : undefined,
+  };
+}
+
 /** Map form data + photoPages into the report template context (data.*, createdBy, attachments, etc.) */
-function buildInspectionReportContext(
+async function buildInspectionReportContext(
   formData: Awaited<ReturnType<typeof workFormService.getFormDataJson>>,
   photoPages: Array<{ sectionName: string; photos: Array<{ src: string; caption: string }> }>
 ) {
@@ -65,7 +183,7 @@ function buildInspectionReportContext(
     ? [{ id: '', name: '—', diverSupervisorComments: '', expertInspectorComments: '', frRatingData: [{}], comments: '' }]
     : entries.map((entry) => {
     const hasLoF = workOrder.type?.toLowerCase().includes('biofouling') || workOrder.type === 'NZ CRMS Biofouling Inspection';
-    const frRatingData = [];
+    const frRatingData: FrRatingDataRow[] = [];
     const desc = entry.component || 'No description';
     if (hasLoF && (entry.foulingRating != null || entry.notes || entry.coatingCondition)) {
       frRatingData.push({
@@ -170,7 +288,7 @@ function buildInspectionReportContext(
     reviewDate: { date: dateObj },
   };
 
-  const attachments = buildAttachments(entries);
+  const attachments = await buildAttachments(entries);
 
   return {
     data,
@@ -189,44 +307,68 @@ function escapeHtml(s: string): string {
     .replace(/"/g, '&quot;');
 }
 
+function buildPhotoPages(entries: Array<{ component: string; attachments: unknown }>) {
+  const photoPages: Array<{ sectionName: string; photos: Array<{ src: string; caption: string }> }> = [];
+
+  for (const entry of entries) {
+    let attachments: string[] = [];
+    try {
+      attachments = typeof entry.attachments === 'string' ? JSON.parse(entry.attachments) : (entry.attachments || []);
+    } catch { /* ignore */ }
+
+    if (attachments.length === 0) continue;
+
+    const photos = attachments.map((src: string, i: number) => ({
+      src,
+      caption: `${entry.component} - Photo ${i + 1}`,
+    }));
+
+    for (let i = 0; i < photos.length; i += PHOTOS_PER_PAGE) {
+      photoPages.push({
+        sectionName: entry.component,
+        photos: photos.slice(i, i + PHOTOS_PER_PAGE),
+      });
+    }
+  }
+
+  return photoPages;
+}
+
+function resolveInspectionTemplatePath(): string | null {
+  const templateCandidates = [
+    path.join(__dirname, '..', '..', 'reportTemplates', REPORT_TEMPLATE_NAME),
+    path.join(process.cwd(), 'reportTemplates', REPORT_TEMPLATE_NAME),
+    path.join(__dirname, '..', '..', 'templates', 'inspection-report.html'),
+  ];
+  return templateCandidates.find((candidate) => fs.existsSync(candidate)) ?? null;
+}
+
 export const reportService = {
+  async getInspectionReportContext(workOrderId: string) {
+    const formData = await workFormService.getFormDataJson(workOrderId);
+    const photoPages = buildPhotoPages(formData.entries);
+    const context = await buildInspectionReportContext(formData, photoPages);
+
+    return {
+      workOrderId,
+      templatePath: resolveInspectionTemplatePath(),
+      formData,
+      photoPages,
+      context,
+    };
+  },
+
   async generateInspectionReport(workOrderId: string) {
     const formData = await workFormService.getFormDataJson(workOrderId);
+    const photoPages = buildPhotoPages(formData.entries);
+    const templatePath = resolveInspectionTemplatePath();
+    if (!templatePath) return { ...formData, photoPages, html: null };
 
-    const photoPages: Array<{ sectionName: string; photos: Array<{ src: string; caption: string }> }> = [];
-
-    for (const entry of formData.entries) {
-      let attachments: string[] = [];
-      try {
-        attachments = typeof entry.attachments === 'string' ? JSON.parse(entry.attachments) : (entry.attachments || []);
-      } catch { /* ignore */ }
-
-      if (attachments.length === 0) continue;
-
-      const photos = attachments.map((src: string, i: number) => ({
-        src,
-        caption: `${entry.component} - Photo ${i + 1}`,
-      }));
-
-      for (let i = 0; i < photos.length; i += PHOTOS_PER_PAGE) {
-        photoPages.push({
-          sectionName: entry.component,
-          photos: photos.slice(i, i + PHOTOS_PER_PAGE),
-        });
-      }
-    }
-
-    const templatePath = path.join(__dirname, '..', '..', 'templates', 'inspection-report.html');
-    let templateSource: string;
-    try {
-      templateSource = fs.readFileSync(templatePath, 'utf-8');
-    } catch {
-      return { ...formData, photoPages, html: null };
-    }
+    const templateSource = fs.readFileSync(templatePath, 'utf-8');
 
     registerReportHelpers(Handlebars);
     const template = Handlebars.compile(templateSource);
-    const context = buildInspectionReportContext(formData, photoPages);
+    const context = await buildInspectionReportContext(formData, photoPages);
     const html = template(context);
 
     return {

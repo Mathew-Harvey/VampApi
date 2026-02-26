@@ -30,6 +30,18 @@ async function assertReportAccess(req: Request, res: Response): Promise<boolean>
   return true;
 }
 
+async function assertReportWriteAccess(req: Request, res: Response): Promise<boolean> {
+  if (!(await assertReportAccess(req, res))) return false;
+  const workOrderId = req.params.workOrderId as string;
+  const canEditByOrg = hasAnyPermission(req.user, 'WORK_ORDER_EDIT', 'REPORT_GENERATE');
+  const canWriteAsCollaborator = await workOrderService.canWriteAsCollaborator(workOrderId, req.user!.userId);
+  if (!canEditByOrg && !canWriteAsCollaborator) {
+    res.status(403).json({ success: false, error: { code: 'FORBIDDEN', message: 'Insufficient permissions' } });
+    return false;
+  }
+  return true;
+}
+
 router.post('/generate', authenticate, requirePermission('REPORT_GENERATE'), async (req: Request, res: Response) => {
   try {
     const { type, workOrderId } = req.body;
@@ -67,6 +79,38 @@ router.get('/preview/:workOrderId', authenticate, async (req: Request, res: Resp
     } else {
       res.json({ success: true, data: report });
     }
+  } catch (error: any) {
+    res.status(error.statusCode || 500).json({ success: false, error: { code: error.code || 'ERROR', message: error.message } });
+  }
+});
+
+// Branded report viewer with page controls + print
+router.get('/view/:workOrderId', authenticate, async (req: Request, res: Response) => {
+  try {
+    if (!(await assertReportAccess(req, res))) return;
+    const html = await reportService.getInspectionReportViewHtml(req.params.workOrderId as string);
+    res.setHeader('Content-Type', 'text/html');
+    res.send(html);
+  } catch (error: any) {
+    res.status(error.statusCode || 500).json({ success: false, error: { code: error.code || 'ERROR', message: error.message } });
+  }
+});
+
+router.get('/config/:workOrderId', authenticate, async (req: Request, res: Response) => {
+  try {
+    if (!(await assertReportAccess(req, res))) return;
+    const data = await reportService.getInspectionReportConfig(req.params.workOrderId as string);
+    res.json({ success: true, data });
+  } catch (error: any) {
+    res.status(error.statusCode || 500).json({ success: false, error: { code: error.code || 'ERROR', message: error.message } });
+  }
+});
+
+router.put('/config/:workOrderId', authenticate, async (req: Request, res: Response) => {
+  try {
+    if (!(await assertReportWriteAccess(req, res))) return;
+    const data = await reportService.updateInspectionReportConfig(req.params.workOrderId as string, req.body || {});
+    res.json({ success: true, data });
   } catch (error: any) {
     res.status(error.statusCode || 500).json({ success: false, error: { code: error.code || 'ERROR', message: error.message } });
   }

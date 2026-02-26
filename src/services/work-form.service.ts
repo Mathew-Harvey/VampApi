@@ -1,6 +1,7 @@
 import prisma from '../config/database';
 import { AppError } from '../middleware/error';
 import { auditService } from './audit.service';
+import { env } from '../config/env';
 
 const ENTRY_UPDATE_FIELDS = [
   'condition', 'foulingRating', 'foulingType', 'coverage',
@@ -205,8 +206,15 @@ export const workFormService = {
     const entry = await prisma.workFormEntry.findUnique({ where: { id: entryId } });
     if (!entry) throw new AppError(404, 'NOT_FOUND', 'Form entry not found');
 
+    const media = await prisma.media.findUnique({
+      where: { id: mediaId },
+      select: { id: true, url: true },
+    });
+    if (!media) throw new AppError(404, 'NOT_FOUND', 'Media not found');
+
     const attachments = JSON.parse(entry.attachments || '[]');
-    attachments.push(mediaId);
+    const mediaUrl = toPublicMediaUrl(media.url);
+    attachments.push(mediaUrl);
 
     return prisma.workFormEntry.update({
       where: { id: entryId },
@@ -214,3 +222,10 @@ export const workFormService = {
     });
   },
 };
+
+function toPublicMediaUrl(url: string): string {
+  if (/^https?:\/\//i.test(url)) return url;
+  const apiBase = env.API_URL.replace(/\/+$/, '');
+  const normalizedPath = url.startsWith('/') ? url : `/${url}`;
+  return `${apiBase}${normalizedPath}`;
+}

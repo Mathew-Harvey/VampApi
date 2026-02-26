@@ -219,11 +219,22 @@ export function initSignaling(httpServer: HTTPServer) {
         }
 
         const updated = await workFormService.addAttachment(entryId, mediaId);
+        let mediaUrl: string | null = null;
+        try {
+          const parsed = typeof updated.attachments === 'string' ? JSON.parse(updated.attachments) : updated.attachments;
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const last = parsed[parsed.length - 1];
+            mediaUrl = typeof last === 'string' ? last : null;
+          }
+        } catch {
+          // ignore parse issues; attachments still sent as-is
+        }
         const formRoomId = `form-${workOrderId}`;
         io.to(formRoomId).emit('form:screenshot-added', {
           workOrderId,
           entryId,
           mediaId,
+          mediaUrl,
           attachments: updated.attachments,
           userId: user.userId,
         });

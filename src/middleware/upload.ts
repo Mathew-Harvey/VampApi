@@ -9,7 +9,17 @@ if (!fs.existsSync(uploadDir)) {
 }
 
 const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, uploadDir),
+  destination: (_req, _file, cb) => {
+    try {
+      // Recreate uploads directory on-demand if it was removed while server is running.
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+      cb(null, uploadDir);
+    } catch (error) {
+      cb(error as Error, uploadDir);
+    }
+  },
   filename: (_req, file, cb) => {
     const ext = path.extname(file.originalname);
     cb(null, `${randomUUID()}${ext}`);

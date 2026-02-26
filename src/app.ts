@@ -38,7 +38,10 @@ app.get('/api/v1/health', async (_req, res) => {
 });
 
 // Security
-app.use(helmet({ contentSecurityPolicy: false }));
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+}));
 const allowedOrigin = process.env.APP_URL || 'http://localhost:5173';
 app.use(cors({
   origin: (origin, cb) => {

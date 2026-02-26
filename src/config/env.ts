@@ -8,6 +8,7 @@ dotenv.config({ path: path.resolve(process.cwd(), '../../.env') }); // from apps
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  STORAGE_BACKEND: z.enum(['auto', 'local', 's3']).default('auto'),
   PORT: z.coerce.number().default(3001),
   DATABASE_URL: z.string().min(1),
   REDIS_URL: z.string().default('redis://localhost:6379'),
@@ -19,6 +20,7 @@ const envSchema = z.object({
   S3_ACCESS_KEY: z.string().default(''),
   S3_SECRET_KEY: z.string().default(''),
   S3_ENDPOINT: z.string().default(''),
+  S3_PUBLIC_URL: z.string().default(''),
   SMTP_HOST: z.string().default(''),
   SMTP_PORT: z.coerce.number().default(587),
   SMTP_USER: z.string().default(''),

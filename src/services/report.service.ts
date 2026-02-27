@@ -210,6 +210,17 @@ function isLikelyUrl(value: string): boolean {
 
 function normalizeMediaUrl(url: string): string {
   if (!url) return url;
+  // Strip localhost/dev origins so URLs stay relative and work on any environment
+  if (/^https?:\/\//i.test(url)) {
+    try {
+      const parsed = new URL(url);
+      if (/^(localhost|127\.0\.0\.1)$/i.test(parsed.hostname)) {
+        return parsed.pathname;
+      }
+    } catch {
+      // not a valid URL, continue
+    }
+  }
   if (isLikelyUrl(url)) return url;
   if (url.startsWith('uploads/')) return `/${url}`;
   return url;

@@ -1,7 +1,6 @@
 import prisma from '../config/database';
 import { AppError } from '../middleware/error';
 import { auditService } from './audit.service';
-import { env } from '../config/env';
 
 const ENTRY_UPDATE_FIELDS = [
   'condition', 'foulingRating', 'foulingType', 'coverage',
@@ -224,8 +223,19 @@ export const workFormService = {
 };
 
 function toPublicMediaUrl(url: string): string {
-  if (/^https?:\/\//i.test(url)) return url;
-  const apiBase = env.API_URL.replace(/\/+$/, '');
-  const normalizedPath = url.startsWith('/') ? url : `/${url}`;
-  return `${apiBase}${normalizedPath}`;
+  // Keep as relative path – the frontend resolves against its configured API base.
+  // This avoids baking in localhost:3001 which breaks on deployed environments.
+  if (/^https?:\/\//i.test(url)) {
+    // Strip any localhost/dev origin so we store only the path
+    try {
+      const parsed = new URL(url);
+      if (/^(localhost|127\.0\.0\.1)$/i.test(parsed.hostname)) {
+        return parsed.pathname;
+      }
+    } catch {
+      // not a valid URL, return as-is
+    }
+    return url;
+  }
+  return url.startsWith('/') ? url : `/${url}`;
 }

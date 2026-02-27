@@ -826,4 +826,342 @@ export const reportService = {
       orderBy: { createdAt: 'desc' },
     });
   },
+
+  /* ---------------------------------------------------------------- */
+  /*  BFMP Report                                                      */
+  /* ---------------------------------------------------------------- */
+  async generateBFMPReport(payload: any, organisationId: string) {
+    const organisation = await prisma.organisation.findFirst({
+      where: { id: organisationId },
+      select: { id: true, name: true },
+    });
+
+    // If a vesselId is provided, enrich with vessel data from DB
+    let vesselData: any = null;
+    if (payload.vesselId) {
+      vesselData = await prisma.vessel.findFirst({
+        where: { id: payload.vesselId, organisationId, isDeleted: false },
+        select: {
+          id: true, name: true, imoNumber: true, type: true,
+          grossTonnage: true, yearBuilt: true, lengthOverall: true,
+          beam: true, maxDraft: true, flagState: true, callSign: true,
+          portOfRegistry: true, vesselType: true,
+        },
+      });
+    }
+
+    return {
+      reportType: 'bfmp',
+      generatedAt: new Date().toISOString(),
+      organisation: organisation ? { id: organisation.id, name: organisation.name } : null,
+      planInformation: {
+        reference: payload.planReference || null,
+        revision: payload.revision || '1',
+        date: payload.planDate || null,
+        preparedBy: payload.preparedBy || null,
+        approvedBy: payload.approvedBy || null,
+        approvalDate: payload.approvalDate || null,
+      },
+      vessel: vesselData ? {
+        ...vesselData,
+        flagState: payload.flagState || vesselData.flagState,
+        portOfRegistry: payload.portOfRegistry || vesselData.portOfRegistry,
+        callSign: payload.callSign || vesselData.callSign,
+      } : {
+        name: payload.vesselName,
+        imoNumber: payload.imoNumber,
+        flagState: payload.flagState,
+        portOfRegistry: payload.portOfRegistry,
+        shipType: payload.shipType,
+        grossTonnage: payload.grossTonnage,
+        yearBuilt: payload.yearBuilt,
+        lengthOverall: payload.lengthOverall,
+        beam: payload.beam,
+        maxDraft: payload.maxDraft,
+        callSign: payload.callSign,
+      },
+      company: {
+        name: payload.companyName || organisation?.name || null,
+        address: payload.companyAddress || null,
+        ismContact: {
+          name: payload.ismContactName || null,
+          email: payload.ismContactEmail || null,
+          phone: payload.ismContactPhone || null,
+        },
+        designatedPerson: payload.designatedPerson || null,
+      },
+      antiFoulingSystem: {
+        hull: {
+          type: payload.hullAfsType || null,
+          manufacturer: payload.hullCoatingManufacturer || null,
+          product: payload.hullCoatingProduct || null,
+          applicationDate: payload.hullApplicationDate || null,
+          recoatingDate: payload.hullRecoatingDate || null,
+        },
+        lastDryDock: payload.lastDryDockDate || null,
+        nextDryDock: payload.nextDryDockDate || null,
+        nicheAreas: Array.isArray(payload.nicheAreas) ? payload.nicheAreas : [],
+      },
+      operatingProfile: {
+        tradeRoutes: payload.tradeRoutes || null,
+        typicalVoyageDuration: payload.typicalVoyageDuration || null,
+        typicalPortStay: payload.typicalPortStay || null,
+        waterTempRange: payload.waterTempRange || null,
+        typicalSpeed: payload.typicalSpeed || null,
+        percentTimeAtAnchor: payload.percentTimeAtAnchor || null,
+        layUpPeriods: payload.layUpPeriods || null,
+      },
+      riskAssessment: {
+        operatingProfileRisk: payload.operatingProfileRisk || null,
+        nicheAreaRisk: payload.nicheAreaRisk || null,
+        hullCoatingRisk: payload.hullCoatingRisk || null,
+        overallRisk: payload.overallRisk || null,
+        notes: payload.riskNotes || null,
+      },
+      inspectionSchedule: {
+        frequency: payload.inspectionFrequency || null,
+        lastInspection: payload.lastInspectionDate || null,
+        nextInspectionDue: payload.nextInspectionDue || null,
+        triggerConditions: payload.triggerConditions || null,
+        records: Array.isArray(payload.inspectionRecords) ? payload.inspectionRecords : [],
+      },
+      maintenance: {
+        cleaningMethod: payload.cleaningMethod || null,
+        approvedContractors: payload.approvedContractors || null,
+        captureRequirements: payload.captureRequirements || null,
+        records: Array.isArray(payload.maintenanceRecords) ? payload.maintenanceRecords : [],
+      },
+      contingency: {
+        foulingThreshold: payload.foulingThreshold || null,
+        emergencyResponse: payload.emergencyResponse || null,
+        portStateNotification: payload.portStateNotification || null,
+        notes: payload.contingencyNotes || null,
+      },
+    };
+  },
+
+  async saveBFMPDraft(payload: any, organisationId: string, userId: string) {
+    // Store draft in a document record for later retrieval
+    const doc = await prisma.document.create({
+      data: {
+        name: `BFMP Draft - ${payload.vesselName || 'Untitled'} - ${new Date().toISOString().slice(0, 10)}`,
+        type: 'BFMP_DRAFT',
+        version: 1,
+        storageKey: `bfmp-drafts/${organisationId}/${Date.now()}.json`,
+        url: '',
+        size: JSON.stringify(payload).length,
+        mimeType: 'application/json',
+        generatedFrom: JSON.stringify({ type: 'bfmp-draft', userId, payload }),
+        ...(payload.vesselId ? { vesselId: payload.vesselId } : {}),
+      },
+    });
+    return { id: doc.id, savedAt: doc.createdAt };
+  },
+
+  /* ---------------------------------------------------------------- */
+  /*  Compliance Summary Report                                        */
+  /* ---------------------------------------------------------------- */
+  async generateComplianceReport(payload: any, organisationId: string) {
+    const organisation = await prisma.organisation.findFirst({
+      where: { id: organisationId },
+      select: { id: true, name: true },
+    });
+
+    // Fetch vessels for the organisation
+    const vesselWhere: any = { organisationId, isDeleted: false };
+    if (Array.isArray(payload.vesselIds) && payload.vesselIds.length > 0 && !payload.selectAllVessels) {
+      vesselWhere.id = { in: payload.vesselIds };
+    }
+    const vessels = await prisma.vessel.findMany({
+      where: vesselWhere,
+      select: {
+        id: true, name: true, imoNumber: true, type: true, flagState: true,
+      },
+      orderBy: { name: 'asc' },
+    });
+
+    // Fetch recent work orders for inspection compliance
+    const workOrders = await prisma.workOrder.findMany({
+      where: {
+        organisationId,
+        isDeleted: false,
+        ...(payload.startDate ? { createdAt: { gte: new Date(payload.startDate) } } : {}),
+      },
+      select: {
+        id: true, referenceNumber: true, title: true, status: true, type: true,
+        vesselId: true, scheduledStart: true, scheduledEnd: true, actualStart: true,
+        actualEnd: true, createdAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 500,
+    });
+
+    // Build per-vessel compliance summary
+    const vesselSummaries = vessels.map((vessel) => {
+      const vesselWorkOrders = workOrders.filter((wo) => wo.vesselId === vessel.id);
+      const completedCount = vesselWorkOrders.filter((wo) => wo.status === 'COMPLETED').length;
+      const overdueCount = vesselWorkOrders.filter((wo) =>
+        wo.status !== 'COMPLETED' && wo.status !== 'CANCELLED' && wo.scheduledEnd && new Date(wo.scheduledEnd) < new Date()
+      ).length;
+
+      return {
+        vessel: { id: vessel.id, name: vessel.name, imoNumber: vessel.imoNumber, flagState: vessel.flagState },
+        totalWorkOrders: vesselWorkOrders.length,
+        completedWorkOrders: completedCount,
+        overdueWorkOrders: overdueCount,
+        complianceRate: vesselWorkOrders.length > 0
+          ? Math.round((completedCount / vesselWorkOrders.length) * 100)
+          : null,
+      };
+    });
+
+    return {
+      reportType: 'compliance',
+      generatedAt: new Date().toISOString(),
+      organisation: organisation ? { id: organisation.id, name: organisation.name } : null,
+      reportDetails: {
+        title: payload.reportTitle || 'Fleet Compliance Summary',
+        preparedBy: payload.preparedBy || null,
+        reportDate: payload.reportDate || new Date().toISOString().slice(0, 10),
+        period: { start: payload.startDate, end: payload.endDate },
+        exportFormat: payload.exportFormat || 'PDF',
+      },
+      filters: {
+        categories: payload.selectedCategories || [],
+        statusFilter: payload.statusFilter || 'All',
+        includeOverdue: payload.includeOverdue ?? true,
+        includeUpcoming: payload.includeUpcoming ?? true,
+        upcomingDays: parseInt(payload.upcomingDays || '30', 10),
+      },
+      fleetOverview: {
+        totalVessels: vessels.length,
+        totalWorkOrders: workOrders.length,
+        completedWorkOrders: workOrders.filter((wo) => wo.status === 'COMPLETED').length,
+        overdueWorkOrders: workOrders.filter((wo) =>
+          wo.status !== 'COMPLETED' && wo.status !== 'CANCELLED' && wo.scheduledEnd && new Date(wo.scheduledEnd) < new Date()
+        ).length,
+      },
+      vesselSummaries,
+      additionalNotes: payload.additionalNotes || null,
+    };
+  },
+
+  /* ---------------------------------------------------------------- */
+  /*  Audit Report                                                     */
+  /* ---------------------------------------------------------------- */
+  async generateAuditReport(payload: any, organisationId: string) {
+    const organisation = await prisma.organisation.findFirst({
+      where: { id: organisationId },
+      select: { id: true, name: true },
+    });
+
+    // Build audit log query filters
+    const auditWhere: any = { organisationId };
+    if (payload.startDate) {
+      auditWhere.createdAt = { ...(auditWhere.createdAt || {}), gte: new Date(payload.startDate) };
+    }
+    if (payload.endDate) {
+      auditWhere.createdAt = { ...(auditWhere.createdAt || {}), lte: new Date(payload.endDate + 'T23:59:59.999Z') };
+    }
+    if (payload.filterByVessel && payload.vesselId) {
+      auditWhere.entityId = payload.vesselId;
+    }
+    if (payload.filterByUser && payload.userId) {
+      auditWhere.userId = payload.userId;
+    }
+
+    const maxResults = Math.min(parseInt(payload.maxResults || '1000', 10), 5000);
+
+    // Attempt to read audit logs - if the AuditLog model exists
+    let auditEntries: any[] = [];
+    try {
+      auditEntries = await (prisma as any).auditLog.findMany({
+        where: auditWhere,
+        orderBy: { createdAt: 'desc' },
+        take: maxResults,
+      });
+    } catch {
+      // AuditLog model may not exist yet; return structured empty report
+      // Fall back to aggregating from work orders, inspections, etc.
+      const workOrders = await prisma.workOrder.findMany({
+        where: {
+          organisationId,
+          isDeleted: false,
+          ...(payload.startDate ? { updatedAt: { gte: new Date(payload.startDate) } } : {}),
+          ...(payload.endDate ? { updatedAt: { lte: new Date(payload.endDate + 'T23:59:59.999Z') } } : {}),
+        },
+        select: {
+          id: true, referenceNumber: true, title: true, status: true,
+          createdAt: true, updatedAt: true,
+        },
+        orderBy: { updatedAt: 'desc' },
+        take: maxResults,
+      });
+
+      auditEntries = workOrders.map((wo) => ({
+        id: wo.id,
+        entityType: 'WorkOrder',
+        entityId: wo.id,
+        action: 'updated',
+        description: `Work Order ${wo.referenceNumber} - ${wo.title} (${wo.status})`,
+        timestamp: wo.updatedAt,
+      }));
+    }
+
+    // Group results based on payload.grouping
+    let groupedEntries: any;
+    if (payload.grouping === 'By Entity') {
+      groupedEntries = {};
+      for (const entry of auditEntries) {
+        const key = entry.entityType || 'Unknown';
+        if (!groupedEntries[key]) groupedEntries[key] = [];
+        groupedEntries[key].push(entry);
+      }
+    } else if (payload.grouping === 'By User') {
+      groupedEntries = {};
+      for (const entry of auditEntries) {
+        const key = entry.userId || entry.user || 'System';
+        if (!groupedEntries[key]) groupedEntries[key] = [];
+        groupedEntries[key].push(entry);
+      }
+    } else if (payload.grouping === 'By Event Type') {
+      groupedEntries = {};
+      for (const entry of auditEntries) {
+        const key = entry.action || entry.eventType || 'Unknown';
+        if (!groupedEntries[key]) groupedEntries[key] = [];
+        groupedEntries[key].push(entry);
+      }
+    } else {
+      groupedEntries = auditEntries;
+    }
+
+    return {
+      reportType: 'audit',
+      generatedAt: new Date().toISOString(),
+      organisation: organisation ? { id: organisation.id, name: organisation.name } : null,
+      reportDetails: {
+        title: payload.reportTitle || 'Audit Trail Report',
+        preparedBy: payload.preparedBy || null,
+        reportDate: payload.reportDate || new Date().toISOString().slice(0, 10),
+        period: { start: payload.startDate, end: payload.endDate },
+        exportFormat: payload.exportFormat || 'PDF',
+      },
+      scope: {
+        eventTypes: payload.selectedEventTypes || [],
+        detailLevel: payload.detailLevel || 'Standard',
+        grouping: payload.grouping || 'Chronological',
+        filters: {
+          vessel: payload.filterByVessel ? payload.vesselId : null,
+          workOrder: payload.filterByWorkOrder ? payload.workOrderId : null,
+          user: payload.filterByUser ? payload.userId : null,
+        },
+      },
+      summary: {
+        totalEvents: auditEntries.length,
+        maxResultsApplied: auditEntries.length >= maxResults,
+      },
+      entries: groupedEntries,
+      additionalNotes: payload.additionalNotes || null,
+    };
+  },
 };

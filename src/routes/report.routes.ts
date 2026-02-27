@@ -44,7 +44,7 @@ async function assertReportWriteAccess(req: Request, res: Response): Promise<boo
 
 router.post('/generate', authenticate, requirePermission('REPORT_GENERATE'), async (req: Request, res: Response) => {
   try {
-    const { type, workOrderId } = req.body;
+    const { type, workOrderId, ...payload } = req.body;
     if (workOrderId) {
       const hasAccess = await workOrderService.canViewWorkOrder(workOrderId, req.user!.userId, req.user!.organisationId, true);
       if (!hasAccess) {
@@ -59,9 +59,28 @@ router.post('/generate', authenticate, requirePermission('REPORT_GENERATE'), asy
     } else if (type === 'work-order' && workOrderId) {
       const data = await reportService.generateWorkOrderReport(workOrderId);
       res.json({ success: true, data });
+    } else if (type === 'bfmp') {
+      const data = await reportService.generateBFMPReport(payload, req.user!.organisationId);
+      res.json({ success: true, data });
+    } else if (type === 'compliance') {
+      const data = await reportService.generateComplianceReport(payload, req.user!.organisationId);
+      res.json({ success: true, data });
+    } else if (type === 'audit') {
+      const data = await reportService.generateAuditReport(payload, req.user!.organisationId);
+      res.json({ success: true, data });
     } else {
-      res.status(400).json({ success: false, error: { code: 'INVALID_TYPE', message: 'Provide type and workOrderId' } });
+      res.status(400).json({ success: false, error: { code: 'INVALID_TYPE', message: 'Provide a valid report type' } });
     }
+  } catch (error: any) {
+    res.status(error.statusCode || 500).json({ success: false, error: { code: error.code || 'ERROR', message: error.message } });
+  }
+});
+
+// Save BFMP draft
+router.post('/bfmp/draft', authenticate, requirePermission('REPORT_GENERATE'), async (req: Request, res: Response) => {
+  try {
+    const data = await reportService.saveBFMPDraft(req.body, req.user!.organisationId, req.user!.userId);
+    res.json({ success: true, data });
   } catch (error: any) {
     res.status(error.statusCode || 500).json({ success: false, error: { code: error.code || 'ERROR', message: error.message } });
   }

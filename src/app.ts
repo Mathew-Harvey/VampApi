@@ -26,6 +26,10 @@ import prisma from './config/database';
 
 const app = express();
 
+// Trust the first proxy (Render's reverse proxy) so express-rate-limit reads
+// the real client IP from X-Forwarded-For instead of crashing.
+app.set('trust proxy', 1);
+
 // Security
 app.use(helmet({
   contentSecurityPolicy: false,

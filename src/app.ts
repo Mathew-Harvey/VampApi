@@ -6,7 +6,6 @@ import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import path from 'path';
 import { notFound, errorHandler } from './middleware/error';
-import { auditContext } from './middleware/audit';
 
 // Routes
 import authRoutes from './routes/auth.routes';
@@ -26,16 +25,6 @@ import inviteRoutes from './routes/invite.routes';
 import prisma from './config/database';
 
 const app = express();
-
-// Health check endpoint
-app.get('/api/v1/health', async (_req, res) => {
-  try {
-    await prisma.$queryRaw`SELECT 1`;
-    res.json({ status: 'ok', timestamp: new Date().toISOString() });
-  } catch (error) {
-    res.status(503).json({ status: 'error', message: 'Database unavailable' });
-  }
-});
 
 // Security
 app.use(helmet({
@@ -74,9 +63,6 @@ app.use(cookieParser());
 if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('short'));
 }
-
-// Audit context
-app.use(auditContext);
 
 // Static files (uploads)
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));

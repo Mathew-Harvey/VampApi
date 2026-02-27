@@ -243,7 +243,4 @@ router.get('/work-orders/:workOrderId/form/json', authenticate, async (req: Requ
   }
 });
 
-// Pass through unmatched requests (e.g. /vessels/:id) to other route handlers
-router.use((_req, _res, next) => next());
-
 export default router;

@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { authService } from '../services/auth.service';
 import { authenticate, optionalAuth } from '../middleware/auth';
 import { validate } from '../middleware/validate';
-import { loginSchema, registerSchema, forgotPasswordSchema, resetPasswordSchema } from '../schemas/user.schema';
+import { loginSchema, registerSchema, forgotPasswordSchema, resetPasswordSchema, changePasswordSchema } from '../schemas/user.schema';
 
 const router = Router();
 
@@ -98,6 +98,16 @@ router.get('/me', authenticate, async (req: Request, res: Response) => {
   try {
     const profile = await authService.getProfile(req.user!.userId);
     res.json({ success: true, data: profile });
+  } catch (error: any) {
+    const status = error.statusCode || 500;
+    res.status(status).json({ success: false, error: { code: error.code || 'ERROR', message: error.message } });
+  }
+});
+
+router.post('/change-password', authenticate, validate(changePasswordSchema), async (req: Request, res: Response) => {
+  try {
+    const result = await authService.changePassword(req.user!.userId, req.body.currentPassword, req.body.newPassword);
+    res.json({ success: true, data: result });
   } catch (error: any) {
     const status = error.statusCode || 500;
     res.status(status).json({ success: false, error: { code: error.code || 'ERROR', message: error.message } });

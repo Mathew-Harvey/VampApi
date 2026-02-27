@@ -386,10 +386,48 @@
 
 
 
+        @page {
+            size: A4;
+            margin: 17mm;
+        }
+
         @media screen {
-                {
-                size: A4;
-                margin: 17mm 17mm 17mm 17mm;
+            html {
+                background: #e8ecf1 !important;
+            }
+            body {
+                background: transparent !important;
+                max-width: none !important;
+                width: auto !important;
+                padding: 40px 20px !important;
+                margin: 0 !important;
+                height: auto !important;
+                overflow-y: auto !important;
+            }
+            .page-header {
+                display: none !important;
+            }
+            .page-footer,
+            .page-footer-cover {
+                display: none !important;
+            }
+            .page-header-space,
+            .page-footer-space {
+                height: 0 !important;
+                display: none !important;
+            }
+            .page,
+            .pageLast {
+                width: 210mm !important;
+                min-height: 297mm !important;
+                margin: 0 auto 40px auto !important;
+                padding: 20mm 17mm !important;
+                background: white !important;
+                box-shadow: 0 1px 12px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.05) !important;
+                border-radius: 2px !important;
+                box-sizing: border-box !important;
+                position: relative !important;
+                page-break-after: unset !important;
             }
         }
 

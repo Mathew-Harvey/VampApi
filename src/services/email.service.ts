@@ -8,10 +8,6 @@ type EmailSendResult = {
   provider?: 'smtp' | 'resend' | 'sendgrid';
 };
 
-export function inviteCodeFromToken(token: string): string {
-  return token.replace(/-/g, '').slice(0, 6).toUpperCase();
-}
-
 // SMTP transporter (Gmail or any SMTP provider)
 let transporter: nodemailer.Transporter | null = null;
 

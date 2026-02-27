@@ -56,12 +56,17 @@ type ReportConfig = {
   togglePhotoName?: boolean;
   supervisorName?: string | null;
   inspectorName?: string | null;
+  confidential?: string | null;
+  toggleRovUse?: boolean;
+  rovDetails?: string | null;
+  repairAgentName?: string | null;
   coverImage?: string | ReportMediaRef | null;
   clientLogo?: string | ReportMediaRef | null;
   generalArrangementImage?: string | ReportMediaRef | null;
   signoff?: {
     supervisor?: ReportSignoffConfig | null;
     inspector?: ReportSignoffConfig | null;
+    repair?: ReportSignoffConfig | null;
   } | null;
 };
 
@@ -259,6 +264,18 @@ function mergeReportConfig(rawMetadata: unknown, reportConfig: ReportConfig): Re
       signoff: {
         ...(existing.signoff || {}),
         ...(reportConfig.signoff || {}),
+        supervisor: {
+          ...(existing.signoff?.supervisor || {}),
+          ...(reportConfig.signoff?.supervisor || {}),
+        },
+        inspector: {
+          ...(existing.signoff?.inspector || {}),
+          ...(reportConfig.signoff?.inspector || {}),
+        },
+        repair: {
+          ...(existing.signoff?.repair || {}),
+          ...(reportConfig.signoff?.repair || {}),
+        },
       },
     },
   };
@@ -380,11 +397,12 @@ async function buildInspectionReportContext(
   const inspector = team?.length ? { name: team[team.length - 1].name } : { name: '' };
   const supervisorSignoff = reportConfig.signoff?.supervisor ?? {};
   const inspectorSignoff = reportConfig.signoff?.inspector ?? {};
+  const repairSignoff = reportConfig.signoff?.repair ?? {};
 
   const data = {
     jobType: workOrder.type || 'Inspection',
     supportingWork: reportConfig.title ?? workOrder.title ?? '',
-    confidential: null as string | null,
+    confidential: reportConfig.confidential ?? null,
     workInstruction: reportConfig.workInstruction ?? workOrder.description ?? null,
     actualDelivery: {
       startDateTime: { date: dateObj, offset: 0 },
@@ -426,8 +444,11 @@ async function buildInspectionReportContext(
     },
     berthAnchorageLocation: reportConfig.berthAnchorageLocation ?? workOrder.location ?? '',
     supervisor: { name: reportConfig.supervisorName ?? supervisorSignoff.name ?? supervisor.name },
-    resourcing: { toggleRovUse: null as string | null, rovDetails: null as string | null },
-    repairAgent: { name: null as string | null },
+    resourcing: {
+      toggleRovUse: reportConfig.toggleRovUse ? 'true' : null,
+      rovDetails: reportConfig.rovDetails ?? null,
+    },
+    repairAgent: { name: reportConfig.repairAgentName ?? null },
     inspector: { name: reportConfig.inspectorName ?? inspectorSignoff.name ?? inspector.name },
     divers,
     inspectionType: workOrder.type || 'Inspection',
@@ -448,7 +469,14 @@ async function buildInspectionReportContext(
       },
       declaration: inspectorSignoff.declaration ?? null,
     },
-    repair: { declaration: null as string | null, signature: { signature: null as string | null, mode: null as string | null, date: null as string | null } },
+    repair: {
+      declaration: repairSignoff.declaration ?? null,
+      signature: {
+        signature: repairSignoff.signature ?? null,
+        mode: repairSignoff.mode ?? null,
+        date: repairSignoff.date ?? null,
+      },
+    },
     document: {
       status: [
         {
@@ -540,81 +568,161 @@ function buildReportViewerHtml(workOrderId: string): string {
     <title>Inspection Report Viewer</title>
     <style>
       :root { color-scheme: light; }
-      body { margin: 0; font-family: Inter, Segoe UI, Arial, sans-serif; background: #f2f5f9; color: #0f172a; }
+      * { box-sizing: border-box; }
+      body { margin: 0; font-family: Inter, Segoe UI, Arial, sans-serif; background: #e8ecf1; color: #0f172a; }
       .toolbar {
-        position: sticky; top: 0; z-index: 10;
+        position: fixed; top: 0; left: 0; right: 0; z-index: 10;
         display: flex; align-items: center; justify-content: space-between; gap: 12px;
-        padding: 12px 16px; background: #ffffff; border-bottom: 1px solid #dbe3ef;
+        padding: 10px 16px; background: #ffffff; border-bottom: 1px solid #dbe3ef;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
       }
-      .title { font-size: 14px; color: #334155; }
-      .actions { display: flex; gap: 8px; align-items: center; }
+      .title { font-size: 14px; font-weight: 500; color: #334155; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .nav { display: flex; gap: 6px; align-items: center; }
+      .actions { display: flex; gap: 6px; align-items: center; }
       button, .linkBtn {
-        border: 1px solid #cbd5e1; background: #fff; color: #0f172a; border-radius: 8px;
-        padding: 8px 12px; font-size: 13px; cursor: pointer; text-decoration: none;
+        border: 1px solid #cbd5e1; background: #fff; color: #0f172a; border-radius: 6px;
+        padding: 6px 12px; font-size: 13px; cursor: pointer; text-decoration: none;
+        display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;
+        transition: background 0.15s, border-color 0.15s;
       }
+      button:hover, .linkBtn:hover { background: #f1f5f9; border-color: #94a3b8; }
+      button:disabled { opacity: 0.4; cursor: default; }
+      button:disabled:hover { background: #fff; border-color: #cbd5e1; }
       button.primary { background: #2563eb; border-color: #2563eb; color: #fff; }
-      .container { padding: 18px; }
-      .frameWrap {
-        margin: 0 auto; width: min(1120px, 96vw); background: #fff; border: 1px solid #dbe3ef;
-        border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
-      }
-      iframe { width: 100%; height: calc(100vh - 120px); border: 0; background: #fff; }
-      .pager { font-size: 13px; color: #475569; min-width: 120px; text-align: center; }
+      button.primary:hover { background: #1d4ed8; }
+      .pager { font-size: 13px; color: #475569; min-width: 90px; text-align: center; font-variant-numeric: tabular-nums; }
+      .container { padding-top: 60px; height: 100vh; overflow: hidden; }
+      iframe { width: 100%; height: 100%; border: 0; background: #e8ecf1; }
+      .kbd { font-size: 11px; color: #94a3b8; margin-left: 2px; }
       @media print {
         .toolbar { display: none; }
-        .container { padding: 0; }
-        .frameWrap { width: 100%; border: 0; box-shadow: none; border-radius: 0; }
+        .container { padding: 0; height: auto; }
         iframe { height: auto; }
       }
     </style>
   </head>
   <body>
     <div class="toolbar">
-      <div class="title">Inspection Report • ${safeWorkOrderId}</div>
+      <div class="title">Inspection Report</div>
+      <div class="nav">
+        <button id="prevBtn" type="button" title="Previous page (Left arrow)">&#9664; Prev</button>
+        <span id="pager" class="pager">Loading...</span>
+        <button id="nextBtn" type="button" title="Next page (Right arrow)">Next &#9654;</button>
+      </div>
       <div class="actions">
-        <button id="prevBtn" type="button">Prev Page</button>
-        <span id="pager" class="pager">Page - / -</span>
-        <button id="nextBtn" type="button">Next Page</button>
-        <button id="printBtn" class="primary" type="button">Print / Save PDF</button>
+        <button id="printBtn" class="primary" type="button" title="Print or save as PDF (Ctrl+P)">Print / Save PDF</button>
         <a class="linkBtn" href="/api/v1/reports/preview/${safeWorkOrderId}" target="_blank" rel="noreferrer">Open Raw</a>
       </div>
     </div>
     <div class="container">
-      <div class="frameWrap">
-        <iframe id="reportFrame" src="/api/v1/reports/preview/${safeWorkOrderId}" title="Inspection Report"></iframe>
-      </div>
+      <iframe id="reportFrame" src="/api/v1/reports/preview/${safeWorkOrderId}" title="Inspection Report"></iframe>
     </div>
     <script>
-      const frame = document.getElementById('reportFrame');
-      const pager = document.getElementById('pager');
-      const prevBtn = document.getElementById('prevBtn');
-      const nextBtn = document.getElementById('nextBtn');
-      const printBtn = document.getElementById('printBtn');
-      let pages = [];
-      let currentIndex = 0;
+      var frame = document.getElementById('reportFrame');
+      var pager = document.getElementById('pager');
+      var prevBtn = document.getElementById('prevBtn');
+      var nextBtn = document.getElementById('nextBtn');
+      var printBtn = document.getElementById('printBtn');
+      var pages = [];
+      var currentIndex = 0;
+      var scrollTimeout = null;
 
-      function collectPages() {
-        const doc = frame.contentDocument;
-        if (!doc) return;
-        pages = Array.from(doc.querySelectorAll('.page, .pageLast')).filter(Boolean);
-        pager.textContent = pages.length ? ('Page ' + (currentIndex + 1) + ' / ' + pages.length) : 'Page - / -';
+      /* Inject A4 screen styles into the iframe content so pages render as distinct A4 cards */
+      function injectA4Styles(doc) {
+        var style = doc.createElement('style');
+        style.setAttribute('data-viewer', 'a4-pages');
+        style.textContent = [
+          '@media screen {',
+          '  html { background: #e8ecf1 !important; }',
+          '  body {',
+          '    background: transparent !important;',
+          '    max-width: none !important;',
+          '    width: auto !important;',
+          '    padding: 40px 20px !important;',
+          '    margin: 0 !important;',
+          '    height: auto !important;',
+          '    overflow-y: auto !important;',
+          '  }',
+          '  .page-header { display: none !important; }',
+          '  .page-footer, .page-footer-cover { display: none !important; }',
+          '  .page-header-space, .page-footer-space { height: 0 !important; display: none !important; }',
+          '  .page, .pageLast {',
+          '    width: 210mm !important;',
+          '    min-height: 297mm !important;',
+          '    margin: 0 auto 40px auto !important;',
+          '    padding: 20mm 17mm !important;',
+          '    background: white !important;',
+          '    box-shadow: 0 1px 12px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.05) !important;',
+          '    border-radius: 2px !important;',
+          '    box-sizing: border-box !important;',
+          '    position: relative !important;',
+          '    page-break-after: unset !important;',
+          '  }',
+          '}',
+        ].join('\\n');
+        doc.head.appendChild(style);
+      }
+
+      function updatePager() {
+        if (!pages.length) { pager.textContent = 'No pages'; return; }
+        pager.textContent = 'Page ' + (currentIndex + 1) + ' / ' + pages.length;
+        prevBtn.disabled = currentIndex <= 0;
+        nextBtn.disabled = currentIndex >= pages.length - 1;
       }
 
       function goTo(index) {
         if (!pages.length) return;
         currentIndex = Math.max(0, Math.min(index, pages.length - 1));
-        const target = pages[currentIndex];
-        if (target && target.scrollIntoView) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        pager.textContent = 'Page ' + (currentIndex + 1) + ' / ' + pages.length;
+        var target = pages[currentIndex];
+        if (target && target.scrollIntoView) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        updatePager();
       }
 
-      frame.addEventListener('load', () => {
+      /* Detect current page based on scroll position inside the iframe */
+      function onIframeScroll() {
+        if (scrollTimeout) clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(function() {
+          var doc = frame.contentDocument;
+          if (!doc || !pages.length) return;
+          var scrollTop = (doc.documentElement || doc.body).scrollTop;
+          var closest = 0;
+          var closestDist = Infinity;
+          for (var i = 0; i < pages.length; i++) {
+            var dist = Math.abs(pages[i].offsetTop - scrollTop - 40);
+            if (dist < closestDist) { closestDist = dist; closest = i; }
+          }
+          if (closest !== currentIndex) {
+            currentIndex = closest;
+            updatePager();
+          }
+        }, 80);
+      }
+
+      frame.addEventListener('load', function() {
+        var doc = frame.contentDocument;
+        if (!doc) return;
+        injectA4Styles(doc);
         currentIndex = 0;
-        collectPages();
+        pages = Array.from(doc.querySelectorAll('.page, .pageLast')).filter(Boolean);
+        updatePager();
+
+        /* Listen for scroll inside iframe to track current page */
+        (doc.documentElement || doc.body).addEventListener('scroll', onIframeScroll, { passive: true });
+        doc.addEventListener('scroll', onIframeScroll, { passive: true });
       });
-      prevBtn.addEventListener('click', () => goTo(currentIndex - 1));
-      nextBtn.addEventListener('click', () => goTo(currentIndex + 1));
-      printBtn.addEventListener('click', () => {
+
+      prevBtn.addEventListener('click', function() { goTo(currentIndex - 1); });
+      nextBtn.addEventListener('click', function() { goTo(currentIndex + 1); });
+
+      /* Keyboard navigation */
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'ArrowLeft') { e.preventDefault(); goTo(currentIndex - 1); }
+        if (e.key === 'ArrowRight') { e.preventDefault(); goTo(currentIndex + 1); }
+      });
+
+      printBtn.addEventListener('click', function() {
         if (frame.contentWindow) frame.contentWindow.print();
       });
     </script>

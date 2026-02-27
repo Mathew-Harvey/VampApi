@@ -1,10 +1,10 @@
 import prisma from '../config/database';
 import { AppError } from '../middleware/error';
 import { auditService } from './audit.service';
-import { storageService } from './storage.service';
+import { storageService, MulterFile } from './storage.service';
 
 export const mediaService = {
-  async create(file: Express.Multer.File, userId: string, metadata: Record<string, string>) {
+  async create(file: MulterFile, userId: string, metadata: Record<string, string>) {
     const stored = await storageService.saveUploadedFile(file);
 
     const media = await prisma.media.create({

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>{{reportDetails.title}}</title>
+  <style>
+    * { font-family: 'Calibri', 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { background: white; }
+    body { max-width: 210mm; margin: 0 auto; padding: 0; color: #1e293b; font-size: 11pt; line-height: 1.5; }
+
+    .page { page-break-after: always; width: 100%; padding: 15mm 17mm; min-height: 297mm; position: relative; }
+    .page:last-child { page-break-after: auto; }
+
+    h1 { font-size: 26px; color: #365F91; text-transform: uppercase; text-align: center; margin-bottom: 8px; }
+    h2 { font-size: 20px; color: #365F91; text-transform: uppercase; text-align: center; margin-bottom: 6px; }
+    h3 { font-size: 16px; color: #365F91; text-transform: uppercase; margin: 20px 0 10px 0; border-bottom: 2px solid #365F91; padding-bottom: 4px; }
+    h4 { font-size: 13px; color: #365F91; text-transform: uppercase; margin: 14px 0 6px 0; }
+    p { margin: 4px 0; font-size: 11pt; }
+
+    .cover { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+    .cover-meta { margin-top: 40px; font-size: 12px; color: #64748b; }
+    .cover-meta table { margin: 0 auto; border-collapse: collapse; }
+    .cover-meta td { padding: 4px 12px; text-align: left; }
+    .cover-meta td:first-child { font-weight: 600; color: #334155; }
+
+    table { width: 100%; border-collapse: collapse; margin: 8px 0 14px 0; font-size: 10pt; }
+    th { background-color: #365F91; color: #fff; font-weight: 600; text-align: left; padding: 6px 8px; border: 1px solid #365F91; font-size: 10pt; }
+    td { padding: 5px 8px; border: 1px solid #cbd5e1; vertical-align: top; word-wrap: break-word; }
+    tr:nth-child(even) td { background-color: #f8fafc; }
+    .label-cell { background-color: #e8edf4; font-weight: 600; color: #334155; width: 40%; }
+
+    /* Stats cards */
+    .stats-row { display: flex; gap: 12px; margin: 14px 0; flex-wrap: wrap; }
+    .stat-card { flex: 1; min-width: 120px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 12px; text-align: center; }
+    .stat-value { font-size: 28px; font-weight: 700; color: #365F91; }
+    .stat-label { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+    .stat-card.green { border-color: #86efac; background: #f0fdf4; }
+    .stat-card.green .stat-value { color: #166534; }
+    .stat-card.red { border-color: #fca5a5; background: #fef2f2; }
+    .stat-card.red .stat-value { color: #991b1b; }
+
+    /* Compliance bar */
+    .compliance-bar { height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; margin-top: 4px; }
+    .compliance-fill { height: 100%; border-radius: 4px; }
+    .compliance-fill.good { background: #22c55e; }
+    .compliance-fill.warning { background: #f59e0b; }
+    .compliance-fill.bad { background: #ef4444; }
+
+    .empty-state { color: #94a3b8; font-style: italic; padding: 10px; text-align: center; }
+    .footer-line { margin-top: 30px; border-top: 1px solid #cbd5e1; padding-top: 8px; font-size: 9px; color: #94a3b8; text-align: center; }
+    .badge { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 9px; font-weight: 600; }
+    .badge-green { background: #dcfce7; color: #166534; }
+    .badge-red { background: #fecaca; color: #991b1b; }
+    .badge-amber { background: #fef3c7; color: #92400e; }
+    .badge-gray { background: #f1f5f9; color: #475569; }
+
+    @media print {
+      .page { page-break-after: always; padding: 10mm 15mm; }
+      body { max-width: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- COVER PAGE -->
+  <div class="page cover">
+    <div style="margin-top: 80px;">
+      {{#if organisation.name}}
+        <h2 style="font-size: 16px; color: #64748b; text-transform: none;">{{organisation.name}}</h2>
+      {{/if}}
+    </div>
+    <h1 style="margin-top: 20px;">{{reportDetails.title}}</h1>
+    <p style="font-size: 14px; color: #475569; margin-top: 8px;">
+      {{reportDetails.period.start}} &mdash; {{reportDetails.period.end}}
+    </p>
+    <div class="cover-meta">
+      <table>
+        {{#if reportDetails.preparedBy}}<tr><td>Prepared By:</td><td>{{reportDetails.preparedBy}}</td></tr>{{/if}}
+        <tr><td>Report Date:</td><td>{{reportDetails.reportDate}}</td></tr>
+        <tr><td>Format:</td><td>{{reportDetails.exportFormat}}</td></tr>
+      </table>
+    </div>
+    <div class="footer-line">Fleet Compliance Summary &mdash; Generated {{generatedAt}}</div>
+  </div>
+
+  <!-- FLEET OVERVIEW -->
+  <div class="page">
+    <h3>Fleet Overview</h3>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-value">{{fleetOverview.totalVessels}}</div>
+        <div class="stat-label">Total Vessels</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">{{fleetOverview.totalWorkOrders}}</div>
+        <div class="stat-label">Total Work Orders</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-value">{{fleetOverview.completedWorkOrders}}</div>
+        <div class="stat-label">Completed</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-value">{{fleetOverview.overdueWorkOrders}}</div>
+        <div class="stat-label">Overdue</div>
+      </div>
+    </div>
+
+    <h3>Report Parameters</h3>
+    <table>
+      <tr><td class="label-cell">Period</td><td>{{reportDetails.period.start}} to {{reportDetails.period.end}}</td></tr>
+      <tr><td class="label-cell">Status Filter</td><td>{{filters.statusFilter}}</td></tr>
+      <tr><td class="label-cell">Categories</td><td>{{#each filters.categories}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}</td></tr>
+      <tr><td class="label-cell">Include Overdue</td><td>{{#if filters.includeOverdue}}Yes{{else}}No{{/if}}</td></tr>
+      <tr><td class="label-cell">Include Upcoming</td><td>{{#if filters.includeUpcoming}}Yes ({{filters.upcomingDays}} days){{else}}No{{/if}}</td></tr>
+    </table>
+  </div>
+
+  <!-- VESSEL COMPLIANCE TABLE -->
+  <div class="page">
+    <h3>Vessel Compliance Summary</h3>
+
+    {{#if vesselSummaries.length}}
+    <table>
+      <thead>
+        <tr>
+          <th>Vessel</th>
+          <th>IMO</th>
+          <th>Flag</th>
+          <th style="text-align:center">Total WOs</th>
+          <th style="text-align:center">Completed</th>
+          <th style="text-align:center">Overdue</th>
+          <th style="text-align:center">Compliance</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each vesselSummaries}}
+        <tr>
+          <td><strong>{{vessel.name}}</strong></td>
+          <td>{{vessel.imoNumber}}</td>
+          <td>{{vessel.flagState}}</td>
+          <td style="text-align:center">{{totalWorkOrders}}</td>
+          <td style="text-align:center">{{completedWorkOrders}}</td>
+          <td style="text-align:center">
+            {{#if overdueWorkOrders}}<span class="badge badge-red">{{overdueWorkOrders}}</span>{{else}}0{{/if}}
+          </td>
+          <td style="text-align:center">
+            {{#if complianceRate}}
+              <strong>{{complianceRate}}%</strong>
+              <div class="compliance-bar">
+                <div class="compliance-fill {{#if (gte complianceRate 80)}}good{{else}}{{#if (gte complianceRate 50)}}warning{{else}}bad{{/if}}{{/if}}" style="width: {{complianceRate}}%;"></div>
+              </div>
+            {{else}}
+              <span class="badge badge-gray">N/A</span>
+            {{/if}}
+          </td>
+        </tr>
+        {{/each}}
+      </tbody>
+    </table>
+    {{else}}
+    <p class="empty-state">No vessels found for the selected criteria.</p>
+    {{/if}}
+
+    {{#if additionalNotes}}
+    <h3>Additional Notes</h3>
+    <p>{{additionalNotes}}</p>
+    {{/if}}
+
+    <div class="footer-line">
+      {{#if organisation.name}}{{organisation.name}} &mdash; {{/if}}{{reportDetails.title}} &mdash; {{reportDetails.reportDate}}
+    </div>
+  </div>
+
+</body>
+</html>

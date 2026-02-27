@@ -14,6 +14,9 @@ Handlebars.registerHelper('ifEquals', function (this: any, a: any, b: any, optio
 
 const PHOTOS_PER_PAGE = 16; // 2 columns x 8 rows
 const REPORT_TEMPLATE_NAME = 'RAN_FUSBiofouling18 (1).hbs';
+const BFMP_TEMPLATE_NAME = 'bfmp-report.hbs';
+const COMPLIANCE_TEMPLATE_NAME = 'compliance-report.hbs';
+const AUDIT_TEMPLATE_NAME = 'audit-report.hbs';
 
 type ReportAttachment = {
   path: string;
@@ -558,6 +561,39 @@ function resolveInspectionTemplatePath(): string | null {
   return templateCandidates.find((candidate) => fs.existsSync(candidate)) ?? null;
 }
 
+function resolveTemplatePath(templateName: string): string | null {
+  const candidates = [
+    path.join(__dirname, '..', '..', 'reportTemplates', templateName),
+    path.join(process.cwd(), 'reportTemplates', templateName),
+  ];
+  return candidates.find((c) => fs.existsSync(c)) ?? null;
+}
+
+function compileAndRender(templateName: string, context: Record<string, any>): string | null {
+  const templatePath = resolveTemplatePath(templateName);
+  if (!templatePath) return null;
+  const source = fs.readFileSync(templatePath, 'utf-8');
+  registerReportHelpers(Handlebars);
+  // Register helpers needed by the new templates
+  if (!Handlebars.helpers['lowercase']) {
+    Handlebars.registerHelper('lowercase', (str: string) => {
+      if (!str || typeof str !== 'string') return '';
+      return str.toLowerCase().replace(/\s+/g, '');
+    });
+  }
+  if (!Handlebars.helpers['truncateId']) {
+    Handlebars.registerHelper('truncateId', (id: string) => {
+      if (!id || typeof id !== 'string') return '';
+      return id.length > 8 ? id.slice(0, 8) + '...' : id;
+    });
+  }
+  if (!Handlebars.helpers['gte']) {
+    Handlebars.registerHelper('gte', (a: any, b: any) => Number(a) >= Number(b));
+  }
+  const template = Handlebars.compile(source);
+  return template(context);
+}
+
 function buildReportViewerHtml(workOrderId: string): string {
   const safeWorkOrderId = workOrderId.replace(/"/g, '&quot;');
   return `<!doctype html>
@@ -850,7 +886,7 @@ export const reportService = {
       });
     }
 
-    return {
+    const context: Record<string, any> = {
       reportType: 'bfmp',
       generatedAt: new Date().toISOString(),
       organisation: organisation ? { id: organisation.id, name: organisation.name } : null,
@@ -938,6 +974,9 @@ export const reportService = {
         notes: payload.contingencyNotes || null,
       },
     };
+
+    const html = compileAndRender(BFMP_TEMPLATE_NAME, context);
+    return { ...context, html };
   },
 
   async saveBFMPDraft(payload: any, organisationId: string, userId: string) {
@@ -1015,7 +1054,7 @@ export const reportService = {
       };
     });
 
-    return {
+    const context: Record<string, any> = {
       reportType: 'compliance',
       generatedAt: new Date().toISOString(),
       organisation: organisation ? { id: organisation.id, name: organisation.name } : null,
@@ -1044,6 +1083,9 @@ export const reportService = {
       vesselSummaries,
       additionalNotes: payload.additionalNotes || null,
     };
+
+    const html = compileAndRender(COMPLIANCE_TEMPLATE_NAME, context);
+    return { ...context, html };
   },
 
   /* ---------------------------------------------------------------- */
@@ -1135,7 +1177,8 @@ export const reportService = {
       groupedEntries = auditEntries;
     }
 
-    return {
+    const isGrouped = payload.grouping && payload.grouping !== 'Chronological';
+    const context: Record<string, any> = {
       reportType: 'audit',
       generatedAt: new Date().toISOString(),
       organisation: organisation ? { id: organisation.id, name: organisation.name } : null,
@@ -1160,8 +1203,12 @@ export const reportService = {
         totalEvents: auditEntries.length,
         maxResultsApplied: auditEntries.length >= maxResults,
       },
+      isGrouped,
       entries: groupedEntries,
       additionalNotes: payload.additionalNotes || null,
     };
+
+    const html = compileAndRender(AUDIT_TEMPLATE_NAME, context);
+    return { ...context, html };
   },
 };

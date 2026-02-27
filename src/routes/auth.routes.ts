@@ -8,16 +8,19 @@ const router = Router();
 
 function setAuthCookies(res: Response, accessToken: string, refreshToken: string) {
   const isProd = process.env.NODE_ENV === 'production';
+  // Cross-origin requests (e.g. vamp-web.onrender.com → vamp-api.onrender.com)
+  // require sameSite:'none' + secure:true so the browser sends cookies on fetch.
+  const sameSite: 'lax' | 'none' = isProd ? 'none' : 'lax';
   res.cookie('accessToken', accessToken, {
     httpOnly: true,
     secure: isProd,
-    sameSite: 'lax',
+    sameSite,
     maxAge: 24 * 60 * 60 * 1000,
   });
   res.cookie('refreshToken', refreshToken, {
     httpOnly: true,
     secure: isProd,
-    sameSite: 'lax',
+    sameSite,
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 }

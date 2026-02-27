@@ -47,8 +47,8 @@ export function initSignaling(httpServer: HTTPServer) {
   const io = new SocketIOServer(httpServer, {
     cors: {
       origin: (origin, cb) => {
-        const allowed = process.env.APP_URL || 'http://localhost:5173';
-        if (!origin || origin === allowed) return cb(null, true);
+        const allowedOrigins = (process.env.APP_URL || 'http://localhost:5173').split(',').map((o) => o.trim()).filter(Boolean);
+        if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
         if (process.env.NODE_ENV !== 'production' && /^https?:\/\/localhost(:\d+)?$/.test(origin)) return cb(null, true);
         cb(null, false);
       },

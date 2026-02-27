@@ -842,10 +842,10 @@ export const reportService = {
       vesselData = await prisma.vessel.findFirst({
         where: { id: payload.vesselId, organisationId, isDeleted: false },
         select: {
-          id: true, name: true, imoNumber: true, type: true,
+          id: true, name: true, imoNumber: true, vesselType: true,
           grossTonnage: true, yearBuilt: true, lengthOverall: true,
           beam: true, maxDraft: true, flagState: true, callSign: true,
-          portOfRegistry: true, vesselType: true,
+          homePort: true,
         },
       });
     }
@@ -865,7 +865,7 @@ export const reportService = {
       vessel: vesselData ? {
         ...vesselData,
         flagState: payload.flagState || vesselData.flagState,
-        portOfRegistry: payload.portOfRegistry || vesselData.portOfRegistry,
+        portOfRegistry: payload.portOfRegistry || vesselData.homePort,
         callSign: payload.callSign || vesselData.callSign,
       } : {
         name: payload.vesselName,
@@ -975,7 +975,7 @@ export const reportService = {
     const vessels = await prisma.vessel.findMany({
       where: vesselWhere,
       select: {
-        id: true, name: true, imoNumber: true, type: true, flagState: true,
+        id: true, name: true, imoNumber: true, vesselType: true, flagState: true,
       },
       orderBy: { name: 'asc' },
     });

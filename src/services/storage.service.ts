@@ -3,6 +3,19 @@ import path from 'path';
 import { DeleteObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { env } from '../config/env';
 
+/** Locally defined to avoid reliance on global Express.Multer namespace augmentation. */
+export interface MulterFile {
+  fieldname: string;
+  originalname: string;
+  encoding: string;
+  mimetype: string;
+  size: number;
+  destination: string;
+  filename: string;
+  path: string;
+  buffer: Buffer;
+}
+
 type StoredMedia = {
   url: string;
   storageKey: string;
@@ -67,7 +80,7 @@ export const storageService = {
     return canUseS3Sync();
   },
 
-  async saveUploadedFile(file: Express.Multer.File): Promise<StoredMedia> {
+  async saveUploadedFile(file: MulterFile): Promise<StoredMedia> {
     if (!shouldUseS3()) {
       return {
         storageKey: file.filename,

@@ -2,157 +2,1290 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>{{reportDetails.title}}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{reportDetails.title}} — Audit Trail Report</title>
   <style>
-    * { font-family: 'Calibri', 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { background: white; }
-    body { max-width: 210mm; margin: 0 auto; padding: 0; color: #1e293b; font-size: 11pt; line-height: 1.5; }
+    /* =====================================================================
+       AUDIT TRAIL REPORT — EMBEDDED STYLESHEET
+       Maritime Vessel Management Platform
+       ===================================================================== */
 
-    .page { page-break-after: always; width: 100%; padding: 15mm 17mm; min-height: 297mm; position: relative; }
-    .page:last-child { page-break-after: auto; }
+    /* ----- Reset & Base Typography ----- */
+    * {
+      font-family: 'Calibri', 'Segoe UI', Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-    h1 { font-size: 26px; color: #365F91; text-transform: uppercase; text-align: center; margin-bottom: 8px; }
-    h2 { font-size: 20px; color: #365F91; text-transform: uppercase; text-align: center; margin-bottom: 6px; }
-    h3 { font-size: 16px; color: #365F91; text-transform: uppercase; margin: 20px 0 10px 0; border-bottom: 2px solid #365F91; padding-bottom: 4px; }
-    h4 { font-size: 13px; color: #365F91; text-transform: uppercase; margin: 14px 0 6px 0; }
-    p { margin: 4px 0; font-size: 11pt; }
+    html {
+      background: white;
+      display: block;
+    }
 
-    .cover { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-    .cover-meta { margin-top: 40px; font-size: 12px; color: #64748b; }
-    .cover-meta table { margin: 0 auto; border-collapse: collapse; }
-    .cover-meta td { padding: 4px 12px; text-align: left; }
-    .cover-meta td:first-child { font-weight: 600; color: #334155; }
+    body {
+      max-width: 210mm;
+      margin: 0 auto;
+      padding: 0;
+      color: #1e293b;
+      font-size: 11pt;
+      line-height: 1.6;
+    }
 
-    table { width: 100%; border-collapse: collapse; margin: 8px 0 14px 0; font-size: 10pt; }
-    th { background-color: #365F91; color: #fff; font-weight: 600; text-align: left; padding: 6px 8px; border: 1px solid #365F91; font-size: 10pt; }
-    td { padding: 5px 8px; border: 1px solid #cbd5e1; vertical-align: top; word-wrap: break-word; }
-    tr:nth-child(even) td { background-color: #f8fafc; }
-    .label-cell { background-color: #e8edf4; font-weight: 600; color: #334155; width: 35%; }
+    /* ----- Page Structure ----- */
+    .page {
+      page-break-after: always;
+      width: 100%;
+      padding: 15mm 17mm;
+      min-height: 297mm;
+      position: relative;
+    }
 
-    .stats-row { display: flex; gap: 12px; margin: 14px 0; flex-wrap: wrap; }
-    .stat-card { flex: 1; min-width: 140px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 12px; text-align: center; }
-    .stat-value { font-size: 28px; font-weight: 700; color: #365F91; }
-    .stat-label { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+    .page:last-child {
+      page-break-after: auto;
+    }
 
-    .badge { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 9px; font-weight: 600; }
-    .badge-blue { background: #dbeafe; color: #1e40af; }
-    .badge-green { background: #dcfce7; color: #166534; }
-    .badge-amber { background: #fef3c7; color: #92400e; }
-    .badge-gray { background: #f1f5f9; color: #475569; }
+    tr {
+      page-break-inside: avoid;
+    }
 
-    .group-header { background: #f1f5f9; padding: 8px 10px; margin: 14px 0 6px 0; border-left: 3px solid #365F91; font-weight: 600; font-size: 12px; color: #334155; }
-
-    .empty-state { color: #94a3b8; font-style: italic; padding: 10px; text-align: center; }
-    .footer-line { margin-top: 30px; border-top: 1px solid #cbd5e1; padding-top: 8px; font-size: 9px; color: #94a3b8; text-align: center; }
-    .truncated-notice { background: #fef3c7; border: 1px solid #fde68a; padding: 8px 12px; border-radius: 4px; font-size: 10px; color: #92400e; margin: 10px 0; }
-    .ts { font-size: 9px; color: #94a3b8; white-space: nowrap; }
+    /* ----- Print Styles ----- */
+    @page {
+      size: A4;
+      margin: 17mm;
+    }
 
     @media print {
-      .page { page-break-after: always; padding: 10mm 15mm; }
-      body { max-width: none; }
+      html, body {
+        background: white;
+        max-width: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      .page {
+        page-break-after: always;
+        padding: 0;
+        min-height: auto;
+        box-shadow: none;
+        border: none;
+        margin: 0;
+      }
+
+      .page:last-child {
+        page-break-after: auto;
+      }
+
+      .page-header,
+      .page-header-space {
+        height: 40px;
+      }
+
+      .page-footer,
+      .page-footer-space {
+        height: 50px;
+      }
+
+      .page-footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        text-align: center;
+        font-size: 8pt;
+        color: #94a3b8;
+        border-top: 1px solid #e2e8f0;
+        padding-top: 4px;
+      }
+
+      .page-header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        text-align: right;
+        font-size: 8pt;
+        color: #94a3b8;
+        border-bottom: 1px solid #e2e8f0;
+        padding-bottom: 4px;
+      }
+
+      .no-print {
+        display: none !important;
+      }
+
+      .stats-row {
+        break-inside: avoid;
+      }
+
+      .stat-card {
+        break-inside: avoid;
+      }
+
+      .group-section {
+        break-inside: avoid;
+      }
     }
+
+    /* ----- Screen Preview Styles ----- */
+    @media screen {
+      html {
+        background: #94a3b8;
+      }
+
+      body {
+        max-width: 210mm;
+        margin: 0 auto;
+        background: white;
+      }
+
+      .page {
+        background: white;
+        margin: 20px auto;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15), 0 1px 6px rgba(0, 0, 0, 0.1);
+        border: 1px solid #cbd5e1;
+      }
+
+      .page-header,
+      .page-header-space,
+      .page-footer-print,
+      .page-footer-space-print {
+        display: none;
+      }
+    }
+
+    /* ----- Headings ----- */
+    h1 {
+      font-size: 28px;
+      color: #365F91;
+      text-transform: uppercase;
+      text-align: center;
+      margin-bottom: 8px;
+      letter-spacing: 1px;
+    }
+
+    h2 {
+      font-size: 22px;
+      color: #365F91;
+      text-transform: uppercase;
+      text-align: center;
+      margin-bottom: 6px;
+    }
+
+    h3 {
+      font-size: 16px;
+      color: #365F91;
+      text-transform: uppercase;
+      margin: 20px 0 10px 0;
+      border-bottom: 2px solid #365F91;
+      padding-bottom: 4px;
+      letter-spacing: 0.5px;
+    }
+
+    h4 {
+      font-size: 13px;
+      color: #365F91;
+      text-transform: uppercase;
+      margin: 16px 0 8px 0;
+    }
+
+    h5 {
+      font-size: 12px;
+      color: #365F91;
+      text-transform: uppercase;
+      margin: 12px 0 6px 0;
+    }
+
+    p {
+      margin: 4px 0;
+      font-size: 11pt;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: #475569;
+      text-align: center;
+      margin-bottom: 4px;
+    }
+
+    .section-intro {
+      color: #475569;
+      font-size: 10pt;
+      margin-bottom: 10px;
+      line-height: 1.5;
+    }
+
+    /* ----- Cover Page ----- */
+    .cover {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .cover-logo {
+      margin-top: 60px;
+      margin-bottom: 20px;
+    }
+
+    .cover-divider {
+      width: 80px;
+      height: 3px;
+      background: #365F91;
+      margin: 16px auto;
+      border-radius: 2px;
+    }
+
+    .cover-period {
+      font-size: 16px;
+      color: #334155;
+      margin-top: 12px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+
+    .cover-meta {
+      margin-top: 40px;
+      font-size: 12px;
+      color: #64748b;
+    }
+
+    .cover-meta table {
+      margin: 0 auto;
+      border-collapse: collapse;
+    }
+
+    .cover-meta td {
+      padding: 4px 14px;
+      text-align: left;
+    }
+
+    .cover-meta td:first-child {
+      font-weight: 600;
+      color: #334155;
+    }
+
+    .cover-confidential {
+      margin-top: 50px;
+      padding: 8px 24px;
+      border: 2px solid #dc2626;
+      color: #dc2626;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .cover-footer {
+      position: absolute;
+      bottom: 20mm;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 9px;
+      color: #94a3b8;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 8px;
+      margin: 0 17mm;
+    }
+
+    /* ----- Tables ----- */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 8px 0 14px 0;
+      font-size: 10pt;
+    }
+
+    th {
+      background-color: #365F91;
+      color: #fff;
+      font-weight: 600;
+      text-align: left;
+      padding: 6px 8px;
+      border: 1px solid #365F91;
+      font-size: 10pt;
+    }
+
+    td {
+      padding: 5px 8px;
+      border: 1px solid #cbd5e1;
+      vertical-align: top;
+      word-wrap: break-word;
+    }
+
+    tr:nth-child(even) td {
+      background-color: #f8fafc;
+    }
+
+    .label-cell {
+      background-color: #e8edf4;
+      font-weight: 600;
+      color: #334155;
+      width: 35%;
+    }
+
+    .kv-table {
+      margin: 6px 0;
+    }
+
+    .kv-table td {
+      border: 1px solid #cbd5e1;
+    }
+
+    /* ----- Table of Contents ----- */
+    .toc-item {
+      margin: 6px 0;
+      font-size: 11pt;
+      line-height: 2;
+      border-bottom: 1px dotted #e2e8f0;
+      padding-bottom: 2px;
+    }
+
+    .toc-item:last-child {
+      border-bottom: none;
+    }
+
+    .toc-item strong {
+      color: #365F91;
+      margin-right: 6px;
+    }
+
+    .toc-sub {
+      margin-left: 24px;
+      font-size: 10pt;
+      color: #475569;
+    }
+
+    .toc-conditional {
+      color: #94a3b8;
+      font-size: 9px;
+      font-style: italic;
+      margin-left: 4px;
+    }
+
+    /* ----- Stats Cards ----- */
+    .stats-row {
+      display: flex;
+      gap: 12px;
+      margin: 14px 0;
+      flex-wrap: wrap;
+    }
+
+    .stat-card {
+      flex: 1;
+      min-width: 130px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 14px 12px;
+      text-align: center;
+      background: #ffffff;
+    }
+
+    .stat-card.primary {
+      border-color: #365F91;
+      background: #f0f4fa;
+    }
+
+    .stat-card.primary .stat-value {
+      color: #365F91;
+    }
+
+    .stat-card.green {
+      border-color: #86efac;
+      background: #f0fdf4;
+    }
+
+    .stat-card.green .stat-value {
+      color: #166534;
+    }
+
+    .stat-card.blue {
+      border-color: #93c5fd;
+      background: #eff6ff;
+    }
+
+    .stat-card.blue .stat-value {
+      color: #1e40af;
+    }
+
+    .stat-card.red {
+      border-color: #fca5a5;
+      background: #fef2f2;
+    }
+
+    .stat-card.red .stat-value {
+      color: #991b1b;
+    }
+
+    .stat-card.gray {
+      border-color: #cbd5e1;
+      background: #f8fafc;
+    }
+
+    .stat-card.gray .stat-value {
+      color: #475569;
+    }
+
+    .stat-value {
+      font-size: 32px;
+      font-weight: 700;
+      color: #365F91;
+      line-height: 1.1;
+    }
+
+    .stat-label {
+      font-size: 9px;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 4px;
+    }
+
+    /* ----- Badges ----- */
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-weight: 600;
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      white-space: nowrap;
+    }
+
+    .badge-green {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .badge-blue {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .badge-red {
+      background: #fecaca;
+      color: #991b1b;
+    }
+
+    .badge-amber {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .badge-gray {
+      background: #f1f5f9;
+      color: #475569;
+    }
+
+    .badge-purple {
+      background: #f3e8ff;
+      color: #6b21a8;
+    }
+
+    .badge-teal {
+      background: #ccfbf1;
+      color: #115e59;
+    }
+
+    /* Action-specific badge colours */
+    .action-create {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .action-update {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .action-delete {
+      background: #fecaca;
+      color: #991b1b;
+    }
+
+    .action-read {
+      background: #f1f5f9;
+      color: #475569;
+    }
+
+    .action-default {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    /* Entity type badge colours */
+    .entity-vessel {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .entity-workorder {
+      background: #f3e8ff;
+      color: #6b21a8;
+    }
+
+    .entity-inspection {
+      background: #ccfbf1;
+      color: #115e59;
+    }
+
+    .entity-user {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .entity-document {
+      background: #e0e7ff;
+      color: #3730a3;
+    }
+
+    .entity-default {
+      background: #f1f5f9;
+      color: #475569;
+    }
+
+    /* ----- Group Header ----- */
+    .group-header {
+      background: #f1f5f9;
+      padding: 10px 14px;
+      margin: 18px 0 8px 0;
+      border-left: 4px solid #365F91;
+      font-weight: 600;
+      font-size: 12pt;
+      color: #334155;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .group-header .group-name {
+      flex: 1;
+    }
+
+    .group-header .group-count {
+      font-size: 10px;
+      color: #64748b;
+      font-weight: 400;
+      background: #e2e8f0;
+      padding: 2px 8px;
+      border-radius: 10px;
+      margin-left: 10px;
+    }
+
+    .group-section {
+      margin-bottom: 16px;
+    }
+
+    /* ----- Timestamp Styling ----- */
+    .ts {
+      font-size: 9pt;
+      color: #64748b;
+      white-space: nowrap;
+      font-family: 'Consolas', 'Courier New', monospace;
+    }
+
+    /* ----- Truncation Warning ----- */
+    .truncated-notice {
+      background: #fef3c7;
+      border: 1px solid #fde68a;
+      border-left: 4px solid #f59e0b;
+      padding: 12px 16px;
+      border-radius: 4px;
+      font-size: 10pt;
+      color: #92400e;
+      margin: 14px 0;
+    }
+
+    .truncated-notice strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 11pt;
+      color: #78350f;
+    }
+
+    .truncated-notice .notice-icon {
+      font-weight: 700;
+      margin-right: 4px;
+    }
+
+    /* ----- Empty State ----- */
+    .empty-state {
+      color: #94a3b8;
+      font-style: italic;
+      padding: 30px 10px;
+      text-align: center;
+      border: 1px dashed #e2e8f0;
+      border-radius: 4px;
+      margin: 14px 0;
+    }
+
+    /* ----- Description / Content Blocks ----- */
+    .description-block {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      padding: 12px 14px;
+      margin: 8px 0;
+      font-size: 10pt;
+      line-height: 1.6;
+    }
+
+    .notes-block {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 4px;
+      padding: 14px 16px;
+      margin: 10px 0;
+      font-size: 10pt;
+      line-height: 1.6;
+    }
+
+    .info-box {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-left: 4px solid #3b82f6;
+      border-radius: 4px;
+      padding: 10px 14px;
+      margin: 10px 0;
+      font-size: 10pt;
+      color: #1e40af;
+    }
+
+    .warning-box {
+      background: #fef3c7;
+      border: 1px solid #fde68a;
+      border-left: 4px solid #f59e0b;
+      border-radius: 4px;
+      padding: 10px 14px;
+      margin: 10px 0;
+      font-size: 10pt;
+      color: #92400e;
+    }
+
+    /* ----- Footer ----- */
+    .footer-line {
+      margin-top: 30px;
+      border-top: 1px solid #cbd5e1;
+      padding-top: 8px;
+      font-size: 9px;
+      color: #94a3b8;
+      text-align: center;
+    }
+
+    .page-number {
+      position: absolute;
+      bottom: 10mm;
+      right: 17mm;
+      font-size: 9px;
+      color: #94a3b8;
+    }
+
+    /* ----- Signature Block ----- */
+    .signature-block {
+      margin: 20px 0;
+      page-break-inside: avoid;
+    }
+
+    .signature-row {
+      display: flex;
+      gap: 30px;
+      margin-top: 10px;
+    }
+
+    .signature-col {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .signature-label {
+      font-size: 9pt;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      margin-bottom: 4px;
+    }
+
+    .signature-line {
+      border-bottom: 1px solid #334155;
+      height: 40px;
+      margin-bottom: 4px;
+    }
+
+    .signature-name {
+      font-size: 10pt;
+      color: #334155;
+      font-weight: 600;
+    }
+
+    .signature-date-line {
+      border-bottom: 1px solid #94a3b8;
+      height: 30px;
+      margin-top: 8px;
+      margin-bottom: 4px;
+      width: 60%;
+    }
+
+    .signature-date-label {
+      font-size: 9pt;
+      color: #94a3b8;
+    }
+
+    /* ----- Disclaimer ----- */
+    .disclaimer {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      padding: 12px 14px;
+      margin: 14px 0;
+      font-size: 9pt;
+      color: #64748b;
+      line-height: 1.5;
+    }
+
+    .disclaimer strong {
+      color: #475569;
+      display: block;
+      margin-bottom: 4px;
+      font-size: 10pt;
+    }
+
+    /* ----- Data Retention Notice ----- */
+    .retention-notice {
+      background: #fafafa;
+      border: 1px solid #e2e8f0;
+      border-left: 3px solid #94a3b8;
+      padding: 10px 14px;
+      margin: 10px 0;
+      font-size: 9pt;
+      color: #64748b;
+      line-height: 1.5;
+    }
+
+    /* ----- Utility ----- */
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+    .text-muted { color: #94a3b8; }
+    .text-small { font-size: 9pt; }
+    .mt-10 { margin-top: 10px; }
+    .mt-20 { margin-top: 20px; }
+    .mb-10 { margin-bottom: 10px; }
+    .mb-20 { margin-bottom: 20px; }
+    .bold { font-weight: 600; }
   </style>
 </head>
 <body>
 
-  <!-- COVER PAGE -->
+  <!-- ===================================================================
+       PAGE HEADER & FOOTER (Print only — fixed position)
+       =================================================================== -->
+  <table class="no-print" style="display: none;">
+    <thead><tr><td><div class="page-header-space">&nbsp;</div></td></tr></thead>
+    <tbody><tr><td>&nbsp;</td></tr></tbody>
+    <tfoot><tr><td><div class="page-footer-space">&nbsp;</div></td></tr></tfoot>
+  </table>
+
+
+  <!-- ===================================================================
+       COVER PAGE
+       =================================================================== -->
   <div class="page cover">
-    <div style="margin-top: 80px;">
+    <div class="cover-logo">
       {{#if organisation.name}}
-        <h2 style="font-size: 16px; color: #64748b; text-transform: none;">{{organisation.name}}</h2>
+        <h2 style="font-size: 16px; color: #64748b; text-transform: none; letter-spacing: 1px;">{{organisation.name}}</h2>
       {{/if}}
     </div>
-    <h1 style="margin-top: 20px;">{{reportDetails.title}}</h1>
-    <p style="font-size: 14px; color: #475569; margin-top: 8px;">
+
+    <div class="cover-divider"></div>
+
+    <h1 style="margin-top: 20px; font-size: 30px;">{{reportDetails.title}}</h1>
+
+    <p class="subtitle" style="margin-top: 6px; font-size: 15px; color: #64748b;">Audit Trail Report</p>
+
+    <div class="cover-divider"></div>
+
+    <div class="cover-period">
       {{reportDetails.period.start}} &mdash; {{reportDetails.period.end}}
-    </p>
+    </div>
+
     <div class="cover-meta">
       <table>
-        {{#if reportDetails.preparedBy}}<tr><td>Prepared By:</td><td>{{reportDetails.preparedBy}}</td></tr>{{/if}}
-        <tr><td>Report Date:</td><td>{{reportDetails.reportDate}}</td></tr>
-        <tr><td>Detail Level:</td><td>{{scope.detailLevel}}</td></tr>
-        <tr><td>Grouping:</td><td>{{scope.grouping}}</td></tr>
-        <tr><td>Format:</td><td>{{reportDetails.exportFormat}}</td></tr>
+        {{#if reportDetails.preparedBy}}
+        <tr>
+          <td>Prepared By:</td>
+          <td>{{reportDetails.preparedBy}}</td>
+        </tr>
+        {{/if}}
+        <tr>
+          <td>Report Date:</td>
+          <td>{{reportDetails.reportDate}}</td>
+        </tr>
+        <tr>
+          <td>Detail Level:</td>
+          <td>{{scope.detailLevel}}</td>
+        </tr>
+        <tr>
+          <td>Grouping:</td>
+          <td>{{scope.grouping}}</td>
+        </tr>
+        <tr>
+          <td>Export Format:</td>
+          <td>{{reportDetails.exportFormat}}</td>
+        </tr>
       </table>
     </div>
-    <div class="footer-line">Audit Trail Report &mdash; Generated {{generatedAt}}</div>
+
+    <div class="cover-confidential">
+      Confidential &mdash; Internal Use Only
+    </div>
+
+    <div class="cover-footer">
+      Audit Trail Report &mdash; Generated {{generatedAt}}
+    </div>
   </div>
 
-  <!-- SUMMARY & SCOPE -->
-  <div class="page">
-    <h3>Audit Summary</h3>
 
+  <!-- ===================================================================
+       DOCUMENT INFORMATION PAGE
+       =================================================================== -->
+  <div class="page">
+    <h3>Document Information</h3>
+
+    <h4>Report Metadata</h4>
+    <table class="kv-table">
+      <tr>
+        <td class="label-cell">Report Title</td>
+        <td>{{reportDetails.title}}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Report Type</td>
+        <td>Audit Trail Report</td>
+      </tr>
+      {{#if organisation.name}}
+      <tr>
+        <td class="label-cell">Organisation</td>
+        <td>{{organisation.name}}{{#if organisation.id}} <span class="badge badge-gray">ID: {{organisation.id}}</span>{{/if}}</td>
+      </tr>
+      {{/if}}
+      {{#if reportDetails.preparedBy}}
+      <tr>
+        <td class="label-cell">Prepared By</td>
+        <td>{{reportDetails.preparedBy}}</td>
+      </tr>
+      {{/if}}
+      <tr>
+        <td class="label-cell">Report Date</td>
+        <td>{{reportDetails.reportDate}}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Audit Period</td>
+        <td>{{reportDetails.period.start}} to {{reportDetails.period.end}}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Export Format</td>
+        <td>{{reportDetails.exportFormat}}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Generated At</td>
+        <td>{{generatedAt}}</td>
+      </tr>
+    </table>
+
+    <h4>Audit Scope Description</h4>
+    <div class="description-block">
+      <p>This audit trail report presents a record of system events captured during the period
+        <strong>{{reportDetails.period.start}}</strong> to <strong>{{reportDetails.period.end}}</strong>.
+        The report has been generated at the <strong>{{scope.detailLevel}}</strong> detail level
+        with events organised in <strong>{{scope.grouping}}</strong> order.
+        {{#if summary.maxResultsApplied}}
+        Please note that the maximum results threshold has been applied; some events may not be included in this report.
+        {{/if}}
+      </p>
+    </div>
+
+    <h4>Data Retention Notice</h4>
+    <div class="retention-notice">
+      <p>Audit trail data is retained in accordance with the organisation's data retention policy and
+        applicable maritime regulatory requirements. This report represents a point-in-time snapshot
+        of the audit log. Records may be subject to automated archival or deletion after the
+        defined retention period has elapsed. For questions regarding data retention, contact your
+        system administrator.</p>
+    </div>
+
+    <h4>Confidentiality Disclaimer</h4>
+    <div class="disclaimer">
+      <strong>Confidential &mdash; Internal Use Only</strong>
+      <p>This document contains confidential audit trail information belonging to {{#if organisation.name}}{{organisation.name}}{{else}}the organisation{{/if}}.
+        It is intended solely for authorised personnel involved in audit review and compliance activities.
+        Unauthorised distribution, reproduction, or disclosure of this document or its contents is
+        strictly prohibited. If you have received this document in error, please notify the sender
+        immediately and destroy all copies.</p>
+    </div>
+
+    <div class="footer-line">
+      {{#if organisation.name}}{{organisation.name}} &mdash; {{/if}}{{reportDetails.title}} &mdash; {{reportDetails.reportDate}}
+    </div>
+  </div>
+
+
+  <!-- ===================================================================
+       TABLE OF CONTENTS
+       =================================================================== -->
+  <div class="page">
+    <h3>Table of Contents</h3>
+
+    <div class="toc-item"><strong>1.</strong> Audit Summary</div>
+    <div class="toc-item"><strong>2.</strong> Audit Scope &amp; Filters</div>
+    <div class="toc-item"><strong>3.</strong> Audit Trail
+      {{#if isGrouped}}<span class="toc-conditional">(Grouped by {{scope.grouping}})</span>{{/if}}
+    </div>
+    <div class="toc-item"><strong>4.</strong> Analysis &amp; Observations</div>
+    {{#if additionalNotes}}
+    <div class="toc-item"><strong>5.</strong> Additional Notes</div>
+    <div class="toc-item"><strong>6.</strong> Document Approval &amp; Disclaimer</div>
+    {{else}}
+    <div class="toc-item"><strong>5.</strong> Additional Notes <span class="toc-conditional">(if applicable)</span></div>
+    <div class="toc-item"><strong>6.</strong> Document Approval &amp; Disclaimer</div>
+    {{/if}}
+
+    <div style="margin-top: 30px;">
+      <h4>Document Conventions</h4>
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 25%;">Convention</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="badge action-create">CREATE</span></td>
+            <td>A new record or entity was created in the system</td>
+          </tr>
+          <tr>
+            <td><span class="badge action-update">UPDATE</span></td>
+            <td>An existing record or entity was modified</td>
+          </tr>
+          <tr>
+            <td><span class="badge action-delete">DELETE</span></td>
+            <td>A record or entity was removed from the system</td>
+          </tr>
+          <tr>
+            <td><span class="badge action-read">READ</span></td>
+            <td>A record or entity was accessed or viewed</td>
+          </tr>
+          <tr>
+            <td><span class="ts">2024-01-15T09:30:00Z</span></td>
+            <td>Timestamps are displayed in ISO 8601 format (monospace)</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-gray">abc12...f9</span></td>
+            <td>Long identifiers are truncated for readability</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="footer-line">
+      {{#if organisation.name}}{{organisation.name}} &mdash; {{/if}}{{reportDetails.title}} &mdash; {{reportDetails.reportDate}}
+    </div>
+  </div>
+
+
+  <!-- ===================================================================
+       SECTION 1: AUDIT SUMMARY (Dashboard Page)
+       =================================================================== -->
+  <div class="page">
+    <h3>1. Audit Summary</h3>
+
+    <p class="section-intro">
+      Overview of audit trail activity for the reporting period
+      <strong>{{reportDetails.period.start}}</strong> to <strong>{{reportDetails.period.end}}</strong>.
+    </p>
+
+    <!-- Primary Stats -->
     <div class="stats-row">
-      <div class="stat-card">
+      <div class="stat-card primary">
         <div class="stat-value">{{summary.totalEvents}}</div>
-        <div class="stat-label">Total Events</div>
+        <div class="stat-label">Total Events Recorded</div>
       </div>
     </div>
 
+    <!-- Action Type Breakdown Stats -->
+    <h4>Activity Breakdown</h4>
+    <div class="stats-row">
+      <div class="stat-card green">
+        <div class="stat-label">Create Events</div>
+        <div style="margin-top: 4px;">
+          <span class="badge action-create">CREATE</span>
+        </div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-label">Update Events</div>
+        <div style="margin-top: 4px;">
+          <span class="badge action-update">UPDATE</span>
+        </div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-label">Delete Events</div>
+        <div style="margin-top: 4px;">
+          <span class="badge action-delete">DELETE</span>
+        </div>
+      </div>
+      <div class="stat-card gray">
+        <div class="stat-label">Read Events</div>
+        <div style="margin-top: 4px;">
+          <span class="badge action-read">READ</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Truncation Warning -->
     {{#if summary.maxResultsApplied}}
     <div class="truncated-notice">
-      Results have been limited to the maximum threshold. Narrow the date range or apply additional filters for complete data.
+      <strong><span class="notice-icon">!</span> Maximum Results Threshold Applied</strong>
+      <p>The number of audit events within the selected period exceeds the maximum export threshold.
+        This report contains a subset of the total available records. To obtain complete audit data,
+        consider narrowing the date range, applying additional filters (vessel, work order, user),
+        or reducing the scope of event types included.</p>
+      <p style="margin-top: 6px;">Not all events may be represented in this report. Exercise caution
+        when drawing conclusions from potentially incomplete data.</p>
     </div>
     {{/if}}
 
-    <h3>Scope &amp; Filters</h3>
-    <table>
-      <tr><td class="label-cell">Period</td><td>{{reportDetails.period.start}} to {{reportDetails.period.end}}</td></tr>
-      <tr><td class="label-cell">Detail Level</td><td>{{scope.detailLevel}}</td></tr>
-      <tr><td class="label-cell">Grouping</td><td>{{scope.grouping}}</td></tr>
-      <tr>
-        <td class="label-cell">Event Types</td>
-        <td>
-          {{#each scope.eventTypes}}
-            <span class="badge badge-blue">{{this}}</span>
-          {{/each}}
-          {{#unless scope.eventTypes.length}}<span class="badge badge-gray">All</span>{{/unless}}
-        </td>
-      </tr>
-      {{#if scope.filters.vessel}}<tr><td class="label-cell">Vessel Filter</td><td>{{scope.filters.vessel}}</td></tr>{{/if}}
-      {{#if scope.filters.workOrder}}<tr><td class="label-cell">Work Order Filter</td><td>{{scope.filters.workOrder}}</td></tr>{{/if}}
-      {{#if scope.filters.user}}<tr><td class="label-cell">User Filter</td><td>{{scope.filters.user}}</td></tr>{{/if}}
-    </table>
+    <!-- Summary Narrative -->
+    <h4>Summary</h4>
+    <div class="description-block">
+      <p>This audit trail report contains <strong>{{summary.totalEvents}}</strong> event{{#unless summary.totalEvents}}s{{/unless}}
+        recorded between <strong>{{reportDetails.period.start}}</strong> and
+        <strong>{{reportDetails.period.end}}</strong>.
+        Events are presented at the <strong>{{scope.detailLevel}}</strong> detail level
+        {{#if isGrouped}}
+          and are grouped by <strong>{{scope.grouping}}</strong> for easier review.
+        {{else}}
+          in <strong>{{scope.grouping}}</strong> order.
+        {{/if}}
+      </p>
+      {{#if summary.maxResultsApplied}}
+      <p style="margin-top: 6px; color: #92400e;">
+        Note: Results have been truncated due to the maximum results threshold. This report may not
+        contain all events for the selected period.
+      </p>
+      {{/if}}
+    </div>
+
+    <div class="footer-line">
+      {{#if organisation.name}}{{organisation.name}} &mdash; {{/if}}{{reportDetails.title}} &mdash; {{reportDetails.reportDate}}
+    </div>
   </div>
 
-  <!-- AUDIT ENTRIES -->
+
+  <!-- ===================================================================
+       SECTION 2: AUDIT SCOPE & FILTERS
+       =================================================================== -->
   <div class="page">
-    <h3>Audit Trail</h3>
+    <h3>2. Audit Scope &amp; Filters</h3>
+
+    <p class="section-intro">
+      Detailed description of the parameters, filters, and configuration used to generate this audit trail report.
+    </p>
+
+    <h4>Report Parameters</h4>
+    <table class="kv-table">
+      <tr>
+        <td class="label-cell">Audit Period Start</td>
+        <td>{{reportDetails.period.start}}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Audit Period End</td>
+        <td>{{reportDetails.period.end}}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Detail Level</td>
+        <td>
+          <span class="badge badge-blue">{{scope.detailLevel}}</span>
+          {{#if scope.detailLevel}}
+            &mdash;
+            {{#if (lookup (lookup (lookup this 'scope') 'detailLevel') 'dummy')}}{{else}}
+              Determines the amount of information shown for each audit event.
+            {{/if}}
+          {{/if}}
+        </td>
+      </tr>
+      <tr>
+        <td class="label-cell">Grouping Mode</td>
+        <td>
+          <span class="badge badge-blue">{{scope.grouping}}</span>
+          &mdash;
+          {{#if isGrouped}}
+            Events are grouped under common headings based on the selected grouping criteria.
+          {{else}}
+            Events are listed in chronological order without grouping.
+          {{/if}}
+        </td>
+      </tr>
+      <tr>
+        <td class="label-cell">Total Events</td>
+        <td>
+          {{summary.totalEvents}}
+          {{#if summary.maxResultsApplied}}
+            <span class="badge badge-amber">TRUNCATED</span>
+          {{/if}}
+        </td>
+      </tr>
+    </table>
+
+    <h4>Event Types</h4>
+    <p class="section-intro">The following event types are included in this audit report:</p>
+    <div style="margin: 8px 0 14px 0;">
+      {{#each scope.eventTypes}}
+        <span class="badge badge-blue" style="margin: 2px 4px 2px 0;">{{this}}</span>
+      {{/each}}
+      {{#unless scope.eventTypes}}
+        <span class="badge badge-gray">All Event Types</span>
+        <p class="text-small text-muted" style="margin-top: 4px;">No specific event type filter has been applied. All available event types are included.</p>
+      {{/unless}}
+    </div>
+
+    <h4>Active Filters</h4>
+    <p class="section-intro">
+      Filters narrow the scope of audit events to specific entities or users. Only events matching
+      all active filters are included in this report.
+    </p>
+    <table class="kv-table">
+      <tr>
+        <td class="label-cell">Vessel Filter</td>
+        <td>
+          {{#if scope.filters.vessel}}
+            <span class="badge badge-blue">{{scope.filters.vessel}}</span>
+            &mdash; Only events related to this vessel are included.
+          {{else}}
+            <span class="text-muted">No vessel filter applied &mdash; all vessels included</span>
+          {{/if}}
+        </td>
+      </tr>
+      <tr>
+        <td class="label-cell">Work Order Filter</td>
+        <td>
+          {{#if scope.filters.workOrder}}
+            <span class="badge badge-purple">{{scope.filters.workOrder}}</span>
+            &mdash; Only events related to this work order are included.
+          {{else}}
+            <span class="text-muted">No work order filter applied &mdash; all work orders included</span>
+          {{/if}}
+        </td>
+      </tr>
+      <tr>
+        <td class="label-cell">User Filter</td>
+        <td>
+          {{#if scope.filters.user}}
+            <span class="badge badge-amber">{{scope.filters.user}}</span>
+            &mdash; Only events performed by this user are included.
+          {{else}}
+            <span class="text-muted">No user filter applied &mdash; all users included</span>
+          {{/if}}
+        </td>
+      </tr>
+    </table>
+
+    <h4>Filter Explanation</h4>
+    <div class="info-box">
+      <p><strong>Vessel Filter:</strong> When applied, restricts audit events to those associated with a specific vessel entity. Events not linked to the specified vessel are excluded.</p>
+      <p style="margin-top: 4px;"><strong>Work Order Filter:</strong> When applied, restricts audit events to those associated with a specific work order. This includes events for inspections, tasks, and form entries linked to the work order.</p>
+      <p style="margin-top: 4px;"><strong>User Filter:</strong> When applied, restricts audit events to those performed by a specific user. This is useful for investigating individual user activity across the system.</p>
+    </div>
+
+    <div class="footer-line">
+      {{#if organisation.name}}{{organisation.name}} &mdash; {{/if}}{{reportDetails.title}} &mdash; {{reportDetails.reportDate}}
+    </div>
+  </div>
+
+
+  <!-- ===================================================================
+       SECTION 3: AUDIT TRAIL (Main Content)
+       =================================================================== -->
+  <div class="page">
+    <h3>3. Audit Trail</h3>
+
+    <p class="section-intro">
+      {{#if isGrouped}}
+        Audit events grouped by <strong>{{scope.grouping}}</strong>. Each group contains its own
+        chronologically ordered table of events.
+      {{else}}
+        Complete chronological listing of all audit events for the reporting period.
+      {{/if}}
+      {{#if summary.maxResultsApplied}}
+        <span style="color: #92400e;">(Results truncated &mdash; maximum threshold applied)</span>
+      {{/if}}
+    </p>
 
     {{#if isGrouped}}
-      {{!-- Grouped entries: entries is an object keyed by group --}}
+      {{!-- ============================================================
+           GROUPED VIEW: entries is an object keyed by group name
+           ============================================================ --}}
       {{#each entries}}
-        <div class="group-header">{{@key}} ({{this.length}} events)</div>
-        <table>
-          <thead>
-            <tr>
-              <th style="width: 15%">Timestamp</th>
-              <th style="width: 15%">Entity</th>
-              <th style="width: 12%">Action</th>
-              <th>Description</th>
-            </tr>
-          </thead>
-          <tbody>
-            {{#each this}}
-            <tr>
-              <td class="ts">{{timestamp}}</td>
-              <td>{{entityType}}{{#if entityId}} <span class="badge badge-gray">{{truncateId entityId}}</span>{{/if}}</td>
-              <td><span class="badge badge-amber">{{action}}</span></td>
-              <td>{{description}}</td>
-            </tr>
-            {{/each}}
-          </tbody>
-        </table>
+        <div class="group-section">
+          <div class="group-header">
+            <span class="group-name">{{@key}}</span>
+            <span class="group-count">{{this.length}} event{{#if this.length}}{{#unless @first}}{{/unless}}{{/if}}s</span>
+          </div>
+
+          {{#if this.length}}
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 18%;">Timestamp</th>
+                <th style="width: 18%;">Entity</th>
+                <th style="width: 12%;">Action</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{#each this}}
+              <tr>
+                <td class="ts">{{timestamp}}</td>
+                <td>
+                  <span class="badge entity-default">{{entityType}}</span>
+                  {{#if entityId}}
+                    <br /><span class="badge badge-gray" style="margin-top: 2px;">{{truncateId entityId}}</span>
+                  {{/if}}
+                </td>
+                <td>
+                  {{#if (lowercase action)}}
+                    <span class="badge action-{{lowercase action}}">{{action}}</span>
+                  {{else}}
+                    <span class="badge action-default">{{action}}</span>
+                  {{/if}}
+                </td>
+                <td>{{description}}</td>
+              </tr>
+              {{/each}}
+            </tbody>
+          </table>
+          {{else}}
+          <p class="empty-state">No events recorded in this group.</p>
+          {{/if}}
+        </div>
+      {{else}}
+        <p class="empty-state">No grouped audit data available for the selected criteria and period.</p>
       {{/each}}
+
     {{else}}
-      {{!-- Chronological: entries is an array --}}
+      {{!-- ============================================================
+           CHRONOLOGICAL VIEW: entries is an array
+           ============================================================ --}}
       {{#if entries.length}}
       <table>
         <thead>
           <tr>
-            <th style="width: 15%">Timestamp</th>
-            <th style="width: 15%">Entity</th>
-            <th style="width: 12%">Action</th>
+            <th style="width: 16%;">Timestamp</th>
+            <th style="width: 12%;">Entity Type</th>
+            <th style="width: 12%;">Entity ID</th>
+            <th style="width: 11%;">Action</th>
             <th>Description</th>
           </tr>
         </thead>
@@ -160,25 +1293,243 @@
           {{#each entries}}
           <tr>
             <td class="ts">{{timestamp}}</td>
-            <td>{{entityType}}{{#if entityId}} <span class="badge badge-gray">{{truncateId entityId}}</span>{{/if}}</td>
-            <td><span class="badge badge-amber">{{action}}</span></td>
+            <td>
+              <span class="badge entity-default">{{entityType}}</span>
+            </td>
+            <td>
+              {{#if entityId}}
+                <span class="badge badge-gray">{{truncateId entityId}}</span>
+              {{else}}
+                <span class="text-muted">&mdash;</span>
+              {{/if}}
+            </td>
+            <td>
+              {{#if (lowercase action)}}
+                <span class="badge action-{{lowercase action}}">{{action}}</span>
+              {{else}}
+                <span class="badge action-default">{{action}}</span>
+              {{/if}}
+            </td>
             <td>{{description}}</td>
           </tr>
           {{/each}}
         </tbody>
       </table>
       {{else}}
-      <p class="empty-state">No audit events found for the selected criteria.</p>
+      <p class="empty-state">No audit events found for the selected criteria and reporting period.</p>
       {{/if}}
-    {{/if}}
 
-    {{#if additionalNotes}}
-    <h3>Additional Notes</h3>
-    <p>{{additionalNotes}}</p>
     {{/if}}
 
     <div class="footer-line">
       {{#if organisation.name}}{{organisation.name}} &mdash; {{/if}}{{reportDetails.title}} &mdash; {{reportDetails.reportDate}}
+    </div>
+  </div>
+
+
+  <!-- ===================================================================
+       SECTION 4: ANALYSIS & OBSERVATIONS
+       =================================================================== -->
+  <div class="page">
+    <h3>4. Analysis &amp; Observations</h3>
+
+    <p class="section-intro">
+      This section provides space for audit observations, identified patterns, and notes regarding
+      the data presented in this report. Review the audit trail entries above for context.
+    </p>
+
+    <h4>4.1 Audit Observations</h4>
+    <div class="description-block">
+      <p>During the reporting period (<strong>{{reportDetails.period.start}}</strong> to
+        <strong>{{reportDetails.period.end}}</strong>), a total of
+        <strong>{{summary.totalEvents}}</strong> audit events were captured.
+        {{#if isGrouped}}
+          Events have been organised by <strong>{{scope.grouping}}</strong> to facilitate review
+          and pattern identification across logical groupings.
+        {{else}}
+          Events are presented in chronological order for sequential review and timeline analysis.
+        {{/if}}
+      </p>
+      <p style="margin-top: 8px;">Key patterns and observations should be documented here by the
+        reviewing auditor or compliance officer.</p>
+    </div>
+
+    <h4>4.2 Unusual Activity Flags</h4>
+    <div class="description-block">
+      <p>Any events or patterns identified as unusual, unexpected, or requiring further investigation
+        should be documented in this section. Consider the following review criteria:</p>
+      <ul style="margin: 8px 0 0 20px; font-size: 10pt; line-height: 1.8;">
+        <li>Bulk delete operations that may indicate data loss or unauthorised removal</li>
+        <li>Activity occurring outside of normal business hours</li>
+        <li>Repeated failed access attempts or permission escalation events</li>
+        <li>Modifications to critical vessel safety or compliance records</li>
+        <li>User accounts performing actions outside their normal operational scope</li>
+        <li>High-frequency create/update patterns that may indicate automated or scripted activity</li>
+      </ul>
+    </div>
+
+    <h4>4.3 Data Integrity Notes</h4>
+    <div class="description-block">
+      <p>The audit trail data presented in this report is sourced directly from the system's event
+        logging infrastructure. The following data integrity considerations apply:</p>
+      <ul style="margin: 8px 0 0 20px; font-size: 10pt; line-height: 1.8;">
+        <li>Audit events are captured at the time of occurrence and cannot be retroactively modified</li>
+        <li>Timestamps reflect the server time at the point of event capture (UTC)</li>
+        <li>Entity identifiers reference the system record at the time of the event; records may have
+          since been modified or removed</li>
+        {{#if summary.maxResultsApplied}}
+        <li style="color: #92400e;"><strong>Note:</strong> The maximum results threshold was applied to this report.
+          Some events within the reporting period may not be included. Generate additional reports with
+          narrower parameters for complete coverage.</li>
+        {{/if}}
+      </ul>
+    </div>
+
+    {{#if scope.filters.vessel}}
+    <div class="info-box" style="margin-top: 14px;">
+      <p><strong>Vessel Scope Note:</strong> This report is filtered to vessel
+        <strong>{{scope.filters.vessel}}</strong>. Only events directly associated with this vessel
+        are included. Cross-vessel activity by the same users is not captured in this report.</p>
+    </div>
+    {{/if}}
+
+    {{#if scope.filters.user}}
+    <div class="info-box" style="margin-top: 14px;">
+      <p><strong>User Scope Note:</strong> This report is filtered to user
+        <strong>{{scope.filters.user}}</strong>. Only events performed by this user are included.
+        Events performed by other users on the same entities are not captured in this report.</p>
+    </div>
+    {{/if}}
+
+    <div class="footer-line">
+      {{#if organisation.name}}{{organisation.name}} &mdash; {{/if}}{{reportDetails.title}} &mdash; {{reportDetails.reportDate}}
+    </div>
+  </div>
+
+
+  <!-- ===================================================================
+       SECTION 5: ADDITIONAL NOTES (Conditional)
+       =================================================================== -->
+  {{#if additionalNotes}}
+  <div class="page">
+    <h3>5. Additional Notes</h3>
+
+    <p class="section-intro">
+      The following notes were included with this audit trail report by the report author.
+    </p>
+
+    <div class="notes-block">
+      <p>{{additionalNotes}}</p>
+    </div>
+
+    <div class="footer-line">
+      {{#if organisation.name}}{{organisation.name}} &mdash; {{/if}}{{reportDetails.title}} &mdash; {{reportDetails.reportDate}}
+    </div>
+  </div>
+  {{/if}}
+
+
+  <!-- ===================================================================
+       SECTION 6: DOCUMENT APPROVAL & DISCLAIMER
+       =================================================================== -->
+  <div class="page">
+    <h3>6. Document Approval &amp; Disclaimer</h3>
+
+    <p class="section-intro">
+      This section provides formal sign-off fields for audit report review and approval, along with
+      applicable disclaimers regarding the accuracy and use of audit trail data.
+    </p>
+
+    <!-- Prepared By -->
+    <h4>6.1 Prepared By</h4>
+    <div class="signature-block">
+      <div class="signature-row">
+        <div class="signature-col">
+          <div class="signature-label">Name</div>
+          <div class="signature-line"></div>
+          {{#if reportDetails.preparedBy}}
+          <div class="signature-name">{{reportDetails.preparedBy}}</div>
+          {{/if}}
+        </div>
+        <div class="signature-col">
+          <div class="signature-label">Signature</div>
+          <div class="signature-line"></div>
+        </div>
+      </div>
+      <div class="signature-date-line"></div>
+      <div class="signature-date-label">Date</div>
+    </div>
+
+    <!-- Reviewed By -->
+    <h4>6.2 Reviewed By</h4>
+    <div class="signature-block">
+      <div class="signature-row">
+        <div class="signature-col">
+          <div class="signature-label">Name</div>
+          <div class="signature-line"></div>
+        </div>
+        <div class="signature-col">
+          <div class="signature-label">Signature</div>
+          <div class="signature-line"></div>
+        </div>
+      </div>
+      <div class="signature-date-line"></div>
+      <div class="signature-date-label">Date</div>
+    </div>
+
+    <!-- Approved By -->
+    <h4>6.3 Approved By</h4>
+    <div class="signature-block">
+      <div class="signature-row">
+        <div class="signature-col">
+          <div class="signature-label">Name</div>
+          <div class="signature-line"></div>
+        </div>
+        <div class="signature-col">
+          <div class="signature-label">Signature</div>
+          <div class="signature-line"></div>
+        </div>
+      </div>
+      <div class="signature-date-line"></div>
+      <div class="signature-date-label">Date</div>
+    </div>
+
+    <!-- Disclaimer -->
+    <h4>6.4 Audit Data Accuracy Disclaimer</h4>
+    <div class="disclaimer">
+      <strong>Disclaimer</strong>
+      <p>This audit trail report has been generated automatically from system event logs. While every
+        effort is made to ensure the accuracy and completeness of the data presented, the following
+        limitations should be noted:</p>
+      <ul style="margin: 8px 0 0 16px; font-size: 9pt; line-height: 1.6;">
+        <li>Audit events reflect system-level actions and may not capture all manual or out-of-system
+          processes.</li>
+        <li>Timestamps are recorded in UTC and may differ from local operational times.</li>
+        <li>Entity references (IDs, names) reflect the state at the time of event capture and may not
+          represent current values if records have been subsequently modified.</li>
+        <li>This report is generated for informational and compliance purposes and does not constitute
+          a legal document unless formally approved and signed by authorised personnel.</li>
+        {{#if summary.maxResultsApplied}}
+        <li>The maximum results threshold was applied during generation. This report may not contain
+          all audit events for the specified period.</li>
+        {{/if}}
+      </ul>
+    </div>
+
+    <!-- Data Retention Policy Notice -->
+    <h4>6.5 Data Retention Policy</h4>
+    <div class="retention-notice">
+      <p>Audit trail records are retained in accordance with {{#if organisation.name}}{{organisation.name}}'s{{else}}the organisation's{{/if}}
+        data retention policy and applicable maritime industry regulations, including but not limited
+        to ISM Code requirements. Audit data may be subject to periodic archival, and historical
+        records beyond the retention period may no longer be available for report generation. It is
+        recommended that critical audit reports be archived in a permanent document management system
+        for long-term reference.</p>
+    </div>
+
+    <div class="footer-line">
+      {{#if organisation.name}}{{organisation.name}} &mdash; {{/if}}{{reportDetails.title}} &mdash; {{reportDetails.reportDate}}
+      &mdash; End of Report
     </div>
   </div>
 

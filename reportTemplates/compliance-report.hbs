@@ -1,94 +1,1114 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>{{reportDetails.title}}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{reportDetails.title}} — Fleet Compliance Summary</title>
   <style>
-    * { font-family: 'Calibri', 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { background: white; }
-    body { max-width: 210mm; margin: 0 auto; padding: 0; color: #1e293b; font-size: 11pt; line-height: 1.5; }
+    /* =========================================================================
+       FLEET COMPLIANCE SUMMARY REPORT — Embedded Stylesheet
+       Professional A4 print-ready document
+       ========================================================================= */
 
-    .page { page-break-after: always; width: 100%; padding: 15mm 17mm; min-height: 297mm; position: relative; }
-    .page:last-child { page-break-after: auto; }
+    /* --- Reset & Base Typography --- */
+    * {
+      font-family: 'Calibri', 'Segoe UI', Arial, Helvetica, sans-serif;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-    h1 { font-size: 26px; color: #365F91; text-transform: uppercase; text-align: center; margin-bottom: 8px; }
-    h2 { font-size: 20px; color: #365F91; text-transform: uppercase; text-align: center; margin-bottom: 6px; }
-    h3 { font-size: 16px; color: #365F91; text-transform: uppercase; margin: 20px 0 10px 0; border-bottom: 2px solid #365F91; padding-bottom: 4px; }
-    h4 { font-size: 13px; color: #365F91; text-transform: uppercase; margin: 14px 0 6px 0; }
-    p { margin: 4px 0; font-size: 11pt; }
+    html {
+      font-size: 11pt;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
 
-    .cover { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-    .cover-meta { margin-top: 40px; font-size: 12px; color: #64748b; }
-    .cover-meta table { margin: 0 auto; border-collapse: collapse; }
-    .cover-meta td { padding: 4px 12px; text-align: left; }
-    .cover-meta td:first-child { font-weight: 600; color: #334155; }
+    body {
+      color: #1e293b;
+      line-height: 1.55;
+      background: white;
+    }
 
-    table { width: 100%; border-collapse: collapse; margin: 8px 0 14px 0; font-size: 10pt; }
-    th { background-color: #365F91; color: #fff; font-weight: 600; text-align: left; padding: 6px 8px; border: 1px solid #365F91; font-size: 10pt; }
-    td { padding: 5px 8px; border: 1px solid #cbd5e1; vertical-align: top; word-wrap: break-word; }
-    tr:nth-child(even) td { background-color: #f8fafc; }
-    .label-cell { background-color: #e8edf4; font-weight: 600; color: #334155; width: 40%; }
+    /* --- Heading Hierarchy --- */
+    h1 {
+      font-size: 28px;
+      color: #365F91;
+      text-transform: uppercase;
+      text-align: center;
+      margin-bottom: 10px;
+      letter-spacing: 1px;
+      font-weight: 700;
+    }
 
-    /* Stats cards */
-    .stats-row { display: flex; gap: 12px; margin: 14px 0; flex-wrap: wrap; }
-    .stat-card { flex: 1; min-width: 120px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 12px; text-align: center; }
-    .stat-value { font-size: 28px; font-weight: 700; color: #365F91; }
-    .stat-label { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
-    .stat-card.green { border-color: #86efac; background: #f0fdf4; }
-    .stat-card.green .stat-value { color: #166534; }
-    .stat-card.red { border-color: #fca5a5; background: #fef2f2; }
-    .stat-card.red .stat-value { color: #991b1b; }
+    h2 {
+      font-size: 22px;
+      color: #365F91;
+      text-transform: uppercase;
+      text-align: center;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
 
-    /* Compliance bar */
-    .compliance-bar { height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; margin-top: 4px; }
-    .compliance-fill { height: 100%; border-radius: 4px; }
-    .compliance-fill.good { background: #22c55e; }
-    .compliance-fill.warning { background: #f59e0b; }
-    .compliance-fill.bad { background: #ef4444; }
+    h3 {
+      font-size: 16px;
+      color: #365F91;
+      text-transform: uppercase;
+      margin: 22px 0 10px 0;
+      border-bottom: 2px solid #365F91;
+      padding-bottom: 5px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
 
-    .empty-state { color: #94a3b8; font-style: italic; padding: 10px; text-align: center; }
-    .footer-line { margin-top: 30px; border-top: 1px solid #cbd5e1; padding-top: 8px; font-size: 9px; color: #94a3b8; text-align: center; }
-    .badge { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 9px; font-weight: 600; }
-    .badge-green { background: #dcfce7; color: #166534; }
-    .badge-red { background: #fecaca; color: #991b1b; }
-    .badge-amber { background: #fef3c7; color: #92400e; }
-    .badge-gray { background: #f1f5f9; color: #475569; }
+    h4 {
+      font-size: 13px;
+      color: #365F91;
+      text-transform: uppercase;
+      margin: 16px 0 8px 0;
+      font-weight: 600;
+    }
+
+    h5 {
+      font-size: 12px;
+      color: #475569;
+      text-transform: uppercase;
+      margin: 12px 0 6px 0;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+
+    p {
+      margin: 5px 0;
+      font-size: 11pt;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: #475569;
+      text-align: center;
+      margin-bottom: 4px;
+    }
+
+    .section-intro {
+      color: #475569;
+      font-size: 10pt;
+      margin-bottom: 12px;
+      line-height: 1.6;
+    }
+
+    .section-number {
+      color: #365F91;
+      font-weight: 700;
+      margin-right: 6px;
+    }
+
+    /* --- Page Layout --- */
+    .page {
+      page-break-after: always;
+      width: 100%;
+      padding: 15mm 17mm;
+      min-height: 297mm;
+      position: relative;
+    }
+
+    .page:last-child {
+      page-break-after: auto;
+    }
+
+    .page-header {
+      border-bottom: 2px solid #365F91;
+      padding-bottom: 6px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      font-size: 9px;
+      color: #64748b;
+    }
+
+    .page-header-title {
+      font-weight: 600;
+      color: #365F91;
+      font-size: 10px;
+      text-transform: uppercase;
+    }
+
+    .page-header-org {
+      font-size: 9px;
+      color: #94a3b8;
+    }
+
+    .header-spacer {
+      height: 12mm;
+    }
+
+    /* --- Cover Page --- */
+    .cover {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .cover-org {
+      margin-top: 50px;
+      margin-bottom: 10px;
+    }
+
+    .cover-org-name {
+      font-size: 18px;
+      color: #64748b;
+      text-transform: none;
+      font-weight: 600;
+      letter-spacing: 2px;
+    }
+
+    .cover-divider {
+      width: 80px;
+      height: 3px;
+      background: #365F91;
+      margin: 20px auto;
+      border-radius: 2px;
+    }
+
+    .cover-title {
+      margin-top: 20px;
+      font-size: 32px;
+      letter-spacing: 2px;
+    }
+
+    .cover-subtitle {
+      font-size: 16px;
+      color: #475569;
+      margin-top: 12px;
+      font-weight: 400;
+    }
+
+    .cover-period {
+      font-size: 15px;
+      color: #365F91;
+      margin-top: 16px;
+      font-weight: 600;
+      padding: 8px 24px;
+      border: 2px solid #365F91;
+      border-radius: 4px;
+      display: inline-block;
+    }
+
+    .cover-meta {
+      margin-top: 50px;
+      font-size: 12px;
+      color: #64748b;
+    }
+
+    .cover-meta table {
+      margin: 0 auto;
+      border-collapse: collapse;
+    }
+
+    .cover-meta td {
+      padding: 5px 14px;
+      text-align: left;
+    }
+
+    .cover-meta td:first-child {
+      font-weight: 600;
+      color: #334155;
+      text-align: right;
+    }
+
+    .cover-footer {
+      position: absolute;
+      bottom: 20mm;
+      left: 17mm;
+      right: 17mm;
+      text-align: center;
+      border-top: 1px solid #cbd5e1;
+      padding-top: 10px;
+      font-size: 9px;
+      color: #94a3b8;
+    }
+
+    /* --- Tables --- */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 8px 0 16px 0;
+      font-size: 10pt;
+    }
+
+    th {
+      background-color: #365F91;
+      color: #ffffff;
+      font-weight: 600;
+      text-align: left;
+      padding: 7px 8px;
+      border: 1px solid #365F91;
+      font-size: 10pt;
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 6px 8px;
+      border: 1px solid #cbd5e1;
+      vertical-align: top;
+      word-wrap: break-word;
+    }
+
+    tr:nth-child(even) td {
+      background-color: #f8fafc;
+    }
+
+    tr {
+      page-break-inside: avoid;
+    }
+
+    .label-cell {
+      background-color: #e8edf4;
+      font-weight: 600;
+      color: #334155;
+      width: 38%;
+    }
+
+    .kv-table {
+      margin: 6px 0 14px 0;
+    }
+
+    .kv-table td {
+      border: 1px solid #cbd5e1;
+    }
+
+    .totals-row td {
+      background-color: #e8edf4 !important;
+      font-weight: 700;
+      color: #1e293b;
+      border-top: 2px solid #365F91;
+    }
+
+    .table-caption {
+      font-size: 9pt;
+      color: #64748b;
+      font-style: italic;
+      margin-top: -10px;
+      margin-bottom: 12px;
+    }
+
+    /* --- Stats Cards --- */
+    .stats-row {
+      display: flex;
+      gap: 14px;
+      margin: 16px 0;
+      flex-wrap: wrap;
+    }
+
+    .stat-card {
+      flex: 1;
+      min-width: 130px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 16px 12px;
+      text-align: center;
+      background: #ffffff;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: #365F91;
+    }
+
+    .stat-value {
+      font-size: 32px;
+      font-weight: 700;
+      color: #365F91;
+      line-height: 1.1;
+    }
+
+    .stat-label {
+      font-size: 9px;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-top: 6px;
+      font-weight: 600;
+    }
+
+    .stat-card.green {
+      border-color: #86efac;
+      background: #f0fdf4;
+    }
+
+    .stat-card.green::before {
+      background: #22c55e;
+    }
+
+    .stat-card.green .stat-value {
+      color: #166534;
+    }
+
+    .stat-card.red {
+      border-color: #fca5a5;
+      background: #fef2f2;
+    }
+
+    .stat-card.red::before {
+      background: #ef4444;
+    }
+
+    .stat-card.red .stat-value {
+      color: #991b1b;
+    }
+
+    .stat-card.amber {
+      border-color: #fcd34d;
+      background: #fffbeb;
+    }
+
+    .stat-card.amber::before {
+      background: #f59e0b;
+    }
+
+    .stat-card.amber .stat-value {
+      color: #92400e;
+    }
+
+    .stat-card.blue {
+      border-color: #93c5fd;
+      background: #eff6ff;
+    }
+
+    .stat-card.blue::before {
+      background: #365F91;
+    }
+
+    .stat-card.blue .stat-value {
+      color: #1e40af;
+    }
+
+    /* --- Compliance Bar Charts --- */
+    .compliance-bar {
+      height: 10px;
+      background: #e2e8f0;
+      border-radius: 5px;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+
+    .compliance-fill {
+      height: 100%;
+      border-radius: 5px;
+      transition: width 0.3s ease;
+    }
+
+    .compliance-fill.good {
+      background: linear-gradient(90deg, #22c55e, #16a34a);
+    }
+
+    .compliance-fill.warning {
+      background: linear-gradient(90deg, #f59e0b, #d97706);
+    }
+
+    .compliance-fill.bad {
+      background: linear-gradient(90deg, #ef4444, #dc2626);
+    }
+
+    .compliance-large-bar {
+      height: 22px;
+      background: #e2e8f0;
+      border-radius: 11px;
+      overflow: hidden;
+      margin: 10px 0;
+      position: relative;
+    }
+
+    .compliance-large-fill {
+      height: 100%;
+      border-radius: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: #ffffff;
+      min-width: 40px;
+    }
+
+    .compliance-large-fill.good {
+      background: linear-gradient(90deg, #22c55e, #16a34a);
+    }
+
+    .compliance-large-fill.warning {
+      background: linear-gradient(90deg, #f59e0b, #d97706);
+    }
+
+    .compliance-large-fill.bad {
+      background: linear-gradient(90deg, #ef4444, #dc2626);
+    }
+
+    /* --- Badge Styles --- */
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-weight: 600;
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .badge-green {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .badge-red {
+      background: #fecaca;
+      color: #991b1b;
+    }
+
+    .badge-amber {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .badge-blue {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .badge-gray {
+      background: #f1f5f9;
+      color: #475569;
+    }
+
+    .badge-lg {
+      font-size: 11px;
+      padding: 4px 12px;
+      border-radius: 4px;
+    }
+
+    /* --- Alert / Callout Boxes --- */
+    .callout {
+      border-radius: 6px;
+      padding: 12px 16px;
+      margin: 12px 0;
+      font-size: 10pt;
+      line-height: 1.5;
+    }
+
+    .callout-info {
+      background: #eff6ff;
+      border-left: 4px solid #365F91;
+      color: #1e40af;
+    }
+
+    .callout-success {
+      background: #f0fdf4;
+      border-left: 4px solid #22c55e;
+      color: #166534;
+    }
+
+    .callout-warning {
+      background: #fffbeb;
+      border-left: 4px solid #f59e0b;
+      color: #92400e;
+    }
+
+    .callout-danger {
+      background: #fef2f2;
+      border-left: 4px solid #ef4444;
+      color: #991b1b;
+    }
+
+    .callout-title {
+      font-weight: 700;
+      margin-bottom: 4px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    /* --- Description / Content Blocks --- */
+    .description-block {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      padding: 12px 14px;
+      margin: 10px 0;
+      font-size: 10pt;
+      line-height: 1.6;
+    }
+
+    .notes-block {
+      background: #fefce8;
+      border: 1px solid #fde68a;
+      border-radius: 4px;
+      padding: 12px 14px;
+      margin: 10px 0;
+      font-size: 10pt;
+      line-height: 1.6;
+    }
+
+    /* --- Signature / Approval Blocks --- */
+    .approval-block {
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 16px 20px;
+      margin: 14px 0;
+      background: #fafbfc;
+    }
+
+    .approval-block h5 {
+      margin-top: 0;
+      color: #365F91;
+    }
+
+    .signature-line {
+      border-bottom: 1px solid #1e293b;
+      width: 250px;
+      margin-top: 40px;
+      margin-bottom: 4px;
+    }
+
+    .signature-label {
+      font-size: 9px;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .approval-grid {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+
+    .approval-grid .approval-block {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    /* --- Table of Contents --- */
+    .toc-item {
+      margin: 5px 0;
+      font-size: 11pt;
+      line-height: 1.8;
+      display: flex;
+      align-items: baseline;
+    }
+
+    .toc-number {
+      font-weight: 700;
+      color: #365F91;
+      min-width: 30px;
+    }
+
+    .toc-text {
+      color: #1e293b;
+    }
+
+    .toc-sub {
+      margin-left: 30px;
+    }
+
+    .toc-sub .toc-number {
+      font-weight: 400;
+      min-width: 40px;
+    }
+
+    .toc-dots {
+      flex: 1;
+      border-bottom: 1px dotted #cbd5e1;
+      margin: 0 8px;
+      min-width: 20px;
+    }
+
+    /* --- Empty / Placeholder States --- */
+    .empty-state {
+      color: #94a3b8;
+      font-style: italic;
+      padding: 14px;
+      text-align: center;
+      border: 1px dashed #e2e8f0;
+      border-radius: 4px;
+      margin: 8px 0;
+    }
+
+    /* --- Footer --- */
+    .footer-line {
+      margin-top: 30px;
+      border-top: 1px solid #cbd5e1;
+      padding-top: 8px;
+      font-size: 9px;
+      color: #94a3b8;
+      text-align: center;
+    }
+
+    .page-footer {
+      position: absolute;
+      bottom: 10mm;
+      left: 17mm;
+      right: 17mm;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 6px;
+      font-size: 8px;
+      color: #94a3b8;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .page-footer-left {
+      text-align: left;
+    }
+
+    .page-footer-center {
+      text-align: center;
+    }
+
+    .page-footer-right {
+      text-align: right;
+    }
+
+    /* --- Confidentiality Banner --- */
+    .confidential-banner {
+      background: #365F91;
+      color: #ffffff;
+      text-align: center;
+      padding: 6px 12px;
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border-radius: 3px;
+      margin: 10px 0;
+    }
+
+    /* --- Vessel Highlight Cards --- */
+    .vessel-highlight {
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin: 8px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .vessel-highlight.top-performer {
+      border-left: 4px solid #22c55e;
+      background: #f0fdf4;
+    }
+
+    .vessel-highlight.needs-attention {
+      border-left: 4px solid #ef4444;
+      background: #fef2f2;
+    }
+
+    .vessel-highlight-name {
+      font-weight: 700;
+      font-size: 11pt;
+      color: #1e293b;
+    }
+
+    .vessel-highlight-detail {
+      font-size: 9pt;
+      color: #64748b;
+    }
+
+    .vessel-highlight-rate {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    /* --- Disclaimer --- */
+    .disclaimer-text {
+      font-size: 9pt;
+      color: #64748b;
+      line-height: 1.6;
+      margin: 8px 0;
+    }
+
+    /* --- Print Styles --- */
+    @page {
+      size: A4;
+      margin: 17mm;
+    }
 
     @media print {
-      .page { page-break-after: always; padding: 10mm 15mm; }
-      body { max-width: none; }
+      html, body {
+        background: white;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        max-width: none;
+        width: 100%;
+      }
+
+      .page {
+        page-break-after: always;
+        padding: 0;
+        min-height: auto;
+        margin: 0;
+      }
+
+      .page:last-child {
+        page-break-after: auto;
+      }
+
+      .cover {
+        min-height: auto;
+        padding: 0;
+      }
+
+      .cover-footer {
+        position: relative;
+        bottom: auto;
+        left: auto;
+        right: auto;
+        margin-top: 60px;
+      }
+
+      .page-footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 6px 17mm;
+      }
+
+      .header-spacer {
+        height: 0;
+      }
+
+      tr {
+        page-break-inside: avoid;
+      }
+
+      .stats-row {
+        page-break-inside: avoid;
+      }
+
+      .stat-card {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .badge,
+      .compliance-fill,
+      .compliance-large-fill,
+      th,
+      .label-cell,
+      .totals-row td,
+      .confidential-banner,
+      .callout,
+      .vessel-highlight {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
+      .no-print {
+        display: none !important;
+      }
+    }
+
+    /* --- Screen Preview Styles --- */
+    @media screen {
+      html {
+        background: #e5e7eb;
+      }
+
+      body {
+        max-width: 210mm;
+        margin: 0 auto;
+        background: white;
+      }
+
+      .page {
+        background: #ffffff;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.08);
+        margin: 20px auto;
+        border-radius: 2px;
+      }
     }
   </style>
 </head>
 <body>
 
-  <!-- COVER PAGE -->
+  <!-- =====================================================================
+       COVER PAGE
+       ===================================================================== -->
   <div class="page cover">
-    <div style="margin-top: 80px;">
+    <div class="cover-org">
       {{#if organisation.name}}
-        <h2 style="font-size: 16px; color: #64748b; text-transform: none;">{{organisation.name}}</h2>
+        <div class="cover-org-name">{{organisation.name}}</div>
       {{/if}}
     </div>
-    <h1 style="margin-top: 20px;">{{reportDetails.title}}</h1>
-    <p style="font-size: 14px; color: #475569; margin-top: 8px;">
+
+    <div class="cover-divider"></div>
+
+    <h1 class="cover-title">{{reportDetails.title}}</h1>
+
+    <p class="cover-subtitle">Fleet Compliance Summary Report</p>
+
+    <div class="cover-period">
       {{reportDetails.period.start}} &mdash; {{reportDetails.period.end}}
-    </p>
+    </div>
+
     <div class="cover-meta">
       <table>
-        {{#if reportDetails.preparedBy}}<tr><td>Prepared By:</td><td>{{reportDetails.preparedBy}}</td></tr>{{/if}}
-        <tr><td>Report Date:</td><td>{{reportDetails.reportDate}}</td></tr>
-        <tr><td>Format:</td><td>{{reportDetails.exportFormat}}</td></tr>
+        {{#if reportDetails.preparedBy}}
+        <tr>
+          <td>Prepared By:</td>
+          <td>{{reportDetails.preparedBy}}</td>
+        </tr>
+        {{/if}}
+        <tr>
+          <td>Report Date:</td>
+          <td>{{reportDetails.reportDate}}</td>
+        </tr>
+        <tr>
+          <td>Export Format:</td>
+          <td>{{reportDetails.exportFormat}}</td>
+        </tr>
+        <tr>
+          <td>Report Type:</td>
+          <td><span class="badge badge-blue badge-lg">{{reportType}}</span></td>
+        </tr>
       </table>
     </div>
-    <div class="footer-line">Fleet Compliance Summary &mdash; Generated {{generatedAt}}</div>
+
+    <div class="cover-footer">
+      <div class="confidential-banner" style="display: inline-block;">Confidential &mdash; For Internal Use Only</div>
+      <div style="margin-top: 8px;">Fleet Compliance Summary Report &mdash; Generated {{generatedAt}}</div>
+    </div>
   </div>
 
-  <!-- FLEET OVERVIEW -->
+
+  <!-- =====================================================================
+       DOCUMENT INFORMATION PAGE
+       ===================================================================== -->
   <div class="page">
-    <h3>Fleet Overview</h3>
+    <div class="page-header">
+      <span class="page-header-title">Document Information</span>
+      <span class="page-header-org">{{#if organisation.name}}{{organisation.name}}{{/if}}</span>
+    </div>
+
+    <h3>Document Information</h3>
+
+    <h4>Report Metadata</h4>
+    <table class="kv-table">
+      <tr>
+        <td class="label-cell">Document Title</td>
+        <td>{{reportDetails.title}}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Report Type</td>
+        <td>Fleet Compliance Summary</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Report Date</td>
+        <td>{{reportDetails.reportDate}}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Prepared By</td>
+        <td>{{#if reportDetails.preparedBy}}{{reportDetails.preparedBy}}{{else}}&mdash;{{/if}}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Reporting Period</td>
+        <td>{{reportDetails.period.start}} to {{reportDetails.period.end}}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Organisation</td>
+        <td>{{#if organisation.name}}{{organisation.name}}{{else}}&mdash;{{/if}}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Organisation ID</td>
+        <td>{{#if organisation.id}}{{organisation.id}}{{else}}&mdash;{{/if}}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Export Format</td>
+        <td>{{reportDetails.exportFormat}}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Generated At</td>
+        <td>{{generatedAt}}</td>
+      </tr>
+    </table>
+
+    <h4>Distribution Notice</h4>
+    <div class="callout callout-info">
+      <div class="callout-title">Distribution</div>
+      <p>This report is intended for authorised personnel within {{#if organisation.name}}{{organisation.name}}{{else}}the organisation{{/if}} who are responsible for fleet compliance management, vessel operations, and safety oversight. Distribution outside the organisation requires prior written approval.</p>
+    </div>
+
+    <h4>Confidentiality Disclaimer</h4>
+    <div class="description-block">
+      <p class="disclaimer-text">This document contains confidential information relating to the compliance status of fleet vessels managed by {{#if organisation.name}}{{organisation.name}}{{else}}the organisation{{/if}}. The information contained herein is provided for internal management and regulatory compliance purposes only. Unauthorised reproduction, distribution, or disclosure of this document or its contents is strictly prohibited. The data presented reflects the status as of the reporting period and may not represent the current state of compliance at the time of reading.</p>
+    </div>
+
+    <h4>Report Scope</h4>
+    <p class="section-intro">This Fleet Compliance Summary Report provides a comprehensive overview of work order compliance across all fleet vessels for the specified reporting period. It includes fleet-wide metrics, individual vessel compliance rates, overdue item analysis, and recommendations for maintaining or improving compliance standards. The report is designed to support management decision-making and provide a documented record for audit purposes.</p>
+
+    <div class="page-footer">
+      <span class="page-footer-left">{{#if organisation.name}}{{organisation.name}}{{/if}}</span>
+      <span class="page-footer-center">{{reportDetails.title}}</span>
+      <span class="page-footer-right">{{reportDetails.reportDate}}</span>
+    </div>
+  </div>
+
+
+  <!-- =====================================================================
+       TABLE OF CONTENTS
+       ===================================================================== -->
+  <div class="page">
+    <div class="page-header">
+      <span class="page-header-title">Table of Contents</span>
+      <span class="page-header-org">{{#if organisation.name}}{{organisation.name}}{{/if}}</span>
+    </div>
+
+    <h3>Table of Contents</h3>
+
+    <div style="margin-top: 16px;">
+      <div class="toc-item">
+        <span class="toc-number">1.</span>
+        <span class="toc-text">Executive Summary &amp; Fleet Overview</span>
+      </div>
+      <div class="toc-item toc-sub">
+        <span class="toc-number">1.1</span>
+        <span class="toc-text">Key Performance Indicators</span>
+      </div>
+      <div class="toc-item toc-sub">
+        <span class="toc-number">1.2</span>
+        <span class="toc-text">Fleet-Wide Compliance Rate</span>
+      </div>
+      <div class="toc-item toc-sub">
+        <span class="toc-number">1.3</span>
+        <span class="toc-text">Summary Narrative</span>
+      </div>
+
+      <div class="toc-item" style="margin-top: 6px;">
+        <span class="toc-number">2.</span>
+        <span class="toc-text">Report Parameters &amp; Scope</span>
+      </div>
+      <div class="toc-item toc-sub">
+        <span class="toc-number">2.1</span>
+        <span class="toc-text">Filter Configuration</span>
+      </div>
+      <div class="toc-item toc-sub">
+        <span class="toc-number">2.2</span>
+        <span class="toc-text">Parameter Definitions</span>
+      </div>
+
+      <div class="toc-item" style="margin-top: 6px;">
+        <span class="toc-number">3.</span>
+        <span class="toc-text">Fleet Compliance Matrix</span>
+      </div>
+      <div class="toc-item toc-sub">
+        <span class="toc-number">3.1</span>
+        <span class="toc-text">Vessel Compliance Detail</span>
+      </div>
+      <div class="toc-item toc-sub">
+        <span class="toc-number">3.2</span>
+        <span class="toc-text">Fleet Totals</span>
+      </div>
+
+      <div class="toc-item" style="margin-top: 6px;">
+        <span class="toc-number">4.</span>
+        <span class="toc-text">Compliance Analysis</span>
+      </div>
+      <div class="toc-item toc-sub">
+        <span class="toc-number">4.1</span>
+        <span class="toc-text">Top Performing Vessels</span>
+      </div>
+      <div class="toc-item toc-sub">
+        <span class="toc-number">4.2</span>
+        <span class="toc-text">Vessels Requiring Attention</span>
+      </div>
+      <div class="toc-item toc-sub">
+        <span class="toc-number">4.3</span>
+        <span class="toc-text">Fleet-Wide Trends</span>
+      </div>
+
+      <div class="toc-item" style="margin-top: 6px;">
+        <span class="toc-number">5.</span>
+        <span class="toc-text">Overdue Items Summary</span>
+      </div>
+      <div class="toc-item toc-sub">
+        <span class="toc-number">5.1</span>
+        <span class="toc-text">Overdue Breakdown by Vessel</span>
+      </div>
+      <div class="toc-item toc-sub">
+        <span class="toc-number">5.2</span>
+        <span class="toc-text">Severity Indicators</span>
+      </div>
+
+      <div class="toc-item" style="margin-top: 6px;">
+        <span class="toc-number">6.</span>
+        <span class="toc-text">Recommendations &amp; Notes</span>
+      </div>
+      <div class="toc-item toc-sub">
+        <span class="toc-number">6.1</span>
+        <span class="toc-text">Additional Notes</span>
+      </div>
+      <div class="toc-item toc-sub">
+        <span class="toc-number">6.2</span>
+        <span class="toc-text">Standard Recommendations</span>
+      </div>
+      <div class="toc-item toc-sub">
+        <span class="toc-number">6.3</span>
+        <span class="toc-text">Next Steps</span>
+      </div>
+
+      <div class="toc-item" style="margin-top: 6px;">
+        <span class="toc-number">7.</span>
+        <span class="toc-text">Document Approval</span>
+      </div>
+      <div class="toc-item toc-sub">
+        <span class="toc-number">7.1</span>
+        <span class="toc-text">Signatures &amp; Authorisation</span>
+      </div>
+      <div class="toc-item toc-sub">
+        <span class="toc-number">7.2</span>
+        <span class="toc-text">Disclaimer</span>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <span class="page-footer-left">{{#if organisation.name}}{{organisation.name}}{{/if}}</span>
+      <span class="page-footer-center">{{reportDetails.title}}</span>
+      <span class="page-footer-right">{{reportDetails.reportDate}}</span>
+    </div>
+  </div>
+
+
+  <!-- =====================================================================
+       SECTION 1: EXECUTIVE SUMMARY & FLEET OVERVIEW
+       ===================================================================== -->
+  <div class="page">
+    <div class="page-header">
+      <span class="page-header-title">Section 1 &mdash; Executive Summary</span>
+      <span class="page-header-org">{{#if organisation.name}}{{organisation.name}}{{/if}}</span>
+    </div>
+
+    <h3><span class="section-number">1.</span> Executive Summary &amp; Fleet Overview</h3>
+
+    <p class="section-intro">This section provides a high-level overview of the fleet compliance status for the reporting period <strong>{{reportDetails.period.start}}</strong> to <strong>{{reportDetails.period.end}}</strong>. The key performance indicators below summarise the overall fleet health and work order completion rates.</p>
+
+    <!-- 1.1 Key Performance Indicators -->
+    <h4>1.1 Key Performance Indicators</h4>
 
     <div class="stats-row">
-      <div class="stat-card">
+      <div class="stat-card blue">
         <div class="stat-value">{{fleetOverview.totalVessels}}</div>
         <div class="stat-label">Total Vessels</div>
       </div>
@@ -106,49 +1126,232 @@
       </div>
     </div>
 
-    <h3>Report Parameters</h3>
-    <table>
-      <tr><td class="label-cell">Period</td><td>{{reportDetails.period.start}} to {{reportDetails.period.end}}</td></tr>
-      <tr><td class="label-cell">Status Filter</td><td>{{filters.statusFilter}}</td></tr>
-      <tr><td class="label-cell">Categories</td><td>{{#each filters.categories}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}</td></tr>
-      <tr><td class="label-cell">Include Overdue</td><td>{{#if filters.includeOverdue}}Yes{{else}}No{{/if}}</td></tr>
-      <tr><td class="label-cell">Include Upcoming</td><td>{{#if filters.includeUpcoming}}Yes ({{filters.upcomingDays}} days){{else}}No{{/if}}</td></tr>
-    </table>
+    <!-- 1.2 Fleet-Wide Compliance Rate -->
+    <h4>1.2 Fleet-Wide Compliance Rate</h4>
+
+    {{#if fleetOverview.totalWorkOrders}}
+      <div style="text-align: center; margin: 12px 0;">
+        <div style="font-size: 14px; color: #475569; margin-bottom: 6px;">Overall Fleet Compliance</div>
+        <div class="compliance-large-bar">
+          {{#if (gte fleetOverview.completedWorkOrders 1)}}
+            <div class="compliance-large-fill {{#if (gte fleetOverview.completedWorkOrders fleetOverview.totalWorkOrders)}}good{{else}}{{#if (gte fleetOverview.completedWorkOrders 1)}}warning{{else}}bad{{/if}}{{/if}}" style="width: calc({{fleetOverview.completedWorkOrders}} / {{fleetOverview.totalWorkOrders}} * 100%);">
+            </div>
+          {{/if}}
+        </div>
+        <div style="font-size: 12px; color: #64748b; margin-top: 4px;">
+          {{fleetOverview.completedWorkOrders}} of {{fleetOverview.totalWorkOrders}} work orders completed
+        </div>
+      </div>
+    {{else}}
+      <p class="empty-state">No work orders recorded for this reporting period.</p>
+    {{/if}}
+
+    <!-- 1.3 Summary Narrative -->
+    <h4>1.3 Summary Narrative</h4>
+
+    <div class="description-block">
+      <p>During the reporting period from <strong>{{reportDetails.period.start}}</strong> to <strong>{{reportDetails.period.end}}</strong>, the fleet consisting of <strong>{{fleetOverview.totalVessels}}</strong> vessel(s) recorded a total of <strong>{{fleetOverview.totalWorkOrders}}</strong> work orders. Of these, <strong>{{fleetOverview.completedWorkOrders}}</strong> were completed within the required timeframe.</p>
+
+      {{#if fleetOverview.overdueWorkOrders}}
+        <p style="margin-top: 8px;"><strong>{{fleetOverview.overdueWorkOrders}}</strong> work order(s) are currently recorded as overdue and require immediate management attention to restore full compliance. Overdue items represent a risk to operational readiness and regulatory standing.</p>
+      {{else}}
+        <p style="margin-top: 8px;">No work orders are currently overdue. The fleet is demonstrating strong compliance performance across all tracked vessels and maintenance categories.</p>
+      {{/if}}
+    </div>
+
+    {{#if fleetOverview.overdueWorkOrders}}
+    <div class="callout callout-warning">
+      <div class="callout-title">Attention Required</div>
+      <p>There are <strong>{{fleetOverview.overdueWorkOrders}}</strong> overdue work order(s) across the fleet. See Section 5 for a detailed breakdown by vessel.</p>
+    </div>
+    {{/if}}
+
+    <div class="page-footer">
+      <span class="page-footer-left">{{#if organisation.name}}{{organisation.name}}{{/if}}</span>
+      <span class="page-footer-center">{{reportDetails.title}}</span>
+      <span class="page-footer-right">{{reportDetails.reportDate}}</span>
+    </div>
   </div>
 
-  <!-- VESSEL COMPLIANCE TABLE -->
+
+  <!-- =====================================================================
+       SECTION 2: REPORT PARAMETERS & SCOPE
+       ===================================================================== -->
   <div class="page">
-    <h3>Vessel Compliance Summary</h3>
+    <div class="page-header">
+      <span class="page-header-title">Section 2 &mdash; Report Parameters</span>
+      <span class="page-header-org">{{#if organisation.name}}{{organisation.name}}{{/if}}</span>
+    </div>
+
+    <h3><span class="section-number">2.</span> Report Parameters &amp; Scope</h3>
+
+    <p class="section-intro">The following parameters were used to generate this compliance report. These filters determine which vessels, work order categories, and time periods are included in the analysis. Understanding the scope ensures that the data is interpreted correctly.</p>
+
+    <!-- 2.1 Filter Configuration -->
+    <h4>2.1 Filter Configuration</h4>
+
+    <table class="kv-table">
+      <tr>
+        <td class="label-cell">Reporting Period Start</td>
+        <td>{{reportDetails.period.start}}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Reporting Period End</td>
+        <td>{{reportDetails.period.end}}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Status Filter</td>
+        <td>
+          {{#if filters.statusFilter}}
+            <span class="badge badge-blue">{{filters.statusFilter}}</span>
+          {{else}}
+            <span class="badge badge-gray">All Statuses</span>
+          {{/if}}
+        </td>
+      </tr>
+      <tr>
+        <td class="label-cell">Categories</td>
+        <td>
+          {{#if filters.categories.length}}
+            {{#each filters.categories}}
+              <span class="badge badge-gray" style="margin: 1px 2px;">{{this}}</span>
+            {{/each}}
+          {{else}}
+            <span style="color: #94a3b8; font-style: italic;">All categories included</span>
+          {{/if}}
+        </td>
+      </tr>
+      <tr>
+        <td class="label-cell">Include Overdue Items</td>
+        <td>
+          {{#if filters.includeOverdue}}
+            <span class="badge badge-green">Yes</span>
+          {{else}}
+            <span class="badge badge-gray">No</span>
+          {{/if}}
+        </td>
+      </tr>
+      <tr>
+        <td class="label-cell">Include Upcoming Items</td>
+        <td>
+          {{#if filters.includeUpcoming}}
+            <span class="badge badge-green">Yes</span> &mdash; Next {{filters.upcomingDays}} day(s)
+          {{else}}
+            <span class="badge badge-gray">No</span>
+          {{/if}}
+        </td>
+      </tr>
+      <tr>
+        <td class="label-cell">Upcoming Window</td>
+        <td>{{#if filters.includeUpcoming}}{{filters.upcomingDays}} days{{else}}&mdash;{{/if}}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Export Format</td>
+        <td>{{reportDetails.exportFormat}}</td>
+      </tr>
+    </table>
+
+    <!-- 2.2 Parameter Definitions -->
+    <h4>2.2 Parameter Definitions</h4>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 28%;">Parameter</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Reporting Period</strong></td>
+          <td>The date range for which work order data is collected and analysed. Only work orders falling within or overlapping this period are included.</td>
+        </tr>
+        <tr>
+          <td><strong>Status Filter</strong></td>
+          <td>Limits the report to work orders matching a specific status (e.g., Open, Completed, Overdue). When set to "all", no status filtering is applied.</td>
+        </tr>
+        <tr>
+          <td><strong>Categories</strong></td>
+          <td>Specifies the work order categories included in the analysis (e.g., Safety, Maintenance, Regulatory). When empty, all categories are included.</td>
+        </tr>
+        <tr>
+          <td><strong>Include Overdue</strong></td>
+          <td>When enabled, work orders that have passed their due date without completion are included in the report with overdue indicators.</td>
+        </tr>
+        <tr>
+          <td><strong>Include Upcoming</strong></td>
+          <td>When enabled, work orders due within the specified number of days are highlighted as upcoming items requiring attention.</td>
+        </tr>
+        <tr>
+          <td><strong>Upcoming Days</strong></td>
+          <td>The look-ahead window in days for upcoming work orders. Only applicable when "Include Upcoming" is enabled.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="page-footer">
+      <span class="page-footer-left">{{#if organisation.name}}{{organisation.name}}{{/if}}</span>
+      <span class="page-footer-center">{{reportDetails.title}}</span>
+      <span class="page-footer-right">{{reportDetails.reportDate}}</span>
+    </div>
+  </div>
+
+
+  <!-- =====================================================================
+       SECTION 3: FLEET COMPLIANCE MATRIX
+       ===================================================================== -->
+  <div class="page">
+    <div class="page-header">
+      <span class="page-header-title">Section 3 &mdash; Fleet Compliance Matrix</span>
+      <span class="page-header-org">{{#if organisation.name}}{{organisation.name}}{{/if}}</span>
+    </div>
+
+    <h3><span class="section-number">3.</span> Fleet Compliance Matrix</h3>
+
+    <p class="section-intro">The following table provides a detailed breakdown of compliance metrics for each vessel in the fleet. Compliance rates are colour-coded: <span class="badge badge-green">80% and above</span> indicates good compliance, <span class="badge badge-amber">50% to 79%</span> indicates moderate compliance requiring monitoring, and <span class="badge badge-red">below 50%</span> indicates poor compliance requiring urgent attention.</p>
+
+    <!-- 3.1 Vessel Compliance Detail -->
+    <h4>3.1 Vessel Compliance Detail</h4>
 
     {{#if vesselSummaries.length}}
     <table>
       <thead>
         <tr>
-          <th>Vessel</th>
-          <th>IMO</th>
-          <th>Flag</th>
-          <th style="text-align:center">Total WOs</th>
-          <th style="text-align:center">Completed</th>
-          <th style="text-align:center">Overdue</th>
-          <th style="text-align:center">Compliance</th>
+          <th style="width: 18%;">Vessel Name</th>
+          <th style="width: 12%; text-align: center;">IMO Number</th>
+          <th style="width: 10%; text-align: center;">Flag State</th>
+          <th style="width: 10%; text-align: center;">Total WOs</th>
+          <th style="width: 10%; text-align: center;">Completed</th>
+          <th style="width: 10%; text-align: center;">Overdue</th>
+          <th style="width: 30%;">Compliance Rate</th>
         </tr>
       </thead>
       <tbody>
         {{#each vesselSummaries}}
         <tr>
           <td><strong>{{vessel.name}}</strong></td>
-          <td>{{vessel.imoNumber}}</td>
-          <td>{{vessel.flagState}}</td>
-          <td style="text-align:center">{{totalWorkOrders}}</td>
-          <td style="text-align:center">{{completedWorkOrders}}</td>
-          <td style="text-align:center">
-            {{#if overdueWorkOrders}}<span class="badge badge-red">{{overdueWorkOrders}}</span>{{else}}0{{/if}}
+          <td style="text-align: center;">{{#if vessel.imoNumber}}{{vessel.imoNumber}}{{else}}&mdash;{{/if}}</td>
+          <td style="text-align: center;">{{#if vessel.flagState}}{{vessel.flagState}}{{else}}&mdash;{{/if}}</td>
+          <td style="text-align: center;">{{totalWorkOrders}}</td>
+          <td style="text-align: center;">
+            {{completedWorkOrders}}
           </td>
-          <td style="text-align:center">
+          <td style="text-align: center;">
+            {{#if overdueWorkOrders}}
+              <span class="badge badge-red">{{overdueWorkOrders}}</span>
+            {{else}}
+              <span style="color: #94a3b8;">0</span>
+            {{/if}}
+          </td>
+          <td>
             {{#if complianceRate}}
-              <strong>{{complianceRate}}%</strong>
-              <div class="compliance-bar">
-                <div class="compliance-fill {{#if (gte complianceRate 80)}}good{{else}}{{#if (gte complianceRate 50)}}warning{{else}}bad{{/if}}{{/if}}" style="width: {{complianceRate}}%;"></div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-weight: 700; min-width: 42px; text-align: right; font-size: 12px; {{#if (gte complianceRate 80)}}color: #166534;{{else}}{{#if (gte complianceRate 50)}}color: #92400e;{{else}}color: #991b1b;{{/if}}{{/if}}">{{complianceRate}}%</span>
+                <div style="flex: 1;">
+                  <div class="compliance-bar">
+                    <div class="compliance-fill {{#if (gte complianceRate 80)}}good{{else}}{{#if (gte complianceRate 50)}}warning{{else}}bad{{/if}}{{/if}}" style="width: {{complianceRate}}%;"></div>
+                  </div>
+                </div>
               </div>
             {{else}}
               <span class="badge badge-gray">N/A</span>
@@ -156,19 +1359,469 @@
           </td>
         </tr>
         {{/each}}
+
+        <!-- 3.2 Fleet Totals Row -->
+        <tr class="totals-row">
+          <td><strong>Fleet Total / Average</strong></td>
+          <td style="text-align: center;">&mdash;</td>
+          <td style="text-align: center;">&mdash;</td>
+          <td style="text-align: center;"><strong>{{fleetOverview.totalWorkOrders}}</strong></td>
+          <td style="text-align: center;"><strong>{{fleetOverview.completedWorkOrders}}</strong></td>
+          <td style="text-align: center;">
+            {{#if fleetOverview.overdueWorkOrders}}
+              <span class="badge badge-red badge-lg">{{fleetOverview.overdueWorkOrders}}</span>
+            {{else}}
+              <strong>0</strong>
+            {{/if}}
+          </td>
+          <td>
+            {{#if fleetOverview.totalWorkOrders}}
+              <strong style="font-size: 12px;">Fleet-wide: {{fleetOverview.completedWorkOrders}} / {{fleetOverview.totalWorkOrders}} completed</strong>
+            {{else}}
+              <span class="badge badge-gray">N/A</span>
+            {{/if}}
+          </td>
+        </tr>
       </tbody>
     </table>
+    <p class="table-caption">Table 3.1 &mdash; Fleet Compliance Matrix showing work order completion and compliance rates per vessel for the reporting period.</p>
     {{else}}
-    <p class="empty-state">No vessels found for the selected criteria.</p>
+    <div class="empty-state">
+      <p>No vessel summaries available for the selected criteria.</p>
+      <p style="font-size: 9pt; margin-top: 4px;">Adjust the report parameters to include additional vessels or categories.</p>
+    </div>
     {{/if}}
+
+    <div class="page-footer">
+      <span class="page-footer-left">{{#if organisation.name}}{{organisation.name}}{{/if}}</span>
+      <span class="page-footer-center">{{reportDetails.title}}</span>
+      <span class="page-footer-right">{{reportDetails.reportDate}}</span>
+    </div>
+  </div>
+
+
+  <!-- =====================================================================
+       SECTION 4: COMPLIANCE ANALYSIS
+       ===================================================================== -->
+  <div class="page">
+    <div class="page-header">
+      <span class="page-header-title">Section 4 &mdash; Compliance Analysis</span>
+      <span class="page-header-org">{{#if organisation.name}}{{organisation.name}}{{/if}}</span>
+    </div>
+
+    <h3><span class="section-number">4.</span> Compliance Analysis</h3>
+
+    <p class="section-intro">This section provides a qualitative analysis of the compliance data, highlighting top performing vessels and those requiring management attention. Use this information to prioritise resources and corrective actions.</p>
+
+    <!-- 4.1 Top Performing Vessels -->
+    <h4>4.1 Top Performing Vessels</h4>
+
+    <p class="section-intro">Vessels demonstrating the highest compliance rates during the reporting period. These vessels set the benchmark for fleet operational excellence.</p>
+
+    {{#if vesselSummaries.length}}
+      {{#each vesselSummaries}}
+        {{#if complianceRate}}
+          {{#if (gte complianceRate 80)}}
+          <div class="vessel-highlight top-performer">
+            <div>
+              <div class="vessel-highlight-name">{{vessel.name}}</div>
+              <div class="vessel-highlight-detail">
+                IMO: {{#if vessel.imoNumber}}{{vessel.imoNumber}}{{else}}N/A{{/if}}
+                &nbsp;&bull;&nbsp; Flag: {{#if vessel.flagState}}{{vessel.flagState}}{{else}}N/A{{/if}}
+                &nbsp;&bull;&nbsp; {{completedWorkOrders}} of {{totalWorkOrders}} completed
+              </div>
+            </div>
+            <div>
+              <span class="vessel-highlight-rate" style="color: #166534;">{{complianceRate}}%</span>
+              <span class="badge badge-green" style="margin-left: 6px;">Compliant</span>
+            </div>
+          </div>
+          {{/if}}
+        {{/if}}
+      {{/each}}
+    {{else}}
+      <p class="empty-state">No vessel data available for analysis.</p>
+    {{/if}}
+
+    <!-- 4.2 Vessels Requiring Attention -->
+    <h4>4.2 Vessels Requiring Attention</h4>
+
+    <p class="section-intro">Vessels with compliance rates below 80% or with outstanding overdue work orders. Immediate corrective action may be required for vessels in this category.</p>
+
+    {{#if vesselSummaries.length}}
+      {{#each vesselSummaries}}
+        {{#if complianceRate}}
+          {{#unless (gte complianceRate 80)}}
+          <div class="vessel-highlight needs-attention">
+            <div>
+              <div class="vessel-highlight-name">{{vessel.name}}</div>
+              <div class="vessel-highlight-detail">
+                IMO: {{#if vessel.imoNumber}}{{vessel.imoNumber}}{{else}}N/A{{/if}}
+                &nbsp;&bull;&nbsp; Flag: {{#if vessel.flagState}}{{vessel.flagState}}{{else}}N/A{{/if}}
+                &nbsp;&bull;&nbsp; {{completedWorkOrders}} of {{totalWorkOrders}} completed
+                {{#if overdueWorkOrders}}&nbsp;&bull;&nbsp; <strong style="color: #991b1b;">{{overdueWorkOrders}} overdue</strong>{{/if}}
+              </div>
+            </div>
+            <div>
+              <span class="vessel-highlight-rate" style="{{#if (gte complianceRate 50)}}color: #92400e;{{else}}color: #991b1b;{{/if}}">{{complianceRate}}%</span>
+              {{#if (gte complianceRate 50)}}
+                <span class="badge badge-amber" style="margin-left: 6px;">Monitor</span>
+              {{else}}
+                <span class="badge badge-red" style="margin-left: 6px;">Critical</span>
+              {{/if}}
+            </div>
+          </div>
+          {{/unless}}
+        {{else}}
+          {{#if overdueWorkOrders}}
+          <div class="vessel-highlight needs-attention">
+            <div>
+              <div class="vessel-highlight-name">{{vessel.name}}</div>
+              <div class="vessel-highlight-detail">
+                IMO: {{#if vessel.imoNumber}}{{vessel.imoNumber}}{{else}}N/A{{/if}}
+                &nbsp;&bull;&nbsp; <strong style="color: #991b1b;">{{overdueWorkOrders}} overdue</strong>
+                &nbsp;&bull;&nbsp; Compliance rate unavailable
+              </div>
+            </div>
+            <div>
+              <span class="badge badge-red badge-lg">Overdue Items</span>
+            </div>
+          </div>
+          {{/if}}
+        {{/if}}
+      {{/each}}
+    {{/if}}
+
+    <!-- 4.3 Fleet-Wide Trends -->
+    <h4>4.3 Fleet-Wide Trends</h4>
+
+    <div class="description-block">
+      <p><strong>Compliance Distribution:</strong> The fleet compliance data for the period <strong>{{reportDetails.period.start}}</strong> to <strong>{{reportDetails.period.end}}</strong> reflects the collective work order management performance across <strong>{{fleetOverview.totalVessels}}</strong> vessel(s).</p>
+
+      {{#if fleetOverview.overdueWorkOrders}}
+        <p style="margin-top: 8px;"><strong>Overdue Trend:</strong> With <strong>{{fleetOverview.overdueWorkOrders}}</strong> overdue item(s) recorded, management should review the root causes of delayed completion. Common contributing factors include resource constraints, supply chain delays, scheduling conflicts, and prioritisation issues.</p>
+      {{else}}
+        <p style="margin-top: 8px;"><strong>Positive Trend:</strong> The fleet is currently operating with zero overdue work orders, which indicates effective planning and execution of maintenance and compliance activities.</p>
+      {{/if}}
+
+      <p style="margin-top: 8px;"><strong>Recommendation:</strong> Regular review of compliance trends across consecutive reporting periods is recommended to identify improving or deteriorating patterns early and take proactive measures.</p>
+    </div>
+
+    <div class="page-footer">
+      <span class="page-footer-left">{{#if organisation.name}}{{organisation.name}}{{/if}}</span>
+      <span class="page-footer-center">{{reportDetails.title}}</span>
+      <span class="page-footer-right">{{reportDetails.reportDate}}</span>
+    </div>
+  </div>
+
+
+  <!-- =====================================================================
+       SECTION 5: OVERDUE ITEMS SUMMARY (CONDITIONAL)
+       ===================================================================== -->
+  {{#if fleetOverview.overdueWorkOrders}}
+  <div class="page">
+    <div class="page-header">
+      <span class="page-header-title">Section 5 &mdash; Overdue Items Summary</span>
+      <span class="page-header-org">{{#if organisation.name}}{{organisation.name}}{{/if}}</span>
+    </div>
+
+    <h3><span class="section-number">5.</span> Overdue Items Summary</h3>
+
+    <div class="callout callout-danger">
+      <div class="callout-title">Overdue Work Orders Detected</div>
+      <p>A total of <strong>{{fleetOverview.overdueWorkOrders}}</strong> work order(s) across the fleet have exceeded their scheduled completion date. Overdue items present a compliance risk and may affect vessel operational status, insurance coverage, and regulatory standing.</p>
+    </div>
+
+    <!-- 5.1 Overdue Breakdown by Vessel -->
+    <h4>5.1 Overdue Breakdown by Vessel</h4>
+
+    <p class="section-intro">The following table shows the distribution of overdue work orders across fleet vessels. Only vessels with overdue items are listed.</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 25%;">Vessel Name</th>
+          <th style="width: 15%; text-align: center;">IMO Number</th>
+          <th style="width: 12%; text-align: center;">Flag State</th>
+          <th style="width: 12%; text-align: center;">Overdue WOs</th>
+          <th style="width: 12%; text-align: center;">Total WOs</th>
+          <th style="width: 24%;">Severity</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each vesselSummaries}}
+          {{#if overdueWorkOrders}}
+          <tr>
+            <td><strong>{{vessel.name}}</strong></td>
+            <td style="text-align: center;">{{#if vessel.imoNumber}}{{vessel.imoNumber}}{{else}}&mdash;{{/if}}</td>
+            <td style="text-align: center;">{{#if vessel.flagState}}{{vessel.flagState}}{{else}}&mdash;{{/if}}</td>
+            <td style="text-align: center;">
+              <span class="badge badge-red badge-lg">{{overdueWorkOrders}}</span>
+            </td>
+            <td style="text-align: center;">{{totalWorkOrders}}</td>
+            <td>
+              {{#if complianceRate}}
+                {{#if (gte complianceRate 80)}}
+                  <span class="badge badge-amber">Low &mdash; Minor Delays</span>
+                {{else}}
+                  {{#if (gte complianceRate 50)}}
+                    <span class="badge badge-amber">Medium &mdash; Action Required</span>
+                  {{else}}
+                    <span class="badge badge-red">High &mdash; Urgent Attention</span>
+                  {{/if}}
+                {{/if}}
+              {{else}}
+                <span class="badge badge-red">Unrated &mdash; Review Required</span>
+              {{/if}}
+            </td>
+          </tr>
+          {{/if}}
+        {{/each}}
+      </tbody>
+    </table>
+
+    <!-- 5.2 Severity Indicators -->
+    <h4>5.2 Severity Indicators</h4>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 20%;">Severity Level</th>
+          <th style="width: 25%;">Indicator</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="badge badge-red badge-lg">High</span></td>
+          <td>Compliance Rate &lt; 50%</td>
+          <td>Vessel has significant overdue items with a compliance rate below 50%. Urgent management intervention is required. Consider escalating to senior management and implementing a corrective action plan.</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-amber badge-lg">Medium</span></td>
+          <td>Compliance Rate 50%&ndash;79%</td>
+          <td>Vessel has overdue items but maintains a moderate compliance rate. Active monitoring and prioritisation of outstanding work orders is recommended.</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-amber badge-lg">Low</span></td>
+          <td>Compliance Rate &ge; 80%</td>
+          <td>Vessel has minor overdue items while maintaining a strong overall compliance rate. Ensure overdue items are addressed promptly to maintain standards.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout callout-warning">
+      <div class="callout-title">Management Action</div>
+      <p>All overdue work orders should be reviewed by the responsible fleet manager. A corrective action plan should be established for any vessel classified with a "High" severity rating. Progress on overdue items should be reported in the next compliance review cycle.</p>
+    </div>
+
+    <div class="page-footer">
+      <span class="page-footer-left">{{#if organisation.name}}{{organisation.name}}{{/if}}</span>
+      <span class="page-footer-center">{{reportDetails.title}}</span>
+      <span class="page-footer-right">{{reportDetails.reportDate}}</span>
+    </div>
+  </div>
+  {{/if}}
+
+
+  <!-- =====================================================================
+       SECTION 6: RECOMMENDATIONS & NOTES
+       ===================================================================== -->
+  <div class="page">
+    <div class="page-header">
+      <span class="page-header-title">Section 6 &mdash; Recommendations &amp; Notes</span>
+      <span class="page-header-org">{{#if organisation.name}}{{organisation.name}}{{/if}}</span>
+    </div>
+
+    <h3><span class="section-number">6.</span> Recommendations &amp; Notes</h3>
+
+    <!-- 6.1 Additional Notes -->
+    <h4>6.1 Additional Notes</h4>
 
     {{#if additionalNotes}}
-    <h3>Additional Notes</h3>
-    <p>{{additionalNotes}}</p>
+      <div class="notes-block">
+        <p>{{additionalNotes}}</p>
+      </div>
+    {{else}}
+      <p class="empty-state">No additional notes were provided for this report.</p>
     {{/if}}
 
-    <div class="footer-line">
-      {{#if organisation.name}}{{organisation.name}} &mdash; {{/if}}{{reportDetails.title}} &mdash; {{reportDetails.reportDate}}
+    <!-- 6.2 Standard Recommendations -->
+    <h4>6.2 Standard Recommendations</h4>
+
+    <div class="description-block">
+      <p><strong>1. Regular Compliance Monitoring:</strong> Fleet compliance reports should be generated and reviewed on a regular basis (monthly or quarterly) to maintain visibility of work order completion rates and identify adverse trends early.</p>
+
+      <p style="margin-top: 8px;"><strong>2. Overdue Item Resolution:</strong> All overdue work orders should be reviewed within five business days of this report. A root cause analysis should be performed for recurring overdue patterns, and corrective actions documented in the vessel management system.</p>
+
+      <p style="margin-top: 8px;"><strong>3. Resource Allocation:</strong> Vessels with compliance rates below 80% should be assessed for resource constraints. Additional support, parts procurement, or scheduling adjustments may be required to bring compliance back to acceptable levels.</p>
+
+      <p style="margin-top: 8px;"><strong>4. Regulatory Alignment:</strong> Ensure that all work order categories align with current regulatory requirements and classification society standards. Any changes to regulatory frameworks should be reflected in work order templates and compliance criteria.</p>
+
+      <p style="margin-top: 8px;"><strong>5. Crew Training:</strong> Where work order delays are attributed to knowledge gaps or procedural issues, targeted training should be scheduled to ensure the crew can effectively complete required maintenance and inspection tasks.</p>
+
+      <p style="margin-top: 8px;"><strong>6. Documentation Standards:</strong> Maintain thorough documentation of all work order activities, completion evidence, and any deviations from scheduled maintenance. Complete records are essential for audits, inspections, and Port State Control examinations.</p>
+    </div>
+
+    <!-- 6.3 Next Steps -->
+    <h4>6.3 Next Steps</h4>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 5%;">#</th>
+          <th style="width: 40%;">Action Item</th>
+          <th style="width: 25%;">Responsible</th>
+          <th style="width: 15%;">Target Date</th>
+          <th style="width: 15%;">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="text-align: center;">1</td>
+          <td>Review all overdue work orders and assign corrective actions</td>
+          <td>Fleet Manager</td>
+          <td>&mdash;</td>
+          <td><span class="badge badge-amber">Pending</span></td>
+        </tr>
+        <tr>
+          <td style="text-align: center;">2</td>
+          <td>Schedule follow-up compliance review meeting</td>
+          <td>Operations Director</td>
+          <td>&mdash;</td>
+          <td><span class="badge badge-amber">Pending</span></td>
+        </tr>
+        <tr>
+          <td style="text-align: center;">3</td>
+          <td>Update vessel maintenance plans for next reporting period</td>
+          <td>Technical Superintendent</td>
+          <td>&mdash;</td>
+          <td><span class="badge badge-amber">Pending</span></td>
+        </tr>
+        <tr>
+          <td style="text-align: center;">4</td>
+          <td>Distribute report to relevant stakeholders</td>
+          <td>{{#if reportDetails.preparedBy}}{{reportDetails.preparedBy}}{{else}}Report Author{{/if}}</td>
+          <td>&mdash;</td>
+          <td><span class="badge badge-amber">Pending</span></td>
+        </tr>
+        <tr>
+          <td style="text-align: center;">5</td>
+          <td>Generate next compliance report for subsequent period</td>
+          <td>Compliance Officer</td>
+          <td>&mdash;</td>
+          <td><span class="badge badge-gray">Scheduled</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="page-footer">
+      <span class="page-footer-left">{{#if organisation.name}}{{organisation.name}}{{/if}}</span>
+      <span class="page-footer-center">{{reportDetails.title}}</span>
+      <span class="page-footer-right">{{reportDetails.reportDate}}</span>
+    </div>
+  </div>
+
+
+  <!-- =====================================================================
+       SECTION 7: DOCUMENT APPROVAL
+       ===================================================================== -->
+  <div class="page">
+    <div class="page-header">
+      <span class="page-header-title">Section 7 &mdash; Document Approval</span>
+      <span class="page-header-org">{{#if organisation.name}}{{organisation.name}}{{/if}}</span>
+    </div>
+
+    <h3><span class="section-number">7.</span> Document Approval</h3>
+
+    <p class="section-intro">This section records the formal approval of this Fleet Compliance Summary Report. All signatories confirm that they have reviewed the contents of this document and that the information presented is accurate to the best of their knowledge as of the report date.</p>
+
+    <!-- 7.1 Signatures & Authorisation -->
+    <h4>7.1 Signatures &amp; Authorisation</h4>
+
+    <div class="approval-grid">
+      <div class="approval-block">
+        <h5>Prepared By</h5>
+        <table class="kv-table" style="margin-top: 8px;">
+          <tr>
+            <td class="label-cell" style="width: 35%;">Name</td>
+            <td>{{#if reportDetails.preparedBy}}{{reportDetails.preparedBy}}{{else}}&mdash;{{/if}}</td>
+          </tr>
+          <tr>
+            <td class="label-cell">Title / Role</td>
+            <td>&mdash;</td>
+          </tr>
+          <tr>
+            <td class="label-cell">Date</td>
+            <td>{{reportDetails.reportDate}}</td>
+          </tr>
+        </table>
+        <div class="signature-line"></div>
+        <div class="signature-label">Signature</div>
+      </div>
+
+      <div class="approval-block">
+        <h5>Reviewed By</h5>
+        <table class="kv-table" style="margin-top: 8px;">
+          <tr>
+            <td class="label-cell" style="width: 35%;">Name</td>
+            <td>&mdash;</td>
+          </tr>
+          <tr>
+            <td class="label-cell">Title / Role</td>
+            <td>&mdash;</td>
+          </tr>
+          <tr>
+            <td class="label-cell">Date</td>
+            <td>&mdash;</td>
+          </tr>
+        </table>
+        <div class="signature-line"></div>
+        <div class="signature-label">Signature</div>
+      </div>
+    </div>
+
+    <div class="approval-block" style="margin-top: 16px;">
+      <h5>Approved By</h5>
+      <table class="kv-table" style="margin-top: 8px;">
+        <tr>
+          <td class="label-cell" style="width: 18%;">Name</td>
+          <td>&mdash;</td>
+        </tr>
+        <tr>
+          <td class="label-cell">Title / Role</td>
+          <td>&mdash;</td>
+        </tr>
+        <tr>
+          <td class="label-cell">Date</td>
+          <td>&mdash;</td>
+        </tr>
+      </table>
+      <div class="signature-line"></div>
+      <div class="signature-label">Signature</div>
+    </div>
+
+    <!-- 7.2 Disclaimer -->
+    <h4>7.2 Disclaimer</h4>
+
+    <div class="description-block">
+      <p class="disclaimer-text">This Fleet Compliance Summary Report has been prepared by {{#if reportDetails.preparedBy}}{{reportDetails.preparedBy}}{{else}}the report author{{/if}} on behalf of {{#if organisation.name}}{{organisation.name}}{{else}}the organisation{{/if}} using data extracted from the vessel management system as of <strong>{{generatedAt}}</strong>.</p>
+
+      <p class="disclaimer-text" style="margin-top: 6px;">The information contained in this report is based on data available at the time of generation and is intended to provide a summary of fleet compliance status. While every effort has been made to ensure accuracy, the authors do not warrant that the information is free from errors or omissions. Work order statuses and compliance rates may have changed since the data extraction date.</p>
+
+      <p class="disclaimer-text" style="margin-top: 6px;">This report does not constitute legal or regulatory advice. Decisions based on the information in this report should be made in conjunction with professional judgement, current regulatory requirements, and any additional data sources relevant to fleet management and compliance.</p>
+
+      <p class="disclaimer-text" style="margin-top: 6px;">This document is the property of {{#if organisation.name}}{{organisation.name}}{{else}}the issuing organisation{{/if}} and is classified as <strong>Confidential</strong>. Reproduction, distribution, or disclosure to third parties without prior written consent is prohibited.</p>
+    </div>
+
+    <div class="confidential-banner">
+      End of Report &mdash; Confidential Document &mdash; {{#if organisation.name}}{{organisation.name}}{{/if}}
+    </div>
+
+    <div class="page-footer">
+      <span class="page-footer-left">{{#if organisation.name}}{{organisation.name}}{{/if}}</span>
+      <span class="page-footer-center">{{reportDetails.title}}</span>
+      <span class="page-footer-right">{{reportDetails.reportDate}}</span>
     </div>
   </div>
 

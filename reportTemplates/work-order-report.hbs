@@ -1,323 +1,1977 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-  <meta charset="utf-8" />
-  <title>Work Order Report — {{workOrder.referenceNumber}}</title>
-  <style>
-    * { font-family: 'Calibri', 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { background: white; }
-    body { max-width: 210mm; margin: 0 auto; padding: 0; color: #1e293b; font-size: 11pt; line-height: 1.5; }
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Work Order Report — {{workOrder.referenceNumber}}</title>
 
-    .page { page-break-after: always; width: 100%; padding: 15mm 17mm; min-height: 297mm; position: relative; }
-    .page:last-child { page-break-after: auto; }
+    <style>
+        /* ===================================================================
+           WORK ORDER REPORT — Standalone Print-Ready Stylesheet
+           Target: A4 (210mm x 297mm) — Maritime Vessel Management Platform
+           =================================================================== */
 
-    h1 { font-size: 26px; color: #365F91; text-transform: uppercase; text-align: center; margin-bottom: 8px; }
-    h2 { font-size: 20px; color: #365F91; text-transform: uppercase; text-align: center; margin-bottom: 6px; }
-    h3 { font-size: 16px; color: #365F91; text-transform: uppercase; margin: 20px 0 10px 0; border-bottom: 2px solid #365F91; padding-bottom: 4px; }
-    h4 { font-size: 13px; color: #365F91; text-transform: uppercase; margin: 14px 0 6px 0; }
-    p { margin: 4px 0; font-size: 11pt; }
-    .subtitle { font-size: 14px; color: #475569; text-align: center; margin-bottom: 4px; }
+        /* --- Reset & Base Typography --- */
+        * {
+            font-family: 'Calibri', 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    /* Cover page */
-    .cover { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-    .cover-logo { margin-top: 60px; margin-bottom: 40px; }
-    .cover-meta { margin-top: 40px; font-size: 12px; color: #64748b; }
-    .cover-meta table { margin: 0 auto; border-collapse: collapse; }
-    .cover-meta td { padding: 4px 12px; text-align: left; }
-    .cover-meta td:first-child { font-weight: 600; color: #334155; }
+        html {
+            background: white;
+            display: block;
+        }
 
-    /* Tables */
-    table { width: 100%; border-collapse: collapse; margin: 8px 0 14px 0; font-size: 10pt; }
-    th { background-color: #365F91; color: #fff; font-weight: 600; text-align: left; padding: 6px 8px; border: 1px solid #365F91; font-size: 10pt; }
-    td { padding: 5px 8px; border: 1px solid #cbd5e1; vertical-align: top; word-wrap: break-word; }
-    tr:nth-child(even) td { background-color: #f8fafc; }
-    .label-cell { background-color: #e8edf4; font-weight: 600; color: #334155; width: 35%; }
-    .kv-table { margin: 6px 0; }
-    .kv-table td { border: 1px solid #cbd5e1; }
+        body {
+            max-width: 210mm;
+            margin: 0 auto;
+            padding: 0;
+            color: #1e293b;
+            font-size: 11pt;
+            line-height: 1.55;
+            background: white;
+        }
 
-    /* Status badges */
-    .badge { display: inline-block; padding: 2px 8px; border-radius: 3px; font-weight: 600; font-size: 10px; }
-    .badge-green { background: #dcfce7; color: #166534; }
-    .badge-blue { background: #dbeafe; color: #1e40af; }
-    .badge-amber { background: #fef3c7; color: #92400e; }
-    .badge-red { background: #fecaca; color: #991b1b; }
-    .badge-gray { background: #f1f5f9; color: #475569; }
+        /* --- Headings Hierarchy --- */
+        h1 {
+            margin-top: 0;
+            padding-top: 0;
+            font-size: 28px;
+            text-transform: uppercase;
+            text-align: center;
+            color: #365F91;
+            letter-spacing: 1px;
+        }
 
-    .stats-row { display: flex; gap: 12px; margin: 14px 0; flex-wrap: wrap; }
-    .stat-card { flex: 1; min-width: 120px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 12px; text-align: center; }
-    .stat-value { font-size: 28px; font-weight: 700; color: #365F91; }
-    .stat-label { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+        h2 {
+            font-size: 22px;
+            text-transform: uppercase;
+            text-align: center;
+            color: #365F91;
+            margin-bottom: 6px;
+        }
 
-    .section-intro { color: #475569; font-size: 10pt; margin-bottom: 10px; }
-    .empty-state { color: #94a3b8; font-style: italic; padding: 10px; text-align: center; }
-    .footer-line { margin-top: 30px; border-top: 1px solid #cbd5e1; padding-top: 8px; font-size: 9px; color: #94a3b8; text-align: center; }
-    .page-number { position: absolute; bottom: 10mm; right: 17mm; font-size: 9px; color: #94a3b8; }
-    .description-block { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 10px 12px; margin: 8px 0; font-size: 10pt; }
+        h3 {
+            font-size: 18px;
+            text-transform: uppercase;
+            text-align: left;
+            color: #365F91;
+            margin: 22px 0 12px 0;
+            padding-bottom: 5px;
+            border-bottom: 2.5px solid #365F91;
+        }
 
-    @media print {
-      .page { page-break-after: always; padding: 10mm 15mm; }
-      body { max-width: none; }
-    }
-  </style>
+        h4 {
+            font-size: 15px;
+            text-transform: uppercase;
+            text-align: left;
+            color: #365F91;
+            margin: 16px 0 8px 0;
+            padding-bottom: 3px;
+        }
+
+        h5 {
+            font-size: 13px;
+            text-transform: uppercase;
+            text-align: left;
+            color: #365F91;
+            margin: 12px 0 6px 0;
+        }
+
+        h6 {
+            font-size: 11px;
+            text-transform: uppercase;
+            text-align: left;
+            color: #365F91;
+            margin: 8px 0 4px 0;
+        }
+
+        p {
+            margin: 4px 0;
+            font-size: 11pt;
+        }
+
+        /* --- Page Structure --- */
+        .page {
+            page-break-after: always;
+            size: A4;
+            width: 100%;
+            padding: 20mm 17mm;
+            min-height: 297mm;
+            position: relative;
+        }
+
+        .page:last-child {
+            page-break-after: auto;
+        }
+
+        /* --- Page Header & Footer (Print) --- */
+        .page-header,
+        .page-header-space {
+            height: 50px;
+        }
+
+        .page-footer,
+        .page-footer-space {
+            height: 40px;
+        }
+
+        .page-header {
+            display: none;
+            position: fixed;
+            top: 0mm;
+            left: 0;
+            right: 0;
+            width: 100%;
+            padding: 8px 17mm;
+            border-bottom: 2px solid #365F91;
+            background: white;
+            z-index: 100;
+        }
+
+        .page-header-inner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 9px;
+            color: #64748b;
+        }
+
+        .page-header .logo-space {
+            width: 120px;
+            height: 35px;
+            border: 1px dashed #cbd5e1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+            color: #94a3b8;
+        }
+
+        .page-footer {
+            display: none;
+            position: fixed;
+            bottom: 0mm;
+            left: 0;
+            right: 0;
+            width: 100%;
+            padding: 6px 17mm;
+            border-top: 1px solid #cbd5e1;
+            background: white;
+            z-index: 100;
+        }
+
+        .page-footer-inner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 8px;
+            color: #94a3b8;
+        }
+
+        /* --- Tables --- */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 8px 0 16px 0;
+            font-size: 10pt;
+            page-break-inside: auto;
+        }
+
+        tr {
+            page-break-inside: avoid;
+        }
+
+        thead {
+            display: table-header-group;
+        }
+
+        th {
+            background-color: #365F91;
+            color: #ffffff;
+            font-weight: 600;
+            text-align: left;
+            padding: 7px 10px;
+            border: 1px solid #365F91;
+            font-size: 10pt;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        td {
+            padding: 6px 10px;
+            border: 1px solid #cbd5e1;
+            vertical-align: top;
+            word-wrap: break-word;
+        }
+
+        tr:nth-child(even) td {
+            background-color: #f1f5f9;
+        }
+
+        tr:nth-child(odd) td {
+            background-color: #ffffff;
+        }
+
+        /* Key-Value Table */
+        .kv-table {
+            margin: 8px 0 16px 0;
+        }
+
+        .kv-table td {
+            border: 1px solid #cbd5e1;
+        }
+
+        .label-cell {
+            background-color: #dce5f0 !important;
+            font-weight: 600;
+            color: #1e3a5f;
+            width: 35%;
+        }
+
+        /* --- Cover Page --- */
+        .cover {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .cover-org {
+            margin-top: 50px;
+            font-size: 16px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+        }
+
+        .cover-logo-space {
+            width: 200px;
+            height: 60px;
+            margin: 15px auto;
+            border: 1px dashed #cbd5e1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            color: #94a3b8;
+        }
+
+        .cover-title {
+            margin-top: 40px;
+            font-size: 32px;
+            font-weight: 700;
+            color: #365F91;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            line-height: 1.2;
+        }
+
+        .cover-ref {
+            margin-top: 18px;
+            font-size: 22px;
+            color: #365F91;
+            font-weight: 600;
+        }
+
+        .cover-subtitle {
+            margin-top: 10px;
+            font-size: 16px;
+            color: #475569;
+            max-width: 80%;
+            line-height: 1.4;
+        }
+
+        .cover-vessel {
+            margin-top: 14px;
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        .cover-vessel strong {
+            color: #334155;
+        }
+
+        .cover-status {
+            margin-top: 24px;
+        }
+
+        .cover-meta {
+            margin-top: 35px;
+            font-size: 11px;
+            color: #64748b;
+        }
+
+        .cover-meta table {
+            margin: 0 auto;
+            border-collapse: collapse;
+            width: auto;
+        }
+
+        .cover-meta table td {
+            padding: 5px 14px;
+            text-align: left;
+            border: none;
+            background: none !important;
+        }
+
+        .cover-meta table td:first-child {
+            font-weight: 600;
+            color: #334155;
+            text-align: right;
+        }
+
+        .cover-divider {
+            width: 60%;
+            border: none;
+            border-top: 2px solid #365F91;
+            margin: 20px auto;
+        }
+
+        .cover-footer {
+            position: absolute;
+            bottom: 20mm;
+            left: 17mm;
+            right: 17mm;
+            border-top: 1px solid #cbd5e1;
+            padding-top: 8px;
+            font-size: 9px;
+            color: #94a3b8;
+            text-align: center;
+        }
+
+        /* --- Status Badges --- */
+        .badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 3px;
+            font-weight: 600;
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .badge-green {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        .badge-blue {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+        }
+
+        .badge-amber {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fde68a;
+        }
+
+        .badge-red {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        .badge-gray {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+        }
+
+        .badge-large {
+            padding: 4px 18px;
+            font-size: 12px;
+            border-radius: 4px;
+        }
+
+        /* --- Severity Badges --- */
+        .severity-critical,
+        .severity-high {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        .severity-medium {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fde68a;
+        }
+
+        .severity-low {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        /* --- Priority Badges --- */
+        .priority-urgent,
+        .priority-critical {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        .priority-high {
+            background: #ffedd5;
+            color: #9a3412;
+            border: 1px solid #fed7aa;
+        }
+
+        .priority-medium {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fde68a;
+        }
+
+        .priority-low {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        /* --- Stats Cards --- */
+        .stats-row {
+            display: flex;
+            gap: 14px;
+            margin: 18px 0;
+            flex-wrap: wrap;
+        }
+
+        .stat-card {
+            flex: 1;
+            min-width: 110px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 14px 10px;
+            text-align: center;
+            background: #fafbfc;
+        }
+
+        .stat-card-highlight {
+            border-color: #365F91;
+            border-width: 2px;
+            background: #f0f4fa;
+        }
+
+        .stat-value {
+            font-size: 30px;
+            font-weight: 700;
+            color: #365F91;
+            line-height: 1.1;
+        }
+
+        .stat-label {
+            font-size: 9px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-top: 4px;
+            font-weight: 600;
+        }
+
+        /* --- Description / Content Block --- */
+        .description-block {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-left: 4px solid #365F91;
+            border-radius: 0 4px 4px 0;
+            padding: 12px 16px;
+            margin: 10px 0;
+            font-size: 10pt;
+            line-height: 1.6;
+        }
+
+        .description-block p {
+            margin: 4px 0;
+        }
+
+        .description-block ul,
+        .description-block ol {
+            margin: 4px 0 4px 20px;
+        }
+
+        /* --- Timeline Styling --- */
+        .timeline-container {
+            margin: 14px 0;
+            padding: 0;
+        }
+
+        .timeline-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 12px;
+            position: relative;
+            padding-left: 28px;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: 8px;
+            top: 6px;
+            width: 10px;
+            height: 10px;
+            background: #365F91;
+            border-radius: 50%;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 0 2px #365F91;
+        }
+
+        .timeline-item::after {
+            content: '';
+            position: absolute;
+            left: 12px;
+            top: 18px;
+            width: 2px;
+            height: calc(100% + 2px);
+            background: #cbd5e1;
+        }
+
+        .timeline-item:last-child::after {
+            display: none;
+        }
+
+        .timeline-item.completed::before {
+            background: #16a34a;
+            box-shadow: 0 0 0 2px #16a34a;
+        }
+
+        .timeline-item.pending::before {
+            background: #f59e0b;
+            box-shadow: 0 0 0 2px #f59e0b;
+        }
+
+        .timeline-label {
+            font-weight: 600;
+            color: #334155;
+            font-size: 10pt;
+            min-width: 130px;
+        }
+
+        .timeline-date {
+            color: #64748b;
+            font-size: 10pt;
+        }
+
+        .timeline-wrapper {
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 16px 20px;
+            margin: 10px 0;
+            background: #fafbfc;
+        }
+
+        /* --- Comment Cards --- */
+        .comment-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin: 8px 0;
+            page-break-inside: avoid;
+        }
+
+        .comment-card-even {
+            background: #f8fafc;
+        }
+
+        .comment-card-odd {
+            background: #ffffff;
+        }
+
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .comment-author {
+            font-weight: 600;
+            font-size: 10pt;
+            color: #334155;
+        }
+
+        .comment-date {
+            font-size: 9px;
+            color: #94a3b8;
+        }
+
+        .comment-content {
+            font-size: 10pt;
+            color: #475569;
+            line-height: 1.5;
+        }
+
+        .comment-index {
+            display: inline-block;
+            width: 22px;
+            height: 22px;
+            background: #365F91;
+            color: #ffffff;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 22px;
+            font-size: 9px;
+            font-weight: 700;
+            margin-right: 8px;
+        }
+
+        /* --- Section Utilities --- */
+        .section-intro {
+            color: #475569;
+            font-size: 10pt;
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+
+        .empty-state {
+            color: #94a3b8;
+            font-style: italic;
+            padding: 16px;
+            text-align: center;
+            border: 1px dashed #e2e8f0;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+
+        .section-number {
+            color: #365F91;
+            font-weight: 700;
+            margin-right: 4px;
+        }
+
+        .subsection-divider {
+            border: none;
+            border-top: 1px solid #e2e8f0;
+            margin: 16px 0;
+        }
+
+        /* --- Page Footer Line --- */
+        .footer-line {
+            margin-top: 30px;
+            border-top: 1px solid #cbd5e1;
+            padding-top: 8px;
+            font-size: 8px;
+            color: #94a3b8;
+            text-align: center;
+        }
+
+        .content-footer {
+            position: absolute;
+            bottom: 15mm;
+            left: 17mm;
+            right: 17mm;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 6px;
+            font-size: 8px;
+            color: #94a3b8;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* --- Table of Contents --- */
+        .toc-entry {
+            font-size: 11pt;
+            line-height: 2;
+            padding: 2px 0;
+            border-bottom: 1px dotted #e2e8f0;
+        }
+
+        .toc-entry-main {
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .toc-entry-sub {
+            padding-left: 24px;
+            font-weight: 400;
+            color: #475569;
+            font-size: 10pt;
+        }
+
+        .toc-section-number {
+            display: inline-block;
+            width: 32px;
+            font-weight: 700;
+            color: #365F91;
+        }
+
+        /* --- Signature / Approval Blocks --- */
+        .signoff-block {
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 14px 0;
+            background: #fafbfc;
+            page-break-inside: avoid;
+        }
+
+        .signoff-title {
+            font-size: 11pt;
+            font-weight: 700;
+            color: #365F91;
+            text-transform: uppercase;
+            margin-bottom: 14px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .signoff-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .signoff-field {
+            flex: 1;
+            margin-right: 20px;
+        }
+
+        .signoff-field:last-child {
+            margin-right: 0;
+        }
+
+        .signoff-label {
+            font-size: 9px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .signoff-line {
+            border-bottom: 1px solid #334155;
+            height: 30px;
+            margin-top: 4px;
+        }
+
+        /* --- Confidential / Disclaimer --- */
+        .disclaimer-block {
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            padding: 12px 16px;
+            background: #fefce8;
+            margin: 14px 0;
+            font-size: 9pt;
+            color: #78716c;
+            line-height: 1.5;
+        }
+
+        .confidential-label {
+            font-size: 10pt;
+            color: #dc2626;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* --- Distribution Notice --- */
+        .distribution-notice {
+            border: 1px solid #bfdbfe;
+            border-radius: 4px;
+            padding: 10px 14px;
+            background: #eff6ff;
+            font-size: 9pt;
+            color: #1e40af;
+            margin: 10px 0;
+        }
+
+        /* --- Progress Visual --- */
+        .progress-bar-container {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 6px 0 2px 0;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: #365F91;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .progress-label {
+            font-size: 9px;
+            color: #64748b;
+            text-align: right;
+        }
+
+        /* ===== @page Print Rules ===== */
+        @page {
+            size: A4;
+            margin: 17mm;
+        }
+
+        /* ===== Screen Preview — A4 cards on grey background ===== */
+        @media screen {
+            html {
+                background: #e8ecf1 !important;
+            }
+
+            body {
+                background: transparent !important;
+                max-width: none !important;
+                width: auto !important;
+                padding: 40px 20px !important;
+                margin: 0 !important;
+                height: auto !important;
+                overflow-y: auto !important;
+            }
+
+            .page-header {
+                display: none !important;
+            }
+
+            .page-footer {
+                display: none !important;
+            }
+
+            .page-header-space,
+            .page-footer-space {
+                height: 0 !important;
+                display: none !important;
+            }
+
+            .page {
+                width: 210mm !important;
+                min-height: 297mm !important;
+                margin: 0 auto 40px auto !important;
+                padding: 20mm 17mm !important;
+                background: white !important;
+                box-shadow: 0 2px 16px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
+                border-radius: 2px !important;
+                box-sizing: border-box !important;
+                position: relative !important;
+                page-break-after: unset !important;
+            }
+        }
+
+        /* ===== Print Media ===== */
+        @media print {
+            html {
+                background: white !important;
+            }
+
+            body {
+                margin: 0;
+                padding: 0;
+                max-width: none;
+                width: 210mm;
+                background: white;
+            }
+
+            .page-header {
+                display: block;
+            }
+
+            .page-footer {
+                display: block;
+            }
+
+            .page {
+                page-break-after: always;
+                padding: 0;
+                margin: 0;
+                min-height: auto;
+            }
+
+            .page:last-child {
+                page-break-after: auto;
+            }
+
+            thead {
+                display: table-header-group;
+            }
+
+            tfoot {
+                display: table-footer-group;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            .content-footer {
+                display: none;
+            }
+
+            section {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
 </head>
+
 <body>
 
-  <!-- COVER PAGE -->
-  <div class="page cover">
-    <div class="cover-logo">
-      {{#if organisation.name}}
-        <h2 style="font-size: 16px; color: #64748b; text-transform: none;">{{organisation.name}}</h2>
-      {{/if}}
+    <!-- ================================================================
+         FIXED PAGE HEADER (visible in print)
+         ================================================================ -->
+    <div class="page-header">
+        <div class="page-header-inner">
+            <div class="logo-space">Logo</div>
+            <div style="font-size: 9px; color: #64748b; text-transform: uppercase; letter-spacing: 1px;">
+                Work Order Report
+            </div>
+            <div style="font-size: 9px; color: #64748b;">
+                {{workOrder.referenceNumber}}
+            </div>
+        </div>
     </div>
-    <h1>Work Order Report</h1>
-    <h2 style="margin-top: 12px;">{{workOrder.referenceNumber}}</h2>
-    <p class="subtitle">{{workOrder.title}}</p>
-    {{#if vessel.name}}
-      <p class="subtitle" style="margin-top: 8px;">Vessel: {{vessel.name}}{{#if vessel.imoNumber}} (IMO {{vessel.imoNumber}}){{/if}}</p>
+
+    <!-- FIXED PAGE FOOTER (visible in print) -->
+    <div class="page-footer">
+        <div class="page-footer-inner">
+            <span>{{#if organisation.name}}{{organisation.name}}{{/if}}</span>
+            <span>Work Order Report &mdash; {{workOrder.referenceNumber}}</span>
+            <span>Generated: {{generatedAt}}</span>
+        </div>
+    </div>
+
+    <!-- Spacer elements for print header/footer -->
+    <table style="width:100%; border:none; margin:0; padding:0;">
+        <thead>
+            <tr>
+                <td style="border:none; padding:0;">
+                    <div class="page-header-space"></div>
+                </td>
+            </tr>
+        </thead>
+        <tfoot>
+            <tr>
+                <td style="border:none; padding:0;">
+                    <div class="page-footer-space"></div>
+                </td>
+            </tr>
+        </tfoot>
+        <tbody>
+            <tr>
+                <td style="border:none; padding:0;">
+
+
+    <!-- ================================================================
+         PAGE 1: COVER PAGE
+         ================================================================ -->
+    <div class="page cover">
+        {{#if organisation.name}}
+            <div class="cover-org">{{organisation.name}}</div>
+        {{/if}}
+
+        <div class="cover-logo-space">Organisation Logo</div>
+
+        <hr class="cover-divider" />
+
+        <div class="cover-title">Work Order Report</div>
+
+        <div class="cover-ref">{{workOrder.referenceNumber}}</div>
+
+        <div class="cover-subtitle">{{workOrder.title}}</div>
+
+        {{#if vessel}}
+            {{#if vessel.name}}
+            <div class="cover-vessel">
+                Vessel: <strong>{{vessel.name}}</strong>
+                {{#if vessel.imoNumber}} &mdash; IMO {{vessel.imoNumber}}{{/if}}
+            </div>
+            {{/if}}
+        {{/if}}
+
+        <div class="cover-status">
+            <span class="badge badge-large {{statusBadge workOrder.status}}">{{workOrder.status}}</span>
+        </div>
+
+        <div class="cover-meta">
+            <table>
+                {{#if workOrder.type}}
+                <tr>
+                    <td>Type:</td>
+                    <td>{{workOrder.type}}</td>
+                </tr>
+                {{/if}}
+                {{#if workOrder.priority}}
+                <tr>
+                    <td>Priority:</td>
+                    <td>
+                        <span class="badge {{statusBadge workOrder.priority}}">{{workOrder.priority}}</span>
+                    </td>
+                </tr>
+                {{/if}}
+                {{#if workOrder.location}}
+                <tr>
+                    <td>Location:</td>
+                    <td>{{workOrder.location}}</td>
+                </tr>
+                {{/if}}
+                <tr>
+                    <td>Generated:</td>
+                    <td>{{generatedAt}}</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="cover-footer">
+            {{#if organisation.name}}{{organisation.name}} &mdash; {{/if}}Work Order Report &mdash; {{workOrder.referenceNumber}} &mdash; Generated {{generatedAt}}
+        </div>
+    </div>
+
+
+    <!-- ================================================================
+         PAGE 2: DOCUMENT INFORMATION / REVISION
+         ================================================================ -->
+    <div class="page">
+        <h3>Document Information</h3>
+        <p class="section-intro">This document provides a comprehensive record of the work order, including all associated inspections, findings, task submissions, and team assignments.</p>
+
+        <h4>Document Metadata</h4>
+        <table class="kv-table">
+            <tr>
+                <td class="label-cell">Document Title</td>
+                <td>Work Order Report</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Work Order Reference</td>
+                <td>{{workOrder.referenceNumber}}</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Work Order Status</td>
+                <td><span class="badge {{statusBadge workOrder.status}}">{{workOrder.status}}</span></td>
+            </tr>
+            <tr>
+                <td class="label-cell">Organisation</td>
+                <td>{{#if organisation.name}}{{organisation.name}}{{else}}&mdash;{{/if}}</td>
+            </tr>
+            {{#if vessel}}
+                {{#if vessel.name}}
+                <tr>
+                    <td class="label-cell">Vessel</td>
+                    <td>{{vessel.name}}{{#if vessel.imoNumber}} (IMO {{vessel.imoNumber}}){{/if}}</td>
+                </tr>
+                {{/if}}
+            {{/if}}
+            <tr>
+                <td class="label-cell">Date Created</td>
+                <td>{{formatDate workOrder.createdAt}}</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Last Updated</td>
+                <td>{{formatDate workOrder.updatedAt}}</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Report Generated</td>
+                <td>{{generatedAt}}</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Report Type</td>
+                <td>{{reportType}}</td>
+            </tr>
+        </table>
+
+        <h4>Revision History</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:12%;">Rev.</th>
+                    <th style="width:22%;">Date</th>
+                    <th>Description</th>
+                    <th style="width:22%;">Author</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1.0</td>
+                    <td>{{generatedAt}}</td>
+                    <td>Initial report generation</td>
+                    <td>System Generated</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Distribution</h4>
+        <div class="distribution-notice">
+            This report has been prepared for the exclusive use of {{#if organisation.name}}{{organisation.name}}{{else}}the commissioning organisation{{/if}} and its authorised representatives. Distribution of this document should be limited to those with a legitimate need to review the work order details.
+        </div>
+
+        <h4>Confidentiality &amp; Disclaimer</h4>
+        <div class="disclaimer-block">
+            <p><span class="confidential-label">Confidential</span></p>
+            <p style="margin-top: 6px;">
+                This document contains proprietary information. The contents of this report are confidential and are intended solely for the use of the client and the organisation named herein. Unauthorised reproduction, distribution, or disclosure of this document or any part thereof is strictly prohibited. All data, findings, and recommendations contained within this report are based on the information available at the time of generation and should be verified independently before acting upon.
+            </p>
+        </div>
+
+        <div class="content-footer">
+            <span>{{#if organisation.name}}{{organisation.name}}{{/if}}</span>
+            <span>{{workOrder.referenceNumber}} &mdash; Document Information</span>
+            <span>{{generatedAt}}</span>
+        </div>
+    </div>
+
+
+    <!-- ================================================================
+         PAGE 3: TABLE OF CONTENTS
+         ================================================================ -->
+    <div class="page">
+        <h3>Table of Contents</h3>
+
+        <div style="margin-top: 16px;">
+            <div class="toc-entry toc-entry-main">
+                <span class="toc-section-number">1.</span> Work Order Details
+            </div>
+            <div class="toc-entry toc-entry-sub">
+                <span class="toc-section-number">1.1</span> General Information
+            </div>
+            <div class="toc-entry toc-entry-sub">
+                <span class="toc-section-number">1.2</span> Description
+            </div>
+
+            <div class="toc-entry toc-entry-main">
+                <span class="toc-section-number">2.</span> Summary Dashboard
+            </div>
+            <div class="toc-entry toc-entry-sub">
+                <span class="toc-section-number">2.1</span> Key Metrics
+            </div>
+            <div class="toc-entry toc-entry-sub">
+                <span class="toc-section-number">2.2</span> Status Overview
+            </div>
+
+            {{#if vessel}}
+            <div class="toc-entry toc-entry-main">
+                <span class="toc-section-number">3.</span> Vessel Information
+            </div>
+            <div class="toc-entry toc-entry-sub">
+                <span class="toc-section-number">3.1</span> Vessel Particulars
+            </div>
+            <div class="toc-entry toc-entry-sub">
+                <span class="toc-section-number">3.2</span> General Arrangement
+            </div>
+            {{/if}}
+
+            <div class="toc-entry toc-entry-main">
+                <span class="toc-section-number">4.</span> Schedule &amp; Timeline
+            </div>
+            <div class="toc-entry toc-entry-sub">
+                <span class="toc-section-number">4.1</span> Planned Schedule
+            </div>
+            <div class="toc-entry toc-entry-sub">
+                <span class="toc-section-number">4.2</span> Actual Timeline
+            </div>
+
+            <div class="toc-entry toc-entry-main">
+                <span class="toc-section-number">5.</span> Assigned Team
+            </div>
+            <div class="toc-entry toc-entry-sub">
+                <span class="toc-section-number">5.1</span> Team Roster
+            </div>
+
+            {{#if inspections.length}}
+            <div class="toc-entry toc-entry-main">
+                <span class="toc-section-number">6.</span> Inspections &amp; Findings
+            </div>
+            {{#each inspections}}
+            <div class="toc-entry toc-entry-sub">
+                <span class="toc-section-number">6.{{@index}}.</span> {{title}}
+            </div>
+            {{/each}}
+            {{/if}}
+
+            {{#if formEntries.length}}
+            <div class="toc-entry toc-entry-main">
+                <span class="toc-section-number">7.</span> Form Entries / Inspection Data
+            </div>
+            <div class="toc-entry toc-entry-sub">
+                <span class="toc-section-number">7.1</span> Collected Data
+            </div>
+            <div class="toc-entry toc-entry-sub">
+                <span class="toc-section-number">7.2</span> Summary Statistics
+            </div>
+            {{/if}}
+
+            {{#if taskSubmissions.length}}
+            <div class="toc-entry toc-entry-main">
+                <span class="toc-section-number">8.</span> Task Submissions
+            </div>
+            <div class="toc-entry toc-entry-sub">
+                <span class="toc-section-number">8.1</span> Task Progress
+            </div>
+            {{/if}}
+
+            {{#if comments.length}}
+            <div class="toc-entry toc-entry-main">
+                <span class="toc-section-number">9.</span> Comments &amp; Activity Log
+            </div>
+            {{/if}}
+
+            <div class="toc-entry toc-entry-main">
+                <span class="toc-section-number">10.</span> Document Approval / Signoff
+            </div>
+        </div>
+
+        <div class="content-footer">
+            <span>{{#if organisation.name}}{{organisation.name}}{{/if}}</span>
+            <span>{{workOrder.referenceNumber}} &mdash; Table of Contents</span>
+            <span>{{generatedAt}}</span>
+        </div>
+    </div>
+
+
+    <!-- ================================================================
+         PAGE 4: SECTION 1 — WORK ORDER DETAILS
+         ================================================================ -->
+    <div class="page">
+        <h3>1. Work Order Details</h3>
+        <p class="section-intro">Complete details of the work order including all key reference data, classification, and scope of work.</p>
+
+        <h4>1.1 General Information</h4>
+        <table class="kv-table">
+            <tr>
+                <td class="label-cell">Reference Number</td>
+                <td><strong>{{workOrder.referenceNumber}}</strong></td>
+            </tr>
+            <tr>
+                <td class="label-cell">Title</td>
+                <td>{{workOrder.title}}</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Status</td>
+                <td><span class="badge {{statusBadge workOrder.status}}">{{workOrder.status}}</span></td>
+            </tr>
+            {{#if workOrder.type}}
+            <tr>
+                <td class="label-cell">Type</td>
+                <td>{{workOrder.type}}</td>
+            </tr>
+            {{/if}}
+            {{#if workOrder.priority}}
+            <tr>
+                <td class="label-cell">Priority</td>
+                <td><span class="badge {{statusBadge workOrder.priority}}">{{workOrder.priority}}</span></td>
+            </tr>
+            {{/if}}
+            {{#if workOrder.location}}
+            <tr>
+                <td class="label-cell">Location</td>
+                <td>{{workOrder.location}}</td>
+            </tr>
+            {{/if}}
+            <tr>
+                <td class="label-cell">Created</td>
+                <td>{{formatDate workOrder.createdAt}}</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Last Updated</td>
+                <td>{{formatDate workOrder.updatedAt}}</td>
+            </tr>
+        </table>
+
+        {{#if workOrder.description}}
+        <h4>1.2 Description</h4>
+        <div class="description-block">
+            {{{workOrder.description}}}
+        </div>
+        {{/if}}
+
+        <div class="content-footer">
+            <span>{{#if organisation.name}}{{organisation.name}}{{/if}}</span>
+            <span>{{workOrder.referenceNumber}} &mdash; Section 1: Work Order Details</span>
+            <span>{{generatedAt}}</span>
+        </div>
+    </div>
+
+
+    <!-- ================================================================
+         PAGE 5: SECTION 2 — SUMMARY DASHBOARD
+         ================================================================ -->
+    <div class="page">
+        <h3>2. Summary Dashboard</h3>
+        <p class="section-intro">High-level overview of the work order scope, resource allocation, and key metrics.</p>
+
+        <h4>2.1 Key Metrics</h4>
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-value">{{assignments.length}}</div>
+                <div class="stat-label">Team Members</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{inspections.length}}</div>
+                <div class="stat-label">Inspections</div>
+            </div>
+            <div class="stat-card stat-card-highlight">
+                <div class="stat-value">{{totalFindings}}</div>
+                <div class="stat-label">Total Findings</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{formEntries.length}}</div>
+                <div class="stat-label">Form Entries</div>
+            </div>
+        </div>
+
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-value">{{taskSubmissions.length}}</div>
+                <div class="stat-label">Task Submissions</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{comments.length}}</div>
+                <div class="stat-label">Comments</div>
+            </div>
+        </div>
+
+        <h4>2.2 Status Overview</h4>
+        <table class="kv-table">
+            <tr>
+                <td class="label-cell">Current Status</td>
+                <td><span class="badge badge-large {{statusBadge workOrder.status}}">{{workOrder.status}}</span></td>
+            </tr>
+            {{#if workOrder.priority}}
+            <tr>
+                <td class="label-cell">Priority Level</td>
+                <td><span class="badge {{statusBadge workOrder.priority}}">{{workOrder.priority}}</span></td>
+            </tr>
+            {{/if}}
+            {{#if workOrder.type}}
+            <tr>
+                <td class="label-cell">Work Order Type</td>
+                <td>{{workOrder.type}}</td>
+            </tr>
+            {{/if}}
+            {{#if vessel}}
+                {{#if vessel.name}}
+                <tr>
+                    <td class="label-cell">Assigned Vessel</td>
+                    <td>{{vessel.name}}</td>
+                </tr>
+                {{/if}}
+            {{/if}}
+            {{#if workOrder.location}}
+            <tr>
+                <td class="label-cell">Location</td>
+                <td>{{workOrder.location}}</td>
+            </tr>
+            {{/if}}
+        </table>
+
+        <h4>Work Order Timeline Summary</h4>
+        <div class="timeline-wrapper">
+            <div class="timeline-container">
+                <div class="timeline-item completed">
+                    <span class="timeline-label">Created:</span>
+                    <span class="timeline-date">{{formatDate workOrder.createdAt}}</span>
+                </div>
+                {{#if workOrder.scheduledStart}}
+                <div class="timeline-item {{#if workOrder.actualStart}}completed{{else}}pending{{/if}}">
+                    <span class="timeline-label">Scheduled Start:</span>
+                    <span class="timeline-date">{{formatDate workOrder.scheduledStart}}</span>
+                </div>
+                {{/if}}
+                {{#if workOrder.actualStart}}
+                <div class="timeline-item completed">
+                    <span class="timeline-label">Actual Start:</span>
+                    <span class="timeline-date">{{formatDate workOrder.actualStart}}</span>
+                </div>
+                {{/if}}
+                {{#if workOrder.scheduledEnd}}
+                <div class="timeline-item {{#if workOrder.actualEnd}}completed{{else}}pending{{/if}}">
+                    <span class="timeline-label">Scheduled End:</span>
+                    <span class="timeline-date">{{formatDate workOrder.scheduledEnd}}</span>
+                </div>
+                {{/if}}
+                {{#if workOrder.actualEnd}}
+                <div class="timeline-item completed">
+                    <span class="timeline-label">Actual End:</span>
+                    <span class="timeline-date">{{formatDate workOrder.actualEnd}}</span>
+                </div>
+                {{/if}}
+                <div class="timeline-item completed">
+                    <span class="timeline-label">Last Updated:</span>
+                    <span class="timeline-date">{{formatDate workOrder.updatedAt}}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-footer">
+            <span>{{#if organisation.name}}{{organisation.name}}{{/if}}</span>
+            <span>{{workOrder.referenceNumber}} &mdash; Section 2: Summary Dashboard</span>
+            <span>{{generatedAt}}</span>
+        </div>
+    </div>
+
+
+    <!-- ================================================================
+         PAGE 6: SECTION 3 — VESSEL INFORMATION (Conditional)
+         ================================================================ -->
+    {{#if vessel}}
+    <div class="page">
+        <h3>3. Vessel Information</h3>
+        <p class="section-intro">Details of the vessel associated with this work order, including key identification and dimensional data.</p>
+
+        <h4>3.1 Vessel Particulars</h4>
+        <table class="kv-table">
+            <tr>
+                <td class="label-cell">Vessel Name</td>
+                <td><strong>{{vessel.name}}</strong></td>
+            </tr>
+            {{#if vessel.imoNumber}}
+            <tr>
+                <td class="label-cell">IMO Number</td>
+                <td>{{vessel.imoNumber}}</td>
+            </tr>
+            {{/if}}
+            {{#if vessel.vesselType}}
+            <tr>
+                <td class="label-cell">Vessel Type</td>
+                <td>{{vessel.vesselType}}</td>
+            </tr>
+            {{/if}}
+            {{#if vessel.flagState}}
+            <tr>
+                <td class="label-cell">Flag State</td>
+                <td>{{vessel.flagState}}</td>
+            </tr>
+            {{/if}}
+            {{#if vessel.grossTonnage}}
+            <tr>
+                <td class="label-cell">Gross Tonnage</td>
+                <td>{{vessel.grossTonnage}} GT</td>
+            </tr>
+            {{/if}}
+            {{#if vessel.yearBuilt}}
+            <tr>
+                <td class="label-cell">Year Built</td>
+                <td>{{vessel.yearBuilt}}</td>
+            </tr>
+            {{/if}}
+            {{#if vessel.lengthOverall}}
+            <tr>
+                <td class="label-cell">Length Overall (LOA)</td>
+                <td>{{vessel.lengthOverall}} m</td>
+            </tr>
+            {{/if}}
+            {{#if vessel.beam}}
+            <tr>
+                <td class="label-cell">Beam</td>
+                <td>{{vessel.beam}} m</td>
+            </tr>
+            {{/if}}
+            {{#if vessel.maxDraft}}
+            <tr>
+                <td class="label-cell">Maximum Draft</td>
+                <td>{{vessel.maxDraft}} m</td>
+            </tr>
+            {{/if}}
+        </table>
+
+        <h4>3.2 General Arrangement</h4>
+        <div class="empty-state">
+            General arrangement diagram not included in this report. Refer to vessel documentation for detailed arrangement plans.
+        </div>
+
+        <div class="content-footer">
+            <span>{{#if organisation.name}}{{organisation.name}}{{/if}}</span>
+            <span>{{workOrder.referenceNumber}} &mdash; Section 3: Vessel Information</span>
+            <span>{{generatedAt}}</span>
+        </div>
+    </div>
     {{/if}}
-    <div class="cover-meta">
-      <table>
-        <tr><td>Status:</td><td><span class="badge badge-blue">{{workOrder.status}}</span></td></tr>
-        {{#if workOrder.type}}<tr><td>Type:</td><td>{{workOrder.type}}</td></tr>{{/if}}
-        {{#if workOrder.priority}}<tr><td>Priority:</td><td>{{workOrder.priority}}</td></tr>{{/if}}
-        {{#if workOrder.location}}<tr><td>Location:</td><td>{{workOrder.location}}</td></tr>{{/if}}
-        <tr><td>Generated:</td><td>{{generatedAt}}</td></tr>
-      </table>
+
+
+    <!-- ================================================================
+         PAGE 7: SECTION 4 — SCHEDULE & TIMELINE
+         ================================================================ -->
+    <div class="page">
+        <h3>4. Schedule &amp; Timeline</h3>
+        <p class="section-intro">Planned and actual schedule for the work order, including milestone tracking and duration analysis.</p>
+
+        <h4>4.1 Planned Schedule</h4>
+        <table class="kv-table">
+            <tr>
+                <td class="label-cell">Scheduled Start</td>
+                <td>{{#if workOrder.scheduledStart}}{{formatDate workOrder.scheduledStart}}{{else}}<span style="color:#94a3b8;">Not specified</span>{{/if}}</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Scheduled End</td>
+                <td>{{#if workOrder.scheduledEnd}}{{formatDate workOrder.scheduledEnd}}{{else}}<span style="color:#94a3b8;">Not specified</span>{{/if}}</td>
+            </tr>
+        </table>
+
+        <h4>4.2 Actual Timeline</h4>
+        <table class="kv-table">
+            <tr>
+                <td class="label-cell">Actual Start</td>
+                <td>{{#if workOrder.actualStart}}{{formatDate workOrder.actualStart}}{{else}}<span style="color:#94a3b8;">Not recorded</span>{{/if}}</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Actual End</td>
+                <td>{{#if workOrder.actualEnd}}{{formatDate workOrder.actualEnd}}{{else}}<span style="color:#94a3b8;">Not recorded</span>{{/if}}</td>
+            </tr>
+        </table>
+
+        <h4>Duration &amp; Status</h4>
+        <table class="kv-table">
+            <tr>
+                <td class="label-cell">Current Status</td>
+                <td><span class="badge {{statusBadge workOrder.status}}">{{workOrder.status}}</span></td>
+            </tr>
+            <tr>
+                <td class="label-cell">Work Order Created</td>
+                <td>{{formatDate workOrder.createdAt}}</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Last Updated</td>
+                <td>{{formatDate workOrder.updatedAt}}</td>
+            </tr>
+        </table>
+
+        <h4>Status Timeline</h4>
+        <div class="timeline-wrapper">
+            <div class="timeline-container">
+                <div class="timeline-item completed">
+                    <span class="timeline-label">Work Order Created</span>
+                    <span class="timeline-date">{{formatDate workOrder.createdAt}}</span>
+                </div>
+
+                {{#if workOrder.scheduledStart}}
+                <div class="timeline-item {{#if workOrder.actualStart}}completed{{else}}pending{{/if}}">
+                    <span class="timeline-label">Scheduled Start</span>
+                    <span class="timeline-date">{{formatDate workOrder.scheduledStart}}</span>
+                </div>
+                {{/if}}
+
+                {{#if workOrder.actualStart}}
+                <div class="timeline-item completed">
+                    <span class="timeline-label">Work Commenced</span>
+                    <span class="timeline-date">{{formatDate workOrder.actualStart}}</span>
+                </div>
+                {{/if}}
+
+                {{#if workOrder.scheduledEnd}}
+                <div class="timeline-item {{#if workOrder.actualEnd}}completed{{else}}pending{{/if}}">
+                    <span class="timeline-label">Scheduled End</span>
+                    <span class="timeline-date">{{formatDate workOrder.scheduledEnd}}</span>
+                </div>
+                {{/if}}
+
+                {{#if workOrder.actualEnd}}
+                <div class="timeline-item completed">
+                    <span class="timeline-label">Work Completed</span>
+                    <span class="timeline-date">{{formatDate workOrder.actualEnd}}</span>
+                </div>
+                {{/if}}
+
+                <div class="timeline-item completed">
+                    <span class="timeline-label">Report Generated</span>
+                    <span class="timeline-date">{{generatedAt}}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-footer">
+            <span>{{#if organisation.name}}{{organisation.name}}{{/if}}</span>
+            <span>{{workOrder.referenceNumber}} &mdash; Section 4: Schedule &amp; Timeline</span>
+            <span>{{generatedAt}}</span>
+        </div>
     </div>
-    <div class="footer-line">
-      Work Order Report &mdash; {{workOrder.referenceNumber}} &mdash; Generated {{generatedAt}}
-    </div>
-  </div>
 
-  <!-- TABLE OF CONTENTS -->
-  <div class="page">
-    <h3>Table of Contents</h3>
-    <div style="margin: 8px 0; font-size: 11pt; line-height: 2;"><strong>1.</strong> Work Order Details</div>
-    {{#if vessel.name}}<div style="margin: 8px 0; font-size: 11pt; line-height: 2;"><strong>2.</strong> Vessel Information</div>{{/if}}
-    <div style="margin: 8px 0; font-size: 11pt; line-height: 2;"><strong>3.</strong> Schedule &amp; Timeline</div>
-    <div style="margin: 8px 0; font-size: 11pt; line-height: 2;"><strong>4.</strong> Assigned Team</div>
-    {{#if inspections.length}}<div style="margin: 8px 0; font-size: 11pt; line-height: 2;"><strong>5.</strong> Inspections &amp; Findings</div>{{/if}}
-    {{#if formEntries.length}}<div style="margin: 8px 0; font-size: 11pt; line-height: 2;"><strong>6.</strong> Form Entries</div>{{/if}}
-    {{#if taskSubmissions.length}}<div style="margin: 8px 0; font-size: 11pt; line-height: 2;"><strong>7.</strong> Task Submissions</div>{{/if}}
-    {{#if comments.length}}<div style="margin: 8px 0; font-size: 11pt; line-height: 2;"><strong>8.</strong> Comments &amp; Notes</div>{{/if}}
-  </div>
 
-  <!-- 1. WORK ORDER DETAILS -->
-  <div class="page">
-    <h3>1. Work Order Details</h3>
-    <table class="kv-table">
-      <tr><td class="label-cell">Reference Number</td><td>{{workOrder.referenceNumber}}</td></tr>
-      <tr><td class="label-cell">Title</td><td>{{workOrder.title}}</td></tr>
-      <tr><td class="label-cell">Status</td><td><span class="badge {{statusBadge workOrder.status}}">{{workOrder.status}}</span></td></tr>
-      {{#if workOrder.type}}<tr><td class="label-cell">Type</td><td>{{workOrder.type}}</td></tr>{{/if}}
-      {{#if workOrder.priority}}<tr><td class="label-cell">Priority</td><td>{{workOrder.priority}}</td></tr>{{/if}}
-      {{#if workOrder.location}}<tr><td class="label-cell">Location</td><td>{{workOrder.location}}</td></tr>{{/if}}
-      <tr><td class="label-cell">Created</td><td>{{formatDate workOrder.createdAt}}</td></tr>
-      <tr><td class="label-cell">Last Updated</td><td>{{formatDate workOrder.updatedAt}}</td></tr>
-    </table>
+    <!-- ================================================================
+         PAGE 8: SECTION 5 — ASSIGNED TEAM
+         ================================================================ -->
+    <div class="page">
+        <h3>5. Assigned Team</h3>
+        <p class="section-intro">Personnel assigned to this work order, including their roles and contact information.</p>
 
-    {{#if workOrder.description}}
-    <h4>Description</h4>
-    <div class="description-block">{{{workOrder.description}}}</div>
-    {{/if}}
+        <h4>5.1 Team Roster</h4>
+        {{#if assignments.length}}
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 8%;">#</th>
+                    <th style="width: 28%;">Name</th>
+                    <th style="width: 34%;">Email</th>
+                    <th style="width: 30%;">Role</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each assignments}}
+                <tr>
+                    <td style="text-align: center;">{{@index}}</td>
+                    <td><strong>{{user.firstName}} {{user.lastName}}</strong></td>
+                    <td>{{user.email}}</td>
+                    <td><span class="badge badge-blue">{{role}}</span></td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
 
-    <!-- SUMMARY STATS -->
-    <div class="stats-row">
-      <div class="stat-card">
-        <div class="stat-value">{{assignments.length}}</div>
-        <div class="stat-label">Team Members</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value">{{inspections.length}}</div>
-        <div class="stat-label">Inspections</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value">{{totalFindings}}</div>
-        <div class="stat-label">Findings</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value">{{formEntries.length}}</div>
-        <div class="stat-label">Form Entries</div>
-      </div>
+        <h4>Team Summary</h4>
+        <table class="kv-table">
+            <tr>
+                <td class="label-cell">Total Team Members</td>
+                <td>{{assignments.length}}</td>
+            </tr>
+        </table>
+        {{else}}
+        <div class="empty-state">
+            No team members have been assigned to this work order.
+        </div>
+        {{/if}}
+
+        <div class="content-footer">
+            <span>{{#if organisation.name}}{{organisation.name}}{{/if}}</span>
+            <span>{{workOrder.referenceNumber}} &mdash; Section 5: Assigned Team</span>
+            <span>{{generatedAt}}</span>
+        </div>
     </div>
 
-    {{#if vessel.name}}
-    <!-- 2. VESSEL INFORMATION -->
-    <h3>2. Vessel Information</h3>
-    <table class="kv-table">
-      <tr><td class="label-cell">Vessel Name</td><td>{{vessel.name}}</td></tr>
-      {{#if vessel.imoNumber}}<tr><td class="label-cell">IMO Number</td><td>{{vessel.imoNumber}}</td></tr>{{/if}}
-      {{#if vessel.vesselType}}<tr><td class="label-cell">Vessel Type</td><td>{{vessel.vesselType}}</td></tr>{{/if}}
-      {{#if vessel.flagState}}<tr><td class="label-cell">Flag State</td><td>{{vessel.flagState}}</td></tr>{{/if}}
-      {{#if vessel.grossTonnage}}<tr><td class="label-cell">Gross Tonnage</td><td>{{vessel.grossTonnage}}</td></tr>{{/if}}
-      {{#if vessel.yearBuilt}}<tr><td class="label-cell">Year Built</td><td>{{vessel.yearBuilt}}</td></tr>{{/if}}
-      {{#if vessel.lengthOverall}}<tr><td class="label-cell">Length Overall</td><td>{{vessel.lengthOverall}} m</td></tr>{{/if}}
-      {{#if vessel.beam}}<tr><td class="label-cell">Beam</td><td>{{vessel.beam}} m</td></tr>{{/if}}
-      {{#if vessel.maxDraft}}<tr><td class="label-cell">Maximum Draft</td><td>{{vessel.maxDraft}} m</td></tr>{{/if}}
-    </table>
-    {{/if}}
-  </div>
 
-  <!-- 3. SCHEDULE & TIMELINE -->
-  <div class="page">
-    <h3>3. Schedule &amp; Timeline</h3>
-    <table class="kv-table">
-      {{#if workOrder.scheduledStart}}<tr><td class="label-cell">Scheduled Start</td><td>{{formatDate workOrder.scheduledStart}}</td></tr>{{/if}}
-      {{#if workOrder.scheduledEnd}}<tr><td class="label-cell">Scheduled End</td><td>{{formatDate workOrder.scheduledEnd}}</td></tr>{{/if}}
-      {{#if workOrder.actualStart}}<tr><td class="label-cell">Actual Start</td><td>{{formatDate workOrder.actualStart}}</td></tr>{{/if}}
-      {{#if workOrder.actualEnd}}<tr><td class="label-cell">Actual End</td><td>{{formatDate workOrder.actualEnd}}</td></tr>{{/if}}
-    </table>
+    <!-- ================================================================
+         PAGE 9: SECTION 6 — INSPECTIONS & FINDINGS (Conditional)
+         ================================================================ -->
+    {{#if inspections.length}}
+    <div class="page">
+        <h3>6. Inspections &amp; Findings</h3>
+        <p class="section-intro">Detailed inspection records and associated findings documented during the execution of this work order. A total of <strong>{{totalFindings}}</strong> finding(s) were recorded across <strong>{{inspections.length}}</strong> inspection(s).</p>
 
-    <!-- 4. ASSIGNED TEAM -->
-    <h3>4. Assigned Team</h3>
-    {{#if assignments.length}}
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Email</th>
-          <th>Role</th>
-        </tr>
-      </thead>
-      <tbody>
-        {{#each assignments}}
-        <tr>
-          <td><strong>{{user.firstName}} {{user.lastName}}</strong></td>
-          <td>{{user.email}}</td>
-          <td><span class="badge badge-blue">{{role}}</span></td>
-        </tr>
+        {{#each inspections}}
+        <section>
+            <h4>6.{{@index}}. Inspection: {{title}}</h4>
+
+            <table class="kv-table">
+                <tr>
+                    <td class="label-cell">Status</td>
+                    <td><span class="badge {{statusBadge status}}">{{status}}</span></td>
+                </tr>
+                {{#if type}}
+                <tr>
+                    <td class="label-cell">Type</td>
+                    <td>{{type}}</td>
+                </tr>
+                {{/if}}
+                {{#if createdAt}}
+                <tr>
+                    <td class="label-cell">Created</td>
+                    <td>{{formatDate createdAt}}</td>
+                </tr>
+                {{/if}}
+            </table>
+
+            {{#if findings.length}}
+            <h5>Findings ({{findings.length}})</h5>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 18%;">Component</th>
+                        <th style="width: 12%;">Severity</th>
+                        <th style="width: 38%;">Description</th>
+                        <th style="width: 32%;">Recommendation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each findings}}
+                    <tr>
+                        <td><strong>{{component}}</strong></td>
+                        <td>
+                            <span class="badge {{severityBadge severity}}">{{severity}}</span>
+                        </td>
+                        <td>{{description}}</td>
+                        <td>{{recommendation}}</td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+            {{else}}
+            <div class="empty-state">
+                No findings were recorded for this inspection.
+            </div>
+            {{/if}}
+
+            <hr class="subsection-divider" />
+        </section>
         {{/each}}
-      </tbody>
-    </table>
-    {{else}}
-    <p class="empty-state">No team members assigned to this work order.</p>
-    {{/if}}
-  </div>
 
-  {{#if inspections.length}}
-  <!-- 5. INSPECTIONS & FINDINGS -->
-  <div class="page">
-    <h3>5. Inspections &amp; Findings</h3>
+        <h4>Findings Summary</h4>
+        <table class="kv-table">
+            <tr>
+                <td class="label-cell">Total Inspections</td>
+                <td>{{inspections.length}}</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Total Findings</td>
+                <td><strong>{{totalFindings}}</strong></td>
+            </tr>
+        </table>
 
-    {{#each inspections}}
-    <h4>Inspection: {{title}}</h4>
-    <table class="kv-table">
-      <tr><td class="label-cell">Status</td><td><span class="badge {{statusBadge status}}">{{status}}</span></td></tr>
-      {{#if type}}<tr><td class="label-cell">Type</td><td>{{type}}</td></tr>{{/if}}
-      {{#if createdAt}}<tr><td class="label-cell">Created</td><td>{{formatDate createdAt}}</td></tr>{{/if}}
-    </table>
-
-    {{#if findings.length}}
-    <table>
-      <thead>
-        <tr>
-          <th style="width: 20%">Component</th>
-          <th style="width: 12%">Severity</th>
-          <th>Description</th>
-          <th style="width: 20%">Recommendation</th>
-        </tr>
-      </thead>
-      <tbody>
-        {{#each findings}}
-        <tr>
-          <td><strong>{{component}}</strong></td>
-          <td>
-            <span class="badge {{severityBadge severity}}">{{severity}}</span>
-          </td>
-          <td>{{description}}</td>
-          <td>{{recommendation}}</td>
-        </tr>
-        {{/each}}
-      </tbody>
-    </table>
-    {{else}}
-    <p class="empty-state">No findings recorded for this inspection.</p>
-    {{/if}}
-    {{/each}}
-  </div>
-  {{/if}}
-
-  {{#if formEntries.length}}
-  <!-- 6. FORM ENTRIES -->
-  <div class="page">
-    <h3>6. Form Entries</h3>
-    <p class="section-intro">Data collected through inspection forms during the work order.</p>
-    <table>
-      <thead>
-        <tr>
-          <th>Component</th>
-          <th>Fouling Rating</th>
-          <th>Coverage</th>
-          <th>Coating Condition</th>
-          <th>Notes</th>
-        </tr>
-      </thead>
-      <tbody>
-        {{#each formEntries}}
-        <tr>
-          <td><strong>{{#if vesselComponent}}{{vesselComponent.name}}{{else}}{{component}}{{/if}}</strong></td>
-          <td>{{foulingRating}}</td>
-          <td>{{#if coverage}}{{coverage}}%{{/if}}</td>
-          <td>{{coatingCondition}}</td>
-          <td>{{notes}}</td>
-        </tr>
-        {{/each}}
-      </tbody>
-    </table>
-  </div>
-  {{/if}}
-
-  {{#if taskSubmissions.length}}
-  <!-- 7. TASK SUBMISSIONS -->
-  <div class="page">
-    <h3>7. Task Submissions</h3>
-    <table>
-      <thead>
-        <tr>
-          <th>Task</th>
-          <th>Submitted By</th>
-          <th>Status</th>
-          <th>Submitted</th>
-          <th>Notes</th>
-        </tr>
-      </thead>
-      <tbody>
-        {{#each taskSubmissions}}
-        <tr>
-          <td><strong>{{#if task}}{{task.title}}{{else}}Task{{/if}}</strong></td>
-          <td>{{#if user}}{{user.firstName}} {{user.lastName}}{{/if}}</td>
-          <td><span class="badge {{statusBadge status}}">{{status}}</span></td>
-          <td>{{formatDate createdAt}}</td>
-          <td>{{notes}}</td>
-        </tr>
-        {{/each}}
-      </tbody>
-    </table>
-  </div>
-  {{/if}}
-
-  {{#if comments.length}}
-  <!-- 8. COMMENTS & NOTES -->
-  <div class="page">
-    <h3>8. Comments &amp; Notes</h3>
-    {{#each comments}}
-    <div style="border: 1px solid #e2e8f0; border-radius: 4px; padding: 10px 12px; margin: 8px 0; background: {{#if (isEven @index)}}#f8fafc{{else}}white{{/if}};">
-      <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-        <strong style="font-size: 10pt; color: #334155;">{{#if author}}{{author.firstName}} {{author.lastName}}{{else}}System{{/if}}</strong>
-        <span style="font-size: 9px; color: #94a3b8;">{{formatDate createdAt}}</span>
-      </div>
-      <p style="font-size: 10pt; color: #475569;">{{content}}</p>
+        <div class="content-footer">
+            <span>{{#if organisation.name}}{{organisation.name}}{{/if}}</span>
+            <span>{{workOrder.referenceNumber}} &mdash; Section 6: Inspections &amp; Findings</span>
+            <span>{{generatedAt}}</span>
+        </div>
     </div>
-    {{/each}}
-  </div>
-  {{/if}}
+    {{/if}}
 
-  <!-- FOOTER -->
-  <div class="page" style="min-height: auto; padding-top: 20mm;">
-    <div class="footer-line">
-      {{#if organisation.name}}{{organisation.name}} &mdash; {{/if}}Work Order Report &mdash; {{workOrder.referenceNumber}} &mdash; Generated {{generatedAt}}
+
+    <!-- ================================================================
+         PAGE 10: SECTION 7 — FORM ENTRIES / INSPECTION DATA (Conditional)
+         ================================================================ -->
+    {{#if formEntries.length}}
+    <div class="page">
+        <h3>7. Form Entries / Inspection Data</h3>
+        <p class="section-intro">Data collected through structured inspection forms during the execution of this work order. These entries provide quantitative assessments of vessel component conditions.</p>
+
+        <h4>7.1 Collected Data</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 22%;">Component</th>
+                    <th style="width: 14%;">Fouling Rating</th>
+                    <th style="width: 12%;">Coverage %</th>
+                    <th style="width: 18%;">Coating Condition</th>
+                    <th style="width: 34%;">Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each formEntries}}
+                <tr>
+                    <td><strong>{{#if vesselComponent}}{{vesselComponent.name}}{{else}}{{component}}{{/if}}</strong></td>
+                    <td style="text-align: center;">{{foulingRating}}</td>
+                    <td style="text-align: center;">{{#if coverage}}{{coverage}}%{{else}}&mdash;{{/if}}</td>
+                    <td>{{#if coatingCondition}}{{coatingCondition}}{{else}}&mdash;{{/if}}</td>
+                    <td>{{#if notes}}{{notes}}{{else}}<span style="color:#94a3b8;">&mdash;</span>{{/if}}</td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+
+        <h4>7.2 Summary Statistics</h4>
+        <table class="kv-table">
+            <tr>
+                <td class="label-cell">Total Form Entries</td>
+                <td><strong>{{formEntries.length}}</strong></td>
+            </tr>
+        </table>
+
+        <div class="content-footer">
+            <span>{{#if organisation.name}}{{organisation.name}}{{/if}}</span>
+            <span>{{workOrder.referenceNumber}} &mdash; Section 7: Form Entries</span>
+            <span>{{generatedAt}}</span>
+        </div>
     </div>
-  </div>
+    {{/if}}
+
+
+    <!-- ================================================================
+         PAGE 11: SECTION 8 — TASK SUBMISSIONS (Conditional)
+         ================================================================ -->
+    {{#if taskSubmissions.length}}
+    <div class="page">
+        <h3>8. Task Submissions</h3>
+        <p class="section-intro">Record of task completions and submissions by assigned personnel for this work order.</p>
+
+        <h4>8.1 Task Progress</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 6%;">#</th>
+                    <th style="width: 22%;">Task Name</th>
+                    <th style="width: 18%;">Submitted By</th>
+                    <th style="width: 12%;">Status</th>
+                    <th style="width: 14%;">Date</th>
+                    <th style="width: 28%;">Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each taskSubmissions}}
+                <tr>
+                    <td style="text-align: center;">{{@index}}</td>
+                    <td><strong>{{#if task}}{{task.title}}{{else}}Untitled Task{{/if}}</strong></td>
+                    <td>{{#if user}}{{user.firstName}} {{user.lastName}}{{else}}<span style="color:#94a3b8;">Not specified</span>{{/if}}</td>
+                    <td><span class="badge {{statusBadge status}}">{{status}}</span></td>
+                    <td>{{formatDate createdAt}}</td>
+                    <td>{{#if notes}}{{notes}}{{else}}<span style="color:#94a3b8;">&mdash;</span>{{/if}}</td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+
+        <h4>Progress Summary</h4>
+        <table class="kv-table">
+            <tr>
+                <td class="label-cell">Total Submissions</td>
+                <td><strong>{{taskSubmissions.length}}</strong></td>
+            </tr>
+        </table>
+
+        <div class="content-footer">
+            <span>{{#if organisation.name}}{{organisation.name}}{{/if}}</span>
+            <span>{{workOrder.referenceNumber}} &mdash; Section 8: Task Submissions</span>
+            <span>{{generatedAt}}</span>
+        </div>
+    </div>
+    {{/if}}
+
+
+    <!-- ================================================================
+         PAGE 12: SECTION 9 — COMMENTS & ACTIVITY LOG (Conditional)
+         ================================================================ -->
+    {{#if comments.length}}
+    <div class="page">
+        <h3>9. Comments &amp; Activity Log</h3>
+        <p class="section-intro">Chronological record of comments and notes added to this work order by team members and stakeholders.</p>
+
+        {{#each comments}}
+        <div class="comment-card {{#if (isEven @index)}}comment-card-even{{else}}comment-card-odd{{/if}}">
+            <div class="comment-header">
+                <div>
+                    <span class="comment-index">{{@index}}</span>
+                    <span class="comment-author">
+                        {{#if author}}{{author.firstName}} {{author.lastName}}{{else}}System{{/if}}
+                    </span>
+                </div>
+                <span class="comment-date">{{formatDate createdAt}}</span>
+            </div>
+            <div class="comment-content">
+                {{content}}
+            </div>
+        </div>
+        {{/each}}
+
+        <div style="margin-top: 18px;">
+            <table class="kv-table">
+                <tr>
+                    <td class="label-cell">Total Comments</td>
+                    <td><strong>{{comments.length}}</strong></td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="content-footer">
+            <span>{{#if organisation.name}}{{organisation.name}}{{/if}}</span>
+            <span>{{workOrder.referenceNumber}} &mdash; Section 9: Comments</span>
+            <span>{{generatedAt}}</span>
+        </div>
+    </div>
+    {{/if}}
+
+
+    <!-- ================================================================
+         PAGE 13: SECTION 10 — DOCUMENT APPROVAL / SIGNOFF
+         ================================================================ -->
+    <div class="page">
+        <h3>10. Document Approval / Signoff</h3>
+        <p class="section-intro">This section provides formal signoff and approval for the work order report. All parties should review the contents of this report before signing.</p>
+
+        <div class="signoff-block">
+            <div class="signoff-title">Prepared By</div>
+            <div class="signoff-row">
+                <div class="signoff-field">
+                    <div class="signoff-label">Name</div>
+                    <div class="signoff-line"></div>
+                </div>
+                <div class="signoff-field">
+                    <div class="signoff-label">Title / Position</div>
+                    <div class="signoff-line"></div>
+                </div>
+            </div>
+            <div class="signoff-row">
+                <div class="signoff-field">
+                    <div class="signoff-label">Signature</div>
+                    <div class="signoff-line" style="height: 45px;"></div>
+                </div>
+                <div class="signoff-field">
+                    <div class="signoff-label">Date</div>
+                    <div class="signoff-line"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="signoff-block">
+            <div class="signoff-title">Reviewed By</div>
+            <div class="signoff-row">
+                <div class="signoff-field">
+                    <div class="signoff-label">Name</div>
+                    <div class="signoff-line"></div>
+                </div>
+                <div class="signoff-field">
+                    <div class="signoff-label">Title / Position</div>
+                    <div class="signoff-line"></div>
+                </div>
+            </div>
+            <div class="signoff-row">
+                <div class="signoff-field">
+                    <div class="signoff-label">Signature</div>
+                    <div class="signoff-line" style="height: 45px;"></div>
+                </div>
+                <div class="signoff-field">
+                    <div class="signoff-label">Date</div>
+                    <div class="signoff-line"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="signoff-block">
+            <div class="signoff-title">Approved By</div>
+            <div class="signoff-row">
+                <div class="signoff-field">
+                    <div class="signoff-label">Name</div>
+                    <div class="signoff-line"></div>
+                </div>
+                <div class="signoff-field">
+                    <div class="signoff-label">Title / Position</div>
+                    <div class="signoff-line"></div>
+                </div>
+            </div>
+            <div class="signoff-row">
+                <div class="signoff-field">
+                    <div class="signoff-label">Signature</div>
+                    <div class="signoff-line" style="height: 45px;"></div>
+                </div>
+                <div class="signoff-field">
+                    <div class="signoff-label">Date</div>
+                    <div class="signoff-line"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="disclaimer-block" style="margin-top: 20px;">
+            <p><strong>Disclaimer:</strong></p>
+            <p style="margin-top: 4px;">
+                This work order report has been compiled based on information recorded within the maritime vessel management platform at the time of generation. The data, observations, findings, and recommendations contained herein reflect the conditions as assessed during the scope of the work order. While every effort has been made to ensure accuracy, the authors and the organisation accept no liability for any errors, omissions, or consequences arising from the use of information contained in this report. This document should be read in conjunction with all relevant regulatory requirements, classification society rules, and operational procedures. Any decisions made based on the contents of this report should be subject to independent verification and professional judgement.
+            </p>
+        </div>
+
+        <div class="footer-line" style="margin-top: 30px;">
+            {{#if organisation.name}}{{organisation.name}} &mdash; {{/if}}Work Order Report &mdash; {{workOrder.referenceNumber}} &mdash; Generated {{generatedAt}}
+        </div>
+
+        <div class="content-footer">
+            <span>{{#if organisation.name}}{{organisation.name}}{{/if}}</span>
+            <span>{{workOrder.referenceNumber}} &mdash; Section 10: Document Approval</span>
+            <span>{{generatedAt}}</span>
+        </div>
+    </div>
+
+
+                </td>
+            </tr>
+        </tbody>
+    </table>
 
 </body>
+
 </html>

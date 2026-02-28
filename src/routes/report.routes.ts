@@ -87,11 +87,19 @@ router.post('/bfmp/draft', authenticate, requirePermission('REPORT_GENERATE'), a
 });
 
 // Serve rendered HTML report for preview / print
+// Supports ?type=inspection (default) or ?type=work-order
 router.get('/preview/:workOrderId', authenticate, async (req: Request, res: Response) => {
   try {
     if (!(await assertReportAccess(req, res))) return;
 
-    const report = await reportService.generateInspectionReport(req.params.workOrderId as string);
+    const reportType = (req.query.type as string) || 'inspection';
+    let report: any;
+    if (reportType === 'work-order') {
+      report = await reportService.generateWorkOrderReport(req.params.workOrderId as string);
+    } else {
+      report = await reportService.generateInspectionReport(req.params.workOrderId as string);
+    }
+
     if (report.html) {
       res.setHeader('Content-Type', 'text/html');
       res.send(report.html);
@@ -104,10 +112,13 @@ router.get('/preview/:workOrderId', authenticate, async (req: Request, res: Resp
 });
 
 // Branded report viewer with page controls + print
+// Supports ?type=inspection (default) or ?type=work-order
 router.get('/view/:workOrderId', authenticate, async (req: Request, res: Response) => {
   try {
     if (!(await assertReportAccess(req, res))) return;
-    const html = await reportService.getInspectionReportViewHtml(req.params.workOrderId as string);
+    const reportType = (req.query.type as string) || 'inspection';
+    const title = reportType === 'work-order' ? 'Work Order Report' : 'Inspection Report';
+    const html = await reportService.getReportViewHtml(req.params.workOrderId as string, reportType, title);
     res.setHeader('Content-Type', 'text/html');
     res.send(html);
   } catch (error: any) {

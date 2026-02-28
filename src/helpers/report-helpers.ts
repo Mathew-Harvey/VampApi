@@ -31,17 +31,21 @@ const stringHelpers: Record<string, Handlebars.HelperDelegate> = {
 // Date helpers
 // ---------------------------------------------------------------------------
 const dateHelpers: Record<string, Handlebars.HelperDelegate> = {
-  formatDate: (date: unknown, format: string, timezoneType = 'utc') => {
+  formatDate: (date: unknown, format: unknown, timezoneType: unknown = 'utc') => {
     if (!date) return '';
+    // When called as {{formatDate value}} without a format arg, Handlebars passes
+    // the options hash as 'format'. Detect this and fall back to a default format.
+    const fmt = typeof format === 'string' ? format : 'DD MMM YYYY';
+    const tz = typeof timezoneType === 'string' ? timezoneType : 'utc';
     const d = (date as any)?.date ?? date;
     const momentDate = moment(d).utcOffset((date as any)?.offset ?? 0);
-    switch (timezoneType) {
+    switch (tz) {
       case 'local':
-        return momentDate.local().format(format);
+        return momentDate.local().format(fmt);
       case 'saved':
-        return momentDate.format(format);
+        return momentDate.format(fmt);
       default:
-        return momentDate.utc().format(format);
+        return momentDate.utc().format(fmt);
     }
   },
   dateDiff: (date1: unknown, date2: unknown, unit: string) => {
@@ -57,16 +61,17 @@ const dateHelpers: Record<string, Handlebars.HelperDelegate> = {
         return diff;
     }
   },
-  now: (format = 'ddd DD, MMM YYYY') => moment().format(format),
+  now: (format: unknown = 'ddd DD, MMM YYYY') => moment().format(typeof format === 'string' ? format : 'ddd DD, MMM YYYY'),
   formatDayOfWeek: (date: unknown) => {
     if (!date) return '';
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     return days[new Date((date as any)?.date ?? date).getDay()];
   },
-  formatDateTime: (dateTime: unknown, format: string) => {
+  formatDateTime: (dateTime: unknown, format: unknown) => {
     if (!dateTime) return '';
+    const fmt = typeof format === 'string' ? format : 'DD MMM YYYY HH:mm';
     const d = (dateTime as any)?.date ?? dateTime;
-    return moment(d).local().format(format);
+    return moment(d).local().format(fmt);
   },
   todaysDate: () => moment().format('dddd DD MMMM YYYY'),
 };

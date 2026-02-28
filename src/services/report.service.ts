@@ -619,11 +619,15 @@ function compileAndRender(templateName: string, context: Record<string, any>): s
   return template(context);
 }
 
-function buildReportViewerHtml(workOrderId: string, reportType: string = 'inspection', title: string = 'Inspection Report'): string {
+function buildReportViewerHtml(workOrderId: string, reportType: string = 'inspection', title: string = 'Inspection Report', token?: string): string {
   const safeWorkOrderId = workOrderId.replace(/"/g, '&quot;');
   const safeType = reportType.replace(/"/g, '&quot;');
   const safeTitle = title.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  const typeParam = safeType !== 'inspection' ? `?type=${safeType}` : '';
+  const params = new URLSearchParams();
+  if (safeType !== 'inspection') params.set('type', safeType);
+  if (token) params.set('token', token);
+  const qs = params.toString();
+  const typeParam = qs ? `?${qs}` : '';
   return `<!doctype html>
 <html>
   <head>
@@ -795,12 +799,12 @@ function buildReportViewerHtml(workOrderId: string, reportType: string = 'inspec
 }
 
 export const reportService = {
-  async getInspectionReportViewHtml(workOrderId: string) {
-    return buildReportViewerHtml(workOrderId, 'inspection', 'Inspection Report');
+  async getInspectionReportViewHtml(workOrderId: string, token?: string) {
+    return buildReportViewerHtml(workOrderId, 'inspection', 'Inspection Report', token);
   },
 
-  async getReportViewHtml(workOrderId: string, reportType: string = 'inspection', title: string = 'Inspection Report') {
-    return buildReportViewerHtml(workOrderId, reportType, title);
+  async getReportViewHtml(workOrderId: string, reportType: string = 'inspection', title: string = 'Inspection Report', token?: string) {
+    return buildReportViewerHtml(workOrderId, reportType, title, token);
   },
 
   async getInspectionReportConfig(workOrderId: string) {

@@ -118,7 +118,8 @@ router.get('/view/:workOrderId', authenticate, async (req: Request, res: Respons
     if (!(await assertReportAccess(req, res))) return;
     const reportType = (req.query.type as string) || 'inspection';
     const title = reportType === 'work-order' ? 'Work Order Report' : 'Inspection Report';
-    const html = await reportService.getReportViewHtml(req.params.workOrderId as string, reportType, title);
+    const queryToken = typeof req.query?.token === 'string' ? req.query.token : undefined;
+    const html = await reportService.getReportViewHtml(req.params.workOrderId as string, reportType, title, queryToken);
     res.setHeader('Content-Type', 'text/html');
     res.send(html);
   } catch (error: any) {

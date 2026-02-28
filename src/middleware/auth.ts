@@ -13,7 +13,8 @@ export function authenticate(req: Request, res: Response, next: NextFunction): v
   const authHeader = req.headers.authorization;
   const headerToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
   const cookieToken = req.cookies?.accessToken;
-  const token = headerToken || cookieToken;
+  const queryToken = typeof req.query?.token === 'string' ? req.query.token : null;
+  const token = headerToken || cookieToken || queryToken;
 
   if (!token) {
     res.status(401).json({ success: false, error: { code: 'UNAUTHORIZED', message: 'Missing or invalid authorization header' } });

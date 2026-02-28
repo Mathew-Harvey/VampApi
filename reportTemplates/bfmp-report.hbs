@@ -1,157 +1,1315 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8" />
-  <title>Biofouling Management Plan</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Biofouling Management Plan — {{vessel.name}}</title>
   <style>
-    * { font-family: 'Calibri', 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { background: white; }
-    body { max-width: 210mm; margin: 0 auto; padding: 0; color: #1e293b; font-size: 11pt; line-height: 1.5; }
+    /* ================================================================
+       BIOFOULING MANAGEMENT PLAN (BFMP) REPORT TEMPLATE
+       Professional A4 Print-Ready Document
+       Following IMO Biofouling Guidelines (MEPC.207(62))
+       ================================================================ */
 
-    .page { page-break-after: always; width: 100%; padding: 15mm 17mm; min-height: 297mm; position: relative; }
-    .page:last-child { page-break-after: auto; }
+    /* ---- Reset & Base Typography ---- */
+    * {
+      font-family: 'Calibri', 'Segoe UI', Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-    h1 { font-size: 26px; color: #365F91; text-transform: uppercase; text-align: center; margin-bottom: 8px; }
-    h2 { font-size: 20px; color: #365F91; text-transform: uppercase; text-align: center; margin-bottom: 6px; }
-    h3 { font-size: 16px; color: #365F91; text-transform: uppercase; margin: 20px 0 10px 0; border-bottom: 2px solid #365F91; padding-bottom: 4px; }
-    h4 { font-size: 13px; color: #365F91; text-transform: uppercase; margin: 14px 0 6px 0; }
-    p { margin: 4px 0; font-size: 11pt; }
-    .subtitle { font-size: 14px; color: #475569; text-align: center; margin-bottom: 4px; }
+    html {
+      background: white;
+      display: block;
+    }
 
-    /* Cover page */
-    .cover { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-    .cover-logo { margin-top: 60px; margin-bottom: 40px; }
-    .cover-meta { margin-top: 40px; font-size: 12px; color: #64748b; }
-    .cover-meta table { margin: 0 auto; border-collapse: collapse; }
-    .cover-meta td { padding: 4px 12px; text-align: left; }
-    .cover-meta td:first-child { font-weight: 600; color: #334155; }
+    body {
+      max-width: 210mm;
+      margin: 0 auto;
+      padding: 0;
+      color: #1e293b;
+      font-size: 11pt;
+      line-height: 1.55;
+      background: white;
+    }
 
-    /* Tables */
-    table { width: 100%; border-collapse: collapse; margin: 8px 0 14px 0; font-size: 10pt; }
-    th { background-color: #365F91; color: #fff; font-weight: 600; text-align: left; padding: 6px 8px; border: 1px solid #365F91; font-size: 10pt; }
-    td { padding: 5px 8px; border: 1px solid #cbd5e1; vertical-align: top; word-wrap: break-word; }
-    tr:nth-child(even) td { background-color: #f8fafc; }
-    .label-cell { background-color: #e8edf4; font-weight: 600; color: #334155; width: 35%; }
+    /* ---- Page Structure ---- */
+    .page {
+      page-break-after: always;
+      size: A4;
+      width: 100%;
+      padding: 20mm 17mm 15mm 17mm;
+      min-height: 297mm;
+      position: relative;
+    }
 
-    /* Key-value rows */
-    .kv-table { margin: 6px 0; }
-    .kv-table td { border: 1px solid #cbd5e1; }
+    .page:last-child {
+      page-break-after: auto;
+    }
 
-    /* Risk badges */
-    .risk-low { background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 3px; font-weight: 600; font-size: 10px; }
-    .risk-medium { background: #fef9c3; color: #854d0e; padding: 2px 8px; border-radius: 3px; font-weight: 600; font-size: 10px; }
-    .risk-high { background: #fed7aa; color: #9a3412; padding: 2px 8px; border-radius: 3px; font-weight: 600; font-size: 10px; }
-    .risk-veryhigh { background: #fecaca; color: #991b1b; padding: 2px 8px; border-radius: 3px; font-weight: 600; font-size: 10px; }
+    .pageLast {
+      size: A4;
+      width: 100%;
+      padding: 20mm 17mm 15mm 17mm;
+      min-height: 297mm;
+      position: relative;
+      page-break-after: auto;
+    }
 
-    .section-intro { color: #475569; font-size: 10pt; margin-bottom: 10px; }
-    .empty-state { color: #94a3b8; font-style: italic; padding: 10px; text-align: center; }
-    .footer-line { margin-top: 30px; border-top: 1px solid #cbd5e1; padding-top: 8px; font-size: 9px; color: #94a3b8; text-align: center; }
-    .toc-item { margin: 4px 0; font-size: 11pt; }
-    .toc-item a { color: #365F91; text-decoration: none; }
-    .page-number { position: absolute; bottom: 10mm; right: 17mm; font-size: 9px; color: #94a3b8; }
+    /* ---- Page Header & Footer (Print) ---- */
+    .page-header,
+    .page-header-space {
+      height: 100px;
+    }
 
+    .page-footer,
+    .page-footer-space {
+      height: 70px;
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: fixed;
+      top: 0mm;
+      left: 0;
+      width: 210mm;
+      box-sizing: border-box;
+      padding: 8mm 17mm 0 17mm;
+      z-index: 10;
+    }
+
+    .header-table {
+      width: 100%;
+      table-layout: fixed;
+      border: none;
+      margin: 0;
+    }
+
+    .header-table td {
+      text-align: center;
+      vertical-align: middle;
+      border: none;
+      padding: 0;
+      background: none;
+    }
+
+    .header-table td:first-child {
+      text-align: left;
+    }
+
+    .header-table td:last-child {
+      text-align: right;
+    }
+
+    .page-footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 210mm;
+      padding: 0 17mm 8mm 17mm;
+      z-index: 10;
+    }
+
+    .page-footer-inner {
+      border-top: 2px solid #365F91;
+      padding-top: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 8pt;
+      color: #64748b;
+    }
+
+    .page-footer-inner .footer-left {
+      text-align: left;
+    }
+
+    .page-footer-inner .footer-center {
+      text-align: center;
+      font-weight: 600;
+      color: #365F91;
+      text-transform: uppercase;
+      font-size: 7pt;
+      letter-spacing: 0.5px;
+    }
+
+    .page-footer-inner .footer-right {
+      text-align: right;
+    }
+
+    #confidential {
+      font-size: 14px;
+      letter-spacing: 1px;
+      word-spacing: 2px;
+      color: #FF0000;
+      font-weight: 700;
+      text-decoration: none;
+      font-style: normal;
+      font-variant: normal;
+      text-transform: uppercase;
+    }
+
+    /* ---- Heading Hierarchy ---- */
+    h1 {
+      font-size: 28px;
+      color: #365F91;
+      text-transform: uppercase;
+      text-align: center;
+      margin-bottom: 10px;
+      letter-spacing: 1px;
+    }
+
+    h2 {
+      font-size: 22px;
+      color: #365F91;
+      text-transform: uppercase;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    h3 {
+      font-size: 17px;
+      color: #365F91;
+      text-transform: uppercase;
+      text-align: left;
+      margin: 22px 0 12px 0;
+      border-bottom: 2px solid #365F91;
+      padding-bottom: 5px;
+      letter-spacing: 0.3px;
+    }
+
+    h4 {
+      font-size: 14px;
+      color: #365F91;
+      text-transform: uppercase;
+      text-align: left;
+      margin: 18px 0 8px 0;
+    }
+
+    h5 {
+      font-size: 12px;
+      color: #365F91;
+      text-transform: uppercase;
+      text-align: left;
+      margin: 12px 0 6px 0;
+    }
+
+    h6 {
+      font-size: 11px;
+      color: #365F91;
+      text-transform: uppercase;
+      text-align: left;
+      margin: 8px 0 4px 0;
+    }
+
+    p {
+      margin: 5px 0;
+      font-size: 11pt;
+    }
+
+    .subtitle {
+      font-size: 15px;
+      color: #475569;
+      text-align: center;
+      margin-bottom: 6px;
+    }
+
+    /* ---- Cover Page ---- */
+    .cover {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      text-align: center;
+      padding-top: 25mm;
+    }
+
+    .cover-org {
+      margin-top: 20px;
+      margin-bottom: 15px;
+    }
+
+    .cover-org h2 {
+      font-size: 18px;
+      color: #64748b;
+      text-transform: none;
+      font-weight: 400;
+      letter-spacing: 1px;
+    }
+
+    .cover-title {
+      margin-top: 30px;
+      margin-bottom: 10px;
+    }
+
+    .cover-title h1 {
+      font-size: 32px;
+      line-height: 1.2;
+      letter-spacing: 2px;
+      color: #365F91;
+      margin-bottom: 0;
+    }
+
+    .cover-vessel {
+      margin-top: 20px;
+      margin-bottom: 5px;
+    }
+
+    .cover-vessel h2 {
+      font-size: 26px;
+      color: #1e293b;
+      letter-spacing: 0.5px;
+    }
+
+    .cover-imo {
+      font-size: 16px;
+      color: #64748b;
+      margin-bottom: 20px;
+    }
+
+    .cover-image-placeholder {
+      width: 80%;
+      max-width: 420px;
+      height: 180px;
+      border: 2px dashed #cbd5e1;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #94a3b8;
+      font-size: 10pt;
+      font-style: italic;
+      margin: 20px auto;
+      background: #f8fafc;
+    }
+
+    .cover-image-placeholder img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
+    .cover-meta {
+      margin-top: 30px;
+      font-size: 11pt;
+      color: #334155;
+      width: 70%;
+    }
+
+    .cover-meta table {
+      margin: 0 auto;
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    .cover-meta td {
+      padding: 6px 14px;
+      text-align: left;
+      border: 1px solid #e2e8f0;
+    }
+
+    .cover-meta td:first-child {
+      font-weight: 600;
+      color: #365F91;
+      background: #f0f4f8;
+      width: 40%;
+    }
+
+    .cover-footer {
+      margin-top: auto;
+      padding-top: 30px;
+      border-top: 2px solid #365F91;
+      width: 100%;
+      text-align: center;
+      font-size: 9pt;
+      color: #94a3b8;
+    }
+
+    /* ---- Table Styles ---- */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 8px 0 16px 0;
+      font-size: 10pt;
+    }
+
+    th {
+      background-color: #365F91;
+      color: #ffffff;
+      font-weight: 600;
+      text-align: left;
+      padding: 7px 10px;
+      border: 1px solid #365F91;
+      font-size: 10pt;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    td {
+      padding: 6px 10px;
+      border: 1px solid #cbd5e1;
+      vertical-align: top;
+      word-wrap: break-word;
+    }
+
+    tr {
+      page-break-inside: avoid;
+    }
+
+    tr:nth-child(even) td {
+      background-color: #f8fafc;
+    }
+
+    .label-cell {
+      background-color: #e8edf4;
+      font-weight: 600;
+      color: #334155;
+      width: 35%;
+    }
+
+    .label-cell-narrow {
+      background-color: #e8edf4;
+      font-weight: 600;
+      color: #334155;
+      width: 25%;
+    }
+
+    /* Key-value table */
+    .kv-table {
+      margin: 8px 0 16px 0;
+    }
+
+    .kv-table td {
+      border: 1px solid #cbd5e1;
+    }
+
+    /* Data table with dense layout */
+    .data-table th {
+      font-size: 9pt;
+      padding: 5px 8px;
+    }
+
+    .data-table td {
+      font-size: 9.5pt;
+      padding: 4px 8px;
+    }
+
+    /* ---- Risk Badges ---- */
+    .risk-badge {
+      display: inline-block;
+      padding: 3px 12px;
+      border-radius: 3px;
+      font-weight: 700;
+      font-size: 10pt;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .risk-low {
+      background: #dcfce7;
+      color: #166534;
+      padding: 3px 12px;
+      border-radius: 3px;
+      font-weight: 700;
+      font-size: 10pt;
+    }
+
+    .risk-medium {
+      background: #fef9c3;
+      color: #854d0e;
+      padding: 3px 12px;
+      border-radius: 3px;
+      font-weight: 700;
+      font-size: 10pt;
+    }
+
+    .risk-high {
+      background: #fed7aa;
+      color: #9a3412;
+      padding: 3px 12px;
+      border-radius: 3px;
+      font-weight: 700;
+      font-size: 10pt;
+    }
+
+    .risk-veryhigh {
+      background: #fecaca;
+      color: #991b1b;
+      padding: 3px 12px;
+      border-radius: 3px;
+      font-weight: 700;
+      font-size: 10pt;
+    }
+
+    .risk-overall {
+      display: inline-block;
+      padding: 6px 18px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 13pt;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* ---- Condition Badges ---- */
+    .condition-good {
+      color: #166534;
+      font-weight: 600;
+    }
+
+    .condition-fair {
+      color: #854d0e;
+      font-weight: 600;
+    }
+
+    .condition-poor {
+      color: #9a3412;
+      font-weight: 600;
+    }
+
+    /* ---- Section Intro ---- */
+    .section-intro {
+      color: #475569;
+      font-size: 10.5pt;
+      margin-bottom: 12px;
+      line-height: 1.6;
+    }
+
+    .section-note {
+      background: #f0f4f8;
+      border-left: 3px solid #365F91;
+      padding: 10px 14px;
+      margin: 12px 0;
+      font-size: 10pt;
+      color: #334155;
+    }
+
+    /* ---- Empty State ---- */
+    .empty-state {
+      color: #94a3b8;
+      font-style: italic;
+      padding: 14px;
+      text-align: center;
+      background: #f8fafc;
+      border: 1px dashed #e2e8f0;
+      border-radius: 4px;
+    }
+
+    /* ---- Footer Line (in-page) ---- */
+    .footer-line {
+      margin-top: 30px;
+      border-top: 1px solid #cbd5e1;
+      padding-top: 8px;
+      font-size: 8.5pt;
+      color: #94a3b8;
+      text-align: center;
+    }
+
+    .page-number {
+      position: absolute;
+      bottom: 12mm;
+      right: 17mm;
+      font-size: 8.5pt;
+      color: #94a3b8;
+    }
+
+    /* ---- Table of Contents ---- */
+    .toc-section {
+      margin: 6px 0;
+      font-size: 11pt;
+      line-height: 2;
+    }
+
+    .toc-section a {
+      color: #365F91;
+      text-decoration: none;
+    }
+
+    .toc-section a:hover {
+      text-decoration: underline;
+    }
+
+    .toc-main {
+      font-weight: 600;
+      font-size: 11.5pt;
+    }
+
+    .toc-sub {
+      margin-left: 22px;
+      font-size: 10.5pt;
+      font-weight: 400;
+    }
+
+    /* ---- Signoff ---- */
+    .signoff-block {
+      margin: 20px 0;
+      page-break-inside: avoid;
+    }
+
+    .signoff-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .signoff-table td {
+      padding: 10px 14px;
+      border: 1px solid #cbd5e1;
+      vertical-align: top;
+    }
+
+    .signoff-label {
+      background: #e8edf4;
+      font-weight: 600;
+      color: #334155;
+      width: 30%;
+    }
+
+    .signature-line {
+      border-bottom: 1px solid #1e293b;
+      height: 40px;
+      margin-top: 10px;
+    }
+
+    .signature-date-line {
+      border-bottom: 1px solid #1e293b;
+      width: 200px;
+      height: 30px;
+      margin-top: 8px;
+      display: inline-block;
+    }
+
+    /* ---- Disclaimer ---- */
+    .disclaimer {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      padding: 14px 18px;
+      margin: 16px 0;
+      font-size: 9pt;
+      color: #64748b;
+      line-height: 1.6;
+    }
+
+    /* ---- Distribution List ---- */
+    .distribution-table td {
+      font-size: 10pt;
+    }
+
+    /* ---- Image / Photo Styles ---- */
+    .image-placeholder {
+      width: 100%;
+      max-width: 500px;
+      min-height: 160px;
+      border: 2px dashed #cbd5e1;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #94a3b8;
+      font-size: 9.5pt;
+      font-style: italic;
+      margin: 12px auto;
+      background: #f8fafc;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .image-placeholder img {
+      max-width: 100%;
+      max-height: 400px;
+      object-fit: contain;
+    }
+
+    .photo-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 10px 0;
+    }
+
+    .photo-grid .photo-item {
+      flex: 1 1 45%;
+      min-width: 200px;
+      page-break-inside: avoid;
+    }
+
+    .photo-grid .photo-item img {
+      width: 100%;
+      height: auto;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+    }
+
+    .photo-caption {
+      font-size: 8.5pt;
+      color: #64748b;
+      text-align: center;
+      margin-top: 4px;
+      font-style: italic;
+    }
+
+    /* ---- Risk Matrix ---- */
+    .risk-matrix-table td {
+      text-align: center;
+      font-weight: 600;
+      padding: 8px 12px;
+    }
+
+    .risk-matrix-table .matrix-low {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .risk-matrix-table .matrix-medium {
+      background: #fef9c3;
+      color: #854d0e;
+    }
+
+    .risk-matrix-table .matrix-high {
+      background: #fed7aa;
+      color: #9a3412;
+    }
+
+    .risk-matrix-table .matrix-veryhigh {
+      background: #fecaca;
+      color: #991b1b;
+    }
+
+    /* ---- Divider ---- */
+    .section-divider {
+      border: none;
+      border-top: 1px solid #e2e8f0;
+      margin: 16px 0;
+    }
+
+    /* ---- Utility ---- */
+    .text-center { text-align: center; }
+    .text-left { text-align: left; }
+    .text-right { text-align: right; }
+    .text-bold { font-weight: 700; }
+    .text-muted { color: #94a3b8; }
+    .text-small { font-size: 9pt; }
+    .mt-0 { margin-top: 0; }
+    .mt-10 { margin-top: 10px; }
+    .mt-20 { margin-top: 20px; }
+    .mb-0 { margin-bottom: 0; }
+    .mb-10 { margin-bottom: 10px; }
+    .mb-20 { margin-bottom: 20px; }
+    .no-border td { border: none; }
+    .full-width { width: 100%; }
+
+    section {
+      page-break-inside: avoid;
+    }
+
+    /* ================================================================
+       @page — Print Page Setup
+       ================================================================ */
+    @page {
+      size: A4;
+      margin: 17mm;
+    }
+
+    /* ================================================================
+       @media screen — Preview Mode (A4 cards on grey background)
+       ================================================================ */
+    @media screen {
+      html {
+        background: #e8ecf1 !important;
+      }
+
+      body {
+        background: transparent !important;
+        max-width: none !important;
+        width: auto !important;
+        padding: 40px 20px !important;
+        margin: 0 !important;
+        height: auto !important;
+        overflow-y: auto !important;
+      }
+
+      .page-header {
+        display: none !important;
+      }
+
+      .page-footer {
+        display: none !important;
+      }
+
+      .page-header-space,
+      .page-footer-space {
+        height: 0 !important;
+        display: none !important;
+      }
+
+      .page,
+      .pageLast {
+        width: 210mm !important;
+        min-height: 297mm !important;
+        margin: 0 auto 40px auto !important;
+        padding: 20mm 17mm !important;
+        background: white !important;
+        box-shadow: 0 2px 16px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
+        border-radius: 2px !important;
+        box-sizing: border-box !important;
+        position: relative !important;
+        page-break-after: unset !important;
+      }
+    }
+
+    /* ================================================================
+       @media print — Print Overrides
+       ================================================================ */
     @media print {
-      .page { page-break-after: always; padding: 10mm 15mm; }
-      body { max-width: none; }
+      thead {
+        display: table-header-group;
+      }
+
+      tfoot {
+        display: table-footer-group;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+        max-width: none;
+        position: relative;
+        height: 297mm;
+        width: 210mm;
+        overflow: hidden;
+      }
+
+      .page {
+        page-break-after: always;
+        padding: 0;
+        min-height: auto;
+      }
+
+      .pageLast {
+        page-break-after: auto;
+        padding: 0;
+        min-height: auto;
+      }
+
+      .no-print {
+        display: none !important;
+      }
     }
   </style>
 </head>
+
 <body>
 
-  <!-- COVER PAGE -->
+  <!-- ============================================================
+       FIXED PAGE HEADER (for print)
+       ============================================================ -->
+  <div class="page-header">
+    <table class="header-table">
+      <tr>
+        <td>
+          <!-- Logo placeholder: organisation logo renders here -->
+          {{#if organisation.name}}
+            <span style="font-size: 11pt; font-weight: 600; color: #365F91;">{{organisation.name}}</span>
+          {{/if}}
+        </td>
+        <td>
+          <p id="confidential">CONFIDENTIAL</p>
+        </td>
+        <td>
+          <span style="font-size: 9pt; color: #64748b;">BFMP &mdash; Rev. {{planInformation.revision}}</span>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- ============================================================
+       FIXED PAGE FOOTER (for print)
+       ============================================================ -->
+  <div class="page-footer">
+    <div class="page-footer-inner">
+      <span class="footer-left">{{#if organisation.name}}{{organisation.name}}{{/if}}</span>
+      <span class="footer-center">Biofouling Management Plan</span>
+      <span class="footer-right">Rev. {{planInformation.revision}} &mdash; {{planInformation.date}}</span>
+    </div>
+  </div>
+
+  <!-- Wrapper table for repeating header/footer in print -->
+  <table style="width:100%; border:none; margin:0; padding:0;">
+    <thead>
+      <tr>
+        <td style="border:none; padding:0;">
+          <div class="page-header-space"></div>
+        </td>
+      </tr>
+    </thead>
+    <tfoot>
+      <tr>
+        <td style="border:none; padding:0;">
+          <div class="page-footer-space"></div>
+        </td>
+      </tr>
+    </tfoot>
+    <tbody>
+      <tr>
+        <td style="border:none; padding:0;">
+
+
+  <!-- ============================================================
+       PAGE 1: COVER PAGE
+       ============================================================ -->
   <div class="page cover">
-    <div class="cover-logo">
+
+    <div class="cover-org">
       {{#if organisation.name}}
-        <h2 style="font-size: 16px; color: #64748b; text-transform: none;">{{organisation.name}}</h2>
+        <h2 style="font-size: 18px; color: #64748b; text-transform: uppercase; font-weight: 400; letter-spacing: 2px;">{{organisation.name}}</h2>
       {{/if}}
     </div>
-    <h1>Biofouling Management Plan</h1>
-    <h2 style="margin-top: 12px;">{{vessel.name}}</h2>
+
+    <div style="width: 80%; border-top: 3px solid #365F91; margin: 10px auto;"></div>
+
+    <div class="cover-title">
+      <h1 style="font-size: 30px; margin-bottom: 4px;">Biofouling</h1>
+      <h1 style="font-size: 30px; margin-top: 0;">Management Plan</h1>
+    </div>
+
+    <div style="width: 40%; border-bottom: 3px solid #365F91; margin: 10px auto;"></div>
+
+    <div class="cover-vessel">
+      <h2 style="margin-top: 24px; font-size: 24px; color: #1e293b;">{{vessel.name}}</h2>
+    </div>
+
     {{#if vessel.imoNumber}}
-      <p class="subtitle">IMO {{vessel.imoNumber}}</p>
+      <p class="cover-imo">IMO {{vessel.imoNumber}}</p>
     {{/if}}
+
+    <div class="cover-image-placeholder">
+      Vessel Photograph / Company Logo
+    </div>
+
     <div class="cover-meta">
       <table>
-        {{#if planInformation.reference}}<tr><td>Plan Reference:</td><td>{{planInformation.reference}}</td></tr>{{/if}}
-        <tr><td>Revision:</td><td>{{planInformation.revision}}</td></tr>
-        {{#if planInformation.date}}<tr><td>Date:</td><td>{{planInformation.date}}</td></tr>{{/if}}
-        {{#if planInformation.preparedBy}}<tr><td>Prepared By:</td><td>{{planInformation.preparedBy}}</td></tr>{{/if}}
-        {{#if planInformation.approvedBy}}<tr><td>Approved By:</td><td>{{planInformation.approvedBy}}</td></tr>{{/if}}
+        {{#if planInformation.reference}}
+        <tr>
+          <td>Plan Reference</td>
+          <td>{{planInformation.reference}}</td>
+        </tr>
+        {{/if}}
+        <tr>
+          <td>Revision</td>
+          <td>{{planInformation.revision}}</td>
+        </tr>
+        {{#if planInformation.date}}
+        <tr>
+          <td>Date</td>
+          <td>{{planInformation.date}}</td>
+        </tr>
+        {{/if}}
+        {{#if planInformation.preparedBy}}
+        <tr>
+          <td>Prepared By</td>
+          <td>{{planInformation.preparedBy}}</td>
+        </tr>
+        {{/if}}
+        {{#if planInformation.approvedBy}}
+        <tr>
+          <td>Approved By</td>
+          <td>{{planInformation.approvedBy}}</td>
+        </tr>
+        {{/if}}
+        {{#if planInformation.approvalDate}}
+        <tr>
+          <td>Approval Date</td>
+          <td>{{planInformation.approvalDate}}</td>
+        </tr>
+        {{/if}}
       </table>
     </div>
-    <div class="footer-line">
-      IMO Biofouling Management Plan &mdash; Generated {{generatedAt}}
+
+    <div class="cover-footer">
+      <p>Biofouling Management Plan in accordance with IMO Guidelines (MEPC.207(62))</p>
+      <p style="margin-top: 4px;">Generated: {{generatedAt}}</p>
     </div>
+
   </div>
 
-  <!-- TABLE OF CONTENTS -->
+
+  <!-- ============================================================
+       PAGE 2: DOCUMENT STATUS / REVISION TABLE
+       ============================================================ -->
   <div class="page">
-    <h3>Table of Contents</h3>
-    <div class="toc-item"><strong>1.</strong> Vessel Details</div>
-    <div class="toc-item"><strong>2.</strong> Company Details</div>
-    <div class="toc-item"><strong>3.</strong> Anti-Fouling System</div>
-    <div class="toc-item" style="margin-left: 20px;">3.1 Hull Anti-Fouling System</div>
-    <div class="toc-item" style="margin-left: 20px;">3.2 Niche Area Assessment</div>
-    <div class="toc-item"><strong>4.</strong> Operating Profile</div>
-    <div class="toc-item"><strong>5.</strong> Biofouling Risk Assessment</div>
-    <div class="toc-item"><strong>6.</strong> In-Water Inspection Schedule</div>
-    <div class="toc-item" style="margin-left: 20px;">6.1 Inspection Records</div>
-    <div class="toc-item"><strong>7.</strong> Cleaning &amp; Maintenance</div>
-    <div class="toc-item" style="margin-left: 20px;">7.1 Maintenance Records</div>
-    <div class="toc-item"><strong>8.</strong> Contingency Measures</div>
-  </div>
 
-  <!-- 1. VESSEL DETAILS -->
-  <div class="page">
-    <h3>1. Vessel Details</h3>
-    <table class="kv-table">
-      <tr><td class="label-cell">Vessel Name</td><td>{{vessel.name}}</td></tr>
-      <tr><td class="label-cell">IMO Number</td><td>{{vessel.imoNumber}}</td></tr>
-      <tr><td class="label-cell">Flag State</td><td>{{vessel.flagState}}</td></tr>
-      <tr><td class="label-cell">Port of Registry</td><td>{{vessel.portOfRegistry}}</td></tr>
-      <tr><td class="label-cell">Ship Type</td><td>{{vessel.shipType}}{{vessel.type}}{{vessel.vesselType}}</td></tr>
-      <tr><td class="label-cell">Gross Tonnage</td><td>{{vessel.grossTonnage}}</td></tr>
-      <tr><td class="label-cell">Year Built</td><td>{{vessel.yearBuilt}}</td></tr>
-      <tr><td class="label-cell">Length Overall</td><td>{{vessel.lengthOverall}} m</td></tr>
-      <tr><td class="label-cell">Beam</td><td>{{vessel.beam}} m</td></tr>
-      <tr><td class="label-cell">Maximum Draft</td><td>{{vessel.maxDraft}} m</td></tr>
-      <tr><td class="label-cell">Call Sign</td><td>{{vessel.callSign}}</td></tr>
-    </table>
+    <h3>Document Status &amp; Revision History</h3>
 
-    <!-- 2. COMPANY DETAILS -->
-    <h3>2. Company Details</h3>
-    <table class="kv-table">
-      <tr><td class="label-cell">Company Name</td><td>{{company.name}}</td></tr>
-      <tr><td class="label-cell">Address</td><td>{{company.address}}</td></tr>
-      <tr><td class="label-cell">Designated Person (DPA)</td><td>{{company.designatedPerson}}</td></tr>
-      <tr><td class="label-cell">ISM Contact Name</td><td>{{company.ismContact.name}}</td></tr>
-      <tr><td class="label-cell">ISM Contact Email</td><td>{{company.ismContact.email}}</td></tr>
-      <tr><td class="label-cell">ISM Contact Phone</td><td>{{company.ismContact.phone}}</td></tr>
-    </table>
-  </div>
+    <p class="section-intro">
+      This document is a controlled copy of the Biofouling Management Plan. Any amendments must be approved by the
+      designated authority and recorded in the revision history below.
+    </p>
 
-  <!-- 3. ANTI-FOULING SYSTEM -->
-  <div class="page">
-    <h3>3. Anti-Fouling System</h3>
-
-    <h4>3.1 Hull Anti-Fouling System</h4>
-    <table class="kv-table">
-      <tr><td class="label-cell">AFS Type</td><td>{{antiFoulingSystem.hull.type}}</td></tr>
-      <tr><td class="label-cell">Coating Manufacturer</td><td>{{antiFoulingSystem.hull.manufacturer}}</td></tr>
-      <tr><td class="label-cell">Product Name</td><td>{{antiFoulingSystem.hull.product}}</td></tr>
-      <tr><td class="label-cell">Application Date</td><td>{{antiFoulingSystem.hull.applicationDate}}</td></tr>
-      <tr><td class="label-cell">Recoating Due Date</td><td>{{antiFoulingSystem.hull.recoatingDate}}</td></tr>
-      <tr><td class="label-cell">Last Dry Dock</td><td>{{antiFoulingSystem.lastDryDock}}</td></tr>
-      <tr><td class="label-cell">Next Dry Dock</td><td>{{antiFoulingSystem.nextDryDock}}</td></tr>
-    </table>
-
-    <h4>3.2 Niche Area Assessment</h4>
-    <p class="section-intro">Niche areas are surfaces prone to biofouling accumulation, assessed individually per IMO guidelines.</p>
-    {{#if antiFoulingSystem.nicheAreas.length}}
     <table>
       <thead>
         <tr>
-          <th>Area</th>
+          <th style="width: 12%;">Revision</th>
+          <th style="width: 15%;">Date</th>
+          <th style="width: 20%;">Prepared By</th>
+          <th style="width: 20%;">Approved By</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="text-align: center;">{{planInformation.revision}}</td>
+          <td>{{planInformation.date}}</td>
+          <td>{{planInformation.preparedBy}}</td>
+          <td>{{planInformation.approvedBy}}</td>
+          <td>Current revision</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h4 style="margin-top: 30px;">Distribution List</h4>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 8%;">No.</th>
+          <th style="width: 20%;">Copy Type</th>
+          <th>Holder / Location</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="text-align: center;">1</td>
+          <td>Controlled</td>
+          <td>Vessel &mdash; Master's Office</td>
+        </tr>
+        <tr>
+          <td style="text-align: center;">2</td>
+          <td>Controlled</td>
+          <td>{{#if company.name}}{{company.name}} &mdash; {{/if}}Shore Office</td>
+        </tr>
+        <tr>
+          <td style="text-align: center;">3</td>
+          <td>Controlled</td>
+          <td>{{#if company.designatedPerson}}DPA &mdash; {{company.designatedPerson}}{{else}}Designated Person Ashore (DPA){{/if}}</td>
+        </tr>
+        <tr>
+          <td style="text-align: center;">4</td>
+          <td>Uncontrolled</td>
+          <td>Flag State Administration (if required)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="disclaimer">
+      <strong>Confidentiality Notice:</strong> This Biofouling Management Plan contains proprietary information
+      belonging to {{#if company.name}}{{company.name}}{{else}}the vessel operator{{/if}}. This document is
+      provided for regulatory compliance purposes and is not to be reproduced, distributed, or disclosed to
+      third parties without prior written consent. The information herein has been prepared in accordance with
+      the IMO Guidelines for the Control and Management of Ships' Biofouling (MEPC.207(62)) and applicable
+      national regulations.
+    </div>
+
+    <div class="footer-line">
+      {{#if organisation.name}}{{organisation.name}} &mdash; {{/if}}Biofouling Management Plan &mdash; Rev. {{planInformation.revision}} &mdash; {{planInformation.date}}
+    </div>
+
+  </div>
+
+
+  <!-- ============================================================
+       PAGE 3: TABLE OF CONTENTS
+       ============================================================ -->
+  <div class="page">
+
+    <h3>Table of Contents</h3>
+
+    <div style="margin-top: 16px;">
+
+      <div class="toc-section toc-main"><strong>1.</strong> Vessel Particulars</div>
+
+      <div class="toc-section toc-main"><strong>2.</strong> Company &amp; Management Details</div>
+      <div class="toc-section toc-sub">2.1 Company Information</div>
+      <div class="toc-section toc-sub">2.2 ISM Contact Details</div>
+      <div class="toc-section toc-sub">2.3 Designated Person Ashore</div>
+
+      <div class="toc-section toc-main"><strong>3.</strong> Anti-Fouling Systems</div>
+      <div class="toc-section toc-sub">3.1 Hull Anti-Fouling System</div>
+      <div class="toc-section toc-sub">3.2 Dry Docking Schedule</div>
+      <div class="toc-section toc-sub">3.3 Niche Area Assessment</div>
+      <div class="toc-section toc-sub">3.4 Reference Diagrams</div>
+
+      <div class="toc-section toc-main"><strong>4.</strong> Operating Profile</div>
+      <div class="toc-section toc-sub">4.1 Trade Routes &amp; Voyage Patterns</div>
+      <div class="toc-section toc-sub">4.2 Environmental Conditions</div>
+      <div class="toc-section toc-sub">4.3 Lay-Up Periods</div>
+
+      <div class="toc-section toc-main"><strong>5.</strong> Biofouling Risk Assessment</div>
+      <div class="toc-section toc-sub">5.1 Risk Categories</div>
+      <div class="toc-section toc-sub">5.2 Overall Risk Rating</div>
+      <div class="toc-section toc-sub">5.3 Risk Assessment Notes</div>
+
+      <div class="toc-section toc-main"><strong>6.</strong> In-Water Inspection Schedule</div>
+      <div class="toc-section toc-sub">6.1 Inspection Parameters</div>
+      <div class="toc-section toc-sub">6.2 Trigger Conditions</div>
+      <div class="toc-section toc-sub">6.3 Historical Inspection Records</div>
+
+      <div class="toc-section toc-main"><strong>7.</strong> Cleaning &amp; Maintenance Procedures</div>
+      <div class="toc-section toc-sub">7.1 Approved Methods &amp; Contractors</div>
+      <div class="toc-section toc-sub">7.2 Capture &amp; Disposal Requirements</div>
+      <div class="toc-section toc-sub">7.3 Maintenance Records</div>
+
+      <div class="toc-section toc-main"><strong>8.</strong> Contingency Measures</div>
+      <div class="toc-section toc-sub">8.1 Fouling Threshold Triggers</div>
+      <div class="toc-section toc-sub">8.2 Emergency Response</div>
+      <div class="toc-section toc-sub">8.3 Port State Notification</div>
+
+      <div class="toc-section toc-main"><strong>9.</strong> Document Approval &amp; Signoff</div>
+
+    </div>
+
+    <div class="footer-line">
+      {{#if organisation.name}}{{organisation.name}} &mdash; {{/if}}Biofouling Management Plan &mdash; Rev. {{planInformation.revision}} &mdash; {{planInformation.date}}
+    </div>
+
+  </div>
+
+
+  <!-- ============================================================
+       PAGE 4: SECTION 1 — VESSEL PARTICULARS
+       ============================================================ -->
+  <div class="page">
+
+    <h3>1. Vessel Particulars</h3>
+
+    <p class="section-intro">
+      The following table provides the principal particulars of the vessel to which this Biofouling Management
+      Plan applies. These details are used to inform the risk assessment and determine appropriate management
+      measures.
+    </p>
+
+    <table class="kv-table">
+      <tr>
+        <td class="label-cell">Vessel Name</td>
+        <td><strong>{{vessel.name}}</strong></td>
+      </tr>
+      <tr>
+        <td class="label-cell">IMO Number</td>
+        <td>{{vessel.imoNumber}}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Flag State</td>
+        <td>{{vessel.flagState}}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Port of Registry</td>
+        <td>{{vessel.portOfRegistry}}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Ship Type</td>
+        <td>{{#if vessel.shipType}}{{vessel.shipType}}{{else}}{{#if vessel.vesselType}}{{vessel.vesselType}}{{else}}{{vessel.type}}{{/if}}{{/if}}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Gross Tonnage</td>
+        <td>{{vessel.grossTonnage}} GT</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Year Built</td>
+        <td>{{vessel.yearBuilt}}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Length Overall (LOA)</td>
+        <td>{{#if vessel.lengthOverall}}{{vessel.lengthOverall}} m{{/if}}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Beam</td>
+        <td>{{#if vessel.beam}}{{vessel.beam}} m{{/if}}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Maximum Draft</td>
+        <td>{{#if vessel.maxDraft}}{{vessel.maxDraft}} m{{/if}}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Call Sign</td>
+        <td>{{vessel.callSign}}</td>
+      </tr>
+    </table>
+
+    <h4>General Arrangement</h4>
+
+    <div class="image-placeholder">
+      General Arrangement Drawing / Profile View<br />
+      <span style="font-size: 8pt;">(Insert vessel general arrangement diagram)</span>
+    </div>
+
+    <div class="footer-line">
+      {{#if organisation.name}}{{organisation.name}} &mdash; {{/if}}Biofouling Management Plan &mdash; Rev. {{planInformation.revision}} &mdash; {{planInformation.date}}
+    </div>
+
+  </div>
+
+
+  <!-- ============================================================
+       PAGE 5: SECTION 2 — COMPANY & MANAGEMENT DETAILS
+       ============================================================ -->
+  <div class="page">
+
+    <h3>2. Company &amp; Management Details</h3>
+
+    <p class="section-intro">
+      Details of the company responsible for the operation of the vessel and the management of biofouling,
+      including the ISM-designated contacts.
+    </p>
+
+    <h4>2.1 Company Information</h4>
+
+    <table class="kv-table">
+      <tr>
+        <td class="label-cell">Company Name</td>
+        <td><strong>{{company.name}}</strong></td>
+      </tr>
+      {{#if company.address}}
+      <tr>
+        <td class="label-cell">Registered Address</td>
+        <td>{{company.address}}</td>
+      </tr>
+      {{/if}}
+    </table>
+
+    <h4>2.2 ISM Contact Details</h4>
+
+    {{#if company.ismContact}}
+    <table class="kv-table">
+      {{#if company.ismContact.name}}
+      <tr>
+        <td class="label-cell">Contact Name</td>
+        <td>{{company.ismContact.name}}</td>
+      </tr>
+      {{/if}}
+      {{#if company.ismContact.email}}
+      <tr>
+        <td class="label-cell">Email Address</td>
+        <td>{{company.ismContact.email}}</td>
+      </tr>
+      {{/if}}
+      {{#if company.ismContact.phone}}
+      <tr>
+        <td class="label-cell">Telephone</td>
+        <td>{{company.ismContact.phone}}</td>
+      </tr>
+      {{/if}}
+    </table>
+    {{else}}
+    <p class="empty-state">ISM contact details not recorded.</p>
+    {{/if}}
+
+    <h4>2.3 Designated Person Ashore (DPA)</h4>
+
+    <table class="kv-table">
+      <tr>
+        <td class="label-cell">DPA Name</td>
+        <td>{{#if company.designatedPerson}}{{company.designatedPerson}}{{else}}<span class="text-muted">Not specified</span>{{/if}}</td>
+      </tr>
+    </table>
+
+    <div class="section-note">
+      <strong>Note:</strong> The Designated Person Ashore (DPA) is responsible for ensuring that the Biofouling
+      Management Plan is implemented effectively and that adequate resources are provided for biofouling management
+      activities as required under the ISM Code.
+    </div>
+
+    <div class="footer-line">
+      {{#if organisation.name}}{{organisation.name}} &mdash; {{/if}}Biofouling Management Plan &mdash; Rev. {{planInformation.revision}} &mdash; {{planInformation.date}}
+    </div>
+
+  </div>
+
+
+  <!-- ============================================================
+       PAGE 6: SECTION 3 — ANTI-FOULING SYSTEMS
+       ============================================================ -->
+  <div class="page">
+
+    <h3>3. Anti-Fouling Systems</h3>
+
+    <p class="section-intro">
+      This section describes the anti-fouling systems (AFS) applied to the vessel hull and niche areas,
+      including coating details, application history, and dry docking schedules. The AFS selection and
+      maintenance directly influence the vessel's biofouling risk profile.
+    </p>
+
+    <h4>3.1 Hull Anti-Fouling System</h4>
+
+    {{#if antiFoulingSystem.hull}}
+    <table class="kv-table">
+      <tr>
+        <td class="label-cell">AFS Type</td>
+        <td><strong>{{antiFoulingSystem.hull.type}}</strong></td>
+      </tr>
+      {{#if antiFoulingSystem.hull.manufacturer}}
+      <tr>
+        <td class="label-cell">Coating Manufacturer</td>
+        <td>{{antiFoulingSystem.hull.manufacturer}}</td>
+      </tr>
+      {{/if}}
+      {{#if antiFoulingSystem.hull.product}}
+      <tr>
+        <td class="label-cell">Product Name</td>
+        <td>{{antiFoulingSystem.hull.product}}</td>
+      </tr>
+      {{/if}}
+      {{#if antiFoulingSystem.hull.applicationDate}}
+      <tr>
+        <td class="label-cell">Application Date</td>
+        <td>{{antiFoulingSystem.hull.applicationDate}}</td>
+      </tr>
+      {{/if}}
+      {{#if antiFoulingSystem.hull.recoatingDate}}
+      <tr>
+        <td class="label-cell">Recoating Due Date</td>
+        <td>{{antiFoulingSystem.hull.recoatingDate}}</td>
+      </tr>
+      {{/if}}
+    </table>
+    {{else}}
+    <p class="empty-state">Hull anti-fouling system details not recorded.</p>
+    {{/if}}
+
+    <h4>3.2 Dry Docking Schedule</h4>
+
+    <table class="kv-table">
+      <tr>
+        <td class="label-cell">Last Dry Dock</td>
+        <td>{{#if antiFoulingSystem.lastDryDock}}{{antiFoulingSystem.lastDryDock}}{{else}}<span class="text-muted">Not recorded</span>{{/if}}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Next Scheduled Dry Dock</td>
+        <td>{{#if antiFoulingSystem.nextDryDock}}{{antiFoulingSystem.nextDryDock}}{{else}}<span class="text-muted">Not scheduled</span>{{/if}}</td>
+      </tr>
+    </table>
+
+    <div class="section-note">
+      <strong>Note:</strong> The hull anti-fouling system should be inspected and assessed at each dry docking.
+      The coating condition should be documented, and any areas requiring repair or recoating should be identified
+      and addressed during the dry dock period.
+    </div>
+
+    <h4>3.3 Niche Area Assessment</h4>
+
+    <p class="section-intro">
+      Niche areas are surfaces and appendages on the hull that are particularly susceptible to biofouling
+      accumulation due to their geometry, location, or coating limitations. Each niche area should be assessed
+      individually per IMO Guidelines (MEPC.207(62)).
+    </p>
+
+    {{#if antiFoulingSystem.nicheAreas.length}}
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Niche Area</th>
           <th>AFS Type</th>
           <th>Last Inspected</th>
           <th>Condition</th>
@@ -171,70 +1329,260 @@
       </tbody>
     </table>
     {{else}}
-    <p class="empty-state">No niche area data recorded.</p>
+    <p class="empty-state">No niche area assessment data recorded.</p>
     {{/if}}
+
+    <h4>3.4 Reference Diagrams</h4>
+
+    <div class="image-placeholder">
+      Hull Coating Scheme Diagram / Niche Area Location Map<br />
+      <span style="font-size: 8pt;">(Insert diagram showing location of niche areas and AFS application zones)</span>
+    </div>
+
+    <div class="footer-line">
+      {{#if organisation.name}}{{organisation.name}} &mdash; {{/if}}Biofouling Management Plan &mdash; Rev. {{planInformation.revision}} &mdash; {{planInformation.date}}
+    </div>
+
   </div>
 
-  <!-- 4. OPERATING PROFILE -->
+
+  <!-- ============================================================
+       PAGE 7: SECTION 4 — OPERATING PROFILE
+       ============================================================ -->
   <div class="page">
+
     <h3>4. Operating Profile</h3>
+
+    <p class="section-intro">
+      The vessel's operating profile is a key factor in determining biofouling risk. Factors such as trade
+      routes, time spent in warm waters, periods at anchor, and vessel speed all significantly influence the
+      rate and type of biofouling accumulation.
+    </p>
+
+    <h4>4.1 Trade Routes &amp; Voyage Patterns</h4>
+
     <table class="kv-table">
-      <tr><td class="label-cell">Trade Routes</td><td>{{operatingProfile.tradeRoutes}}</td></tr>
-      <tr><td class="label-cell">Typical Voyage Duration</td><td>{{operatingProfile.typicalVoyageDuration}}</td></tr>
-      <tr><td class="label-cell">Typical Port Stay</td><td>{{operatingProfile.typicalPortStay}}</td></tr>
-      <tr><td class="label-cell">Water Temperature Range</td><td>{{operatingProfile.waterTempRange}}</td></tr>
-      <tr><td class="label-cell">Typical Speed</td><td>{{operatingProfile.typicalSpeed}}</td></tr>
-      <tr><td class="label-cell">% Time at Anchor/Idle</td><td>{{operatingProfile.percentTimeAtAnchor}}</td></tr>
-      <tr><td class="label-cell">Lay-Up Periods</td><td>{{operatingProfile.layUpPeriods}}</td></tr>
+      <tr>
+        <td class="label-cell">Trade Routes / Operating Areas</td>
+        <td>{{#if operatingProfile.tradeRoutes}}{{operatingProfile.tradeRoutes}}{{else}}<span class="text-muted">Not specified</span>{{/if}}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Typical Voyage Duration</td>
+        <td>{{#if operatingProfile.typicalVoyageDuration}}{{operatingProfile.typicalVoyageDuration}}{{else}}<span class="text-muted">Not specified</span>{{/if}}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Typical Port Stay Duration</td>
+        <td>{{#if operatingProfile.typicalPortStay}}{{operatingProfile.typicalPortStay}}{{else}}<span class="text-muted">Not specified</span>{{/if}}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Typical Operating Speed</td>
+        <td>{{#if operatingProfile.typicalSpeed}}{{operatingProfile.typicalSpeed}}{{else}}<span class="text-muted">Not specified</span>{{/if}}</td>
+      </tr>
     </table>
 
-    <!-- 5. RISK ASSESSMENT -->
-    <h3>5. Biofouling Risk Assessment</h3>
+    <h4>4.2 Environmental Conditions</h4>
+
     <table class="kv-table">
       <tr>
-        <td class="label-cell">Operating Profile Risk</td>
-        <td><span class="risk-{{lowercase riskAssessment.operatingProfileRisk}}">{{riskAssessment.operatingProfileRisk}}</span></td>
+        <td class="label-cell">Water Temperature Range</td>
+        <td>{{#if operatingProfile.waterTempRange}}{{operatingProfile.waterTempRange}}{{else}}<span class="text-muted">Not specified</span>{{/if}}</td>
       </tr>
       <tr>
-        <td class="label-cell">Niche Area Risk</td>
-        <td><span class="risk-{{lowercase riskAssessment.nicheAreaRisk}}">{{riskAssessment.nicheAreaRisk}}</span></td>
-      </tr>
-      <tr>
-        <td class="label-cell">Hull Coating Risk</td>
-        <td><span class="risk-{{lowercase riskAssessment.hullCoatingRisk}}">{{riskAssessment.hullCoatingRisk}}</span></td>
-      </tr>
-      <tr>
-        <td class="label-cell"><strong>Overall Risk Rating</strong></td>
-        <td><span class="risk-{{lowercase riskAssessment.overallRisk}}"><strong>{{riskAssessment.overallRisk}}</strong></span></td>
+        <td class="label-cell">Percentage Time at Anchor / Idle</td>
+        <td>{{#if operatingProfile.percentTimeAtAnchor}}{{operatingProfile.percentTimeAtAnchor}}{{else}}<span class="text-muted">Not specified</span>{{/if}}</td>
       </tr>
     </table>
-    {{#if riskAssessment.notes}}
-    <h4>Risk Assessment Notes</h4>
-    <p>{{riskAssessment.notes}}</p>
-    {{/if}}
+
+    <h4>4.3 Lay-Up Periods</h4>
+
+    <table class="kv-table">
+      <tr>
+        <td class="label-cell">Lay-Up Periods</td>
+        <td>{{#if operatingProfile.layUpPeriods}}{{operatingProfile.layUpPeriods}}{{else}}<span class="text-muted">No lay-up periods recorded</span>{{/if}}</td>
+      </tr>
+    </table>
+
+    <div class="section-note">
+      <strong>Important:</strong> Vessels with extended periods at anchor, in warm waters (above 18&deg;C), or
+      with slow steaming profiles are at increased risk of biofouling. These factors should be monitored and
+      the inspection frequency adjusted accordingly. Extended lay-up periods (&gt;14 days) in tropical or
+      subtropical waters will trigger an unscheduled in-water inspection upon resumption of operations.
+    </div>
+
+    <div class="footer-line">
+      {{#if organisation.name}}{{organisation.name}} &mdash; {{/if}}Biofouling Management Plan &mdash; Rev. {{planInformation.revision}} &mdash; {{planInformation.date}}
+    </div>
+
   </div>
 
-  <!-- 6. INSPECTION SCHEDULE -->
-  <div class="page">
-    <h3>6. In-Water Inspection Schedule</h3>
-    <table class="kv-table">
-      <tr><td class="label-cell">Inspection Frequency</td><td>{{inspectionSchedule.frequency}}</td></tr>
-      <tr><td class="label-cell">Last Inspection</td><td>{{inspectionSchedule.lastInspection}}</td></tr>
-      <tr><td class="label-cell">Next Inspection Due</td><td>{{inspectionSchedule.nextInspectionDue}}</td></tr>
-      <tr><td class="label-cell">Trigger Conditions</td><td>{{inspectionSchedule.triggerConditions}}</td></tr>
-    </table>
 
-    <h4>6.1 Inspection Records</h4>
-    {{#if inspectionSchedule.records.length}}
+  <!-- ============================================================
+       PAGE 8: SECTION 5 — BIOFOULING RISK ASSESSMENT
+       ============================================================ -->
+  <div class="page">
+
+    <h3>5. Biofouling Risk Assessment</h3>
+
+    <p class="section-intro">
+      The biofouling risk assessment evaluates the vessel's susceptibility to biofouling based on its operating
+      profile, hull coating system, and niche area management. The assessment informs the inspection and
+      maintenance schedule and identifies areas requiring heightened monitoring.
+    </p>
+
+    <h4>5.1 Risk Categories</h4>
+
     <table>
       <thead>
         <tr>
-          <th>Date</th>
-          <th>Location</th>
-          <th>Method</th>
-          <th>Areas Inspected</th>
-          <th>Findings</th>
-          <th>Actions Taken</th>
+          <th style="width: 35%;">Risk Category</th>
+          <th style="width: 20%; text-align: center;">Risk Level</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Operating Profile Risk</strong></td>
+          <td style="text-align: center;">
+            {{#if riskAssessment.operatingProfileRisk}}
+              <span class="risk-{{lowercase riskAssessment.operatingProfileRisk}}">{{riskAssessment.operatingProfileRisk}}</span>
+            {{else}}
+              <span class="text-muted">N/A</span>
+            {{/if}}
+          </td>
+          <td>Risk based on trade routes, speed profiles, anchorage time, and water temperatures encountered during normal operations.</td>
+        </tr>
+        <tr>
+          <td><strong>Niche Area Risk</strong></td>
+          <td style="text-align: center;">
+            {{#if riskAssessment.nicheAreaRisk}}
+              <span class="risk-{{lowercase riskAssessment.nicheAreaRisk}}">{{riskAssessment.nicheAreaRisk}}</span>
+            {{else}}
+              <span class="text-muted">N/A</span>
+            {{/if}}
+          </td>
+          <td>Risk associated with biofouling accumulation in niche areas such as sea chests, propeller, rudder, and other appendages.</td>
+        </tr>
+        <tr>
+          <td><strong>Hull Coating Risk</strong></td>
+          <td style="text-align: center;">
+            {{#if riskAssessment.hullCoatingRisk}}
+              <span class="risk-{{lowercase riskAssessment.hullCoatingRisk}}">{{riskAssessment.hullCoatingRisk}}</span>
+            {{else}}
+              <span class="text-muted">N/A</span>
+            {{/if}}
+          </td>
+          <td>Risk based on the age, type, and condition of the anti-fouling coating system, including time since last application.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h4>5.2 Overall Risk Rating</h4>
+
+    <div style="text-align: center; margin: 20px 0; padding: 18px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">
+      <p style="font-size: 10pt; color: #64748b; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">Overall Biofouling Risk</p>
+      {{#if riskAssessment.overallRisk}}
+        <span class="risk-overall risk-{{lowercase riskAssessment.overallRisk}}">{{riskAssessment.overallRisk}}</span>
+      {{else}}
+        <span class="text-muted" style="font-size: 13pt;">Not Assessed</span>
+      {{/if}}
+    </div>
+
+    <!-- Risk Level Reference -->
+    <h5>Risk Level Reference</h5>
+    <table class="risk-matrix-table" style="margin-bottom: 16px;">
+      <thead>
+        <tr>
+          <th style="text-align: center;">Low</th>
+          <th style="text-align: center;">Medium</th>
+          <th style="text-align: center;">High</th>
+          <th style="text-align: center;">Very High</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="matrix-low">Standard monitoring. Routine inspections per schedule.</td>
+          <td class="matrix-medium">Enhanced monitoring. Consider increased inspection frequency.</td>
+          <td class="matrix-high">Active management required. Shortened inspection intervals.</td>
+          <td class="matrix-veryhigh">Immediate action required. Urgent inspection and cleaning.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    {{#if riskAssessment.notes}}
+    <h4>5.3 Risk Assessment Notes</h4>
+    <div class="section-note">
+      {{riskAssessment.notes}}
+    </div>
+    {{/if}}
+
+    <div class="footer-line">
+      {{#if organisation.name}}{{organisation.name}} &mdash; {{/if}}Biofouling Management Plan &mdash; Rev. {{planInformation.revision}} &mdash; {{planInformation.date}}
+    </div>
+
+  </div>
+
+
+  <!-- ============================================================
+       PAGE 9: SECTION 6 — IN-WATER INSPECTION SCHEDULE
+       ============================================================ -->
+  <div class="page">
+
+    <h3>6. In-Water Inspection Schedule</h3>
+
+    <p class="section-intro">
+      Regular in-water inspections are essential for monitoring the condition of the hull and niche areas,
+      assessing the effectiveness of the anti-fouling system, and detecting biofouling accumulation before
+      it reaches unacceptable levels. The inspection schedule is determined by the vessel's risk profile.
+    </p>
+
+    <h4>6.1 Inspection Parameters</h4>
+
+    <table class="kv-table">
+      <tr>
+        <td class="label-cell">Inspection Frequency</td>
+        <td><strong>{{#if inspectionSchedule.frequency}}{{inspectionSchedule.frequency}}{{else}}<span class="text-muted">Not specified</span>{{/if}}</strong></td>
+      </tr>
+      <tr>
+        <td class="label-cell">Last Inspection Date</td>
+        <td>{{#if inspectionSchedule.lastInspection}}{{inspectionSchedule.lastInspection}}{{else}}<span class="text-muted">Not recorded</span>{{/if}}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Next Inspection Due</td>
+        <td>{{#if inspectionSchedule.nextInspectionDue}}{{inspectionSchedule.nextInspectionDue}}{{else}}<span class="text-muted">Not scheduled</span>{{/if}}</td>
+      </tr>
+    </table>
+
+    <h4>6.2 Trigger Conditions for Unscheduled Inspections</h4>
+
+    {{#if inspectionSchedule.triggerConditions}}
+    <div class="section-note">
+      {{inspectionSchedule.triggerConditions}}
+    </div>
+    {{else}}
+    <div class="section-note">
+      An unscheduled in-water inspection should be conducted when any of the following conditions are met:
+      <ul style="margin: 8px 0 0 20px; font-size: 10pt;">
+        <li>Extended idle period (&gt;14 days) in warm waters (&gt;18&deg;C)</li>
+        <li>Significant change in operating profile or trade route</li>
+        <li>Suspected AFS damage or deterioration</li>
+        <li>Noticeable decrease in vessel performance (speed/fuel consumption)</li>
+        <li>Requirement by port state authority</li>
+      </ul>
+    </div>
+    {{/if}}
+
+    <h4>6.3 Historical Inspection Records</h4>
+
+    {{#if inspectionSchedule.records.length}}
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width: 12%;">Date</th>
+          <th style="width: 14%;">Location</th>
+          <th style="width: 12%;">Method</th>
+          <th style="width: 18%;">Areas Inspected</th>
+          <th style="width: 22%;">Findings</th>
+          <th style="width: 22%;">Actions Taken</th>
         </tr>
       </thead>
       <tbody>
@@ -251,28 +1599,67 @@
       </tbody>
     </table>
     {{else}}
-    <p class="empty-state">No inspection records recorded.</p>
+    <p class="empty-state">No inspection records have been recorded to date.</p>
     {{/if}}
+
+    <div class="footer-line">
+      {{#if organisation.name}}{{organisation.name}} &mdash; {{/if}}Biofouling Management Plan &mdash; Rev. {{planInformation.revision}} &mdash; {{planInformation.date}}
+    </div>
+
   </div>
 
-  <!-- 7. CLEANING & MAINTENANCE -->
+
+  <!-- ============================================================
+       PAGE 10: SECTION 7 — CLEANING & MAINTENANCE PROCEDURES
+       ============================================================ -->
   <div class="page">
-    <h3>7. Cleaning &amp; Maintenance</h3>
+
+    <h3>7. Cleaning &amp; Maintenance Procedures</h3>
+
+    <p class="section-intro">
+      This section outlines the approved cleaning methods, designated contractors, and capture/disposal
+      requirements for hull and niche area maintenance. All cleaning operations must be conducted in accordance
+      with applicable local regulations and port authority requirements.
+    </p>
+
+    <h4>7.1 Approved Methods &amp; Contractors</h4>
+
     <table class="kv-table">
-      <tr><td class="label-cell">Cleaning Method</td><td>{{maintenance.cleaningMethod}}</td></tr>
-      <tr><td class="label-cell">Approved Contractors</td><td>{{maintenance.approvedContractors}}</td></tr>
-      <tr><td class="label-cell">Capture &amp; Disposal Requirements</td><td>{{maintenance.captureRequirements}}</td></tr>
+      <tr>
+        <td class="label-cell">Approved Cleaning Method(s)</td>
+        <td>{{#if maintenance.cleaningMethod}}{{maintenance.cleaningMethod}}{{else}}<span class="text-muted">Not specified</span>{{/if}}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">Approved Contractor(s)</td>
+        <td>{{#if maintenance.approvedContractors}}{{maintenance.approvedContractors}}{{else}}<span class="text-muted">Not specified</span>{{/if}}</td>
+      </tr>
     </table>
 
-    <h4>7.1 Maintenance Records</h4>
+    <h4>7.2 Capture &amp; Disposal Requirements</h4>
+
+    {{#if maintenance.captureRequirements}}
+    <div class="section-note">
+      {{maintenance.captureRequirements}}
+    </div>
+    {{else}}
+    <div class="section-note">
+      All in-water cleaning operations must comply with local port and environmental regulations regarding
+      the capture and disposal of removed biofouling material. Where required, cleaning operations must utilise
+      approved capture systems to prevent the release of biofouling organisms and anti-fouling coating particles
+      into the marine environment.
+    </div>
+    {{/if}}
+
+    <h4>7.3 Maintenance Records</h4>
+
     {{#if maintenance.records.length}}
-    <table>
+    <table class="data-table">
       <thead>
         <tr>
-          <th>Date</th>
-          <th>Activity</th>
+          <th style="width: 14%;">Date</th>
+          <th style="width: 20%;">Activity</th>
           <th>Details</th>
-          <th>Performed By</th>
+          <th style="width: 18%;">Performed By</th>
         </tr>
       </thead>
       <tbody>
@@ -287,24 +1674,191 @@
       </tbody>
     </table>
     {{else}}
-    <p class="empty-state">No maintenance records recorded.</p>
+    <p class="empty-state">No maintenance records have been recorded to date.</p>
     {{/if}}
-
-    <!-- 8. CONTINGENCY MEASURES -->
-    <h3>8. Contingency Measures</h3>
-    <table class="kv-table">
-      <tr><td class="label-cell">Fouling Threshold for Action</td><td>{{contingency.foulingThreshold}}</td></tr>
-      <tr><td class="label-cell">Emergency Cleaning Response</td><td>{{contingency.emergencyResponse}}</td></tr>
-      <tr><td class="label-cell">Port State Notification</td><td>{{contingency.portStateNotification}}</td></tr>
-      {{#if contingency.notes}}
-      <tr><td class="label-cell">Additional Notes</td><td>{{contingency.notes}}</td></tr>
-      {{/if}}
-    </table>
 
     <div class="footer-line">
       {{#if organisation.name}}{{organisation.name}} &mdash; {{/if}}Biofouling Management Plan &mdash; Rev. {{planInformation.revision}} &mdash; {{planInformation.date}}
     </div>
+
   </div>
+
+
+  <!-- ============================================================
+       PAGE 11: SECTION 8 — CONTINGENCY MEASURES
+       ============================================================ -->
+  <div class="page">
+
+    <h3>8. Contingency Measures</h3>
+
+    <p class="section-intro">
+      Contingency measures define the actions to be taken when biofouling levels exceed acceptable thresholds
+      or when unexpected fouling events occur. These measures ensure a rapid and effective response to minimise
+      the biosecurity risk posed by the vessel.
+    </p>
+
+    <h4>8.1 Fouling Threshold Triggers</h4>
+
+    <table class="kv-table">
+      <tr>
+        <td class="label-cell">Fouling Threshold for Action</td>
+        <td>{{#if contingency.foulingThreshold}}{{contingency.foulingThreshold}}{{else}}<span class="text-muted">Not defined</span>{{/if}}</td>
+      </tr>
+    </table>
+
+    <div class="section-note">
+      <strong>Guidance:</strong> The fouling threshold should be defined in terms of the level of fouling (LOF)
+      scale or equivalent rating system. When the threshold is exceeded, the contingency response procedures
+      detailed below must be initiated without delay.
+    </div>
+
+    <h4>8.2 Emergency Cleaning Response</h4>
+
+    <table class="kv-table">
+      <tr>
+        <td class="label-cell">Emergency Response Procedure</td>
+        <td>{{#if contingency.emergencyResponse}}{{contingency.emergencyResponse}}{{else}}<span class="text-muted">Not defined</span>{{/if}}</td>
+      </tr>
+    </table>
+
+    <h4>8.3 Port State Notification Requirements</h4>
+
+    <table class="kv-table">
+      <tr>
+        <td class="label-cell">Port State Notification</td>
+        <td>{{#if contingency.portStateNotification}}{{contingency.portStateNotification}}{{else}}<span class="text-muted">Not defined</span>{{/if}}</td>
+      </tr>
+    </table>
+
+    {{#if contingency.notes}}
+    <h4>Additional Contingency Notes</h4>
+    <div class="section-note">
+      {{contingency.notes}}
+    </div>
+    {{/if}}
+
+    <div class="section-note" style="margin-top: 20px;">
+      <strong>Reminder:</strong> In the event of a contingency situation, the Master should:
+      <ol style="margin: 8px 0 0 20px; font-size: 10pt; line-height: 1.8;">
+        <li>Notify the company DPA immediately</li>
+        <li>Arrange for an in-water inspection at the earliest opportunity</li>
+        <li>Implement interim measures to prevent further fouling accumulation</li>
+        <li>Notify the port state authority of the next port of call if required</li>
+        <li>Record all actions taken in the Biofouling Record Book</li>
+        <li>Arrange cleaning operations through approved contractors</li>
+      </ol>
+    </div>
+
+    <div class="footer-line">
+      {{#if organisation.name}}{{organisation.name}} &mdash; {{/if}}Biofouling Management Plan &mdash; Rev. {{planInformation.revision}} &mdash; {{planInformation.date}}
+    </div>
+
+  </div>
+
+
+  <!-- ============================================================
+       PAGE 12: SECTION 9 — DOCUMENT APPROVAL & SIGNOFF
+       ============================================================ -->
+  <div class="pageLast">
+
+    <h3>9. Document Approval &amp; Signoff</h3>
+
+    <p class="section-intro">
+      This Biofouling Management Plan has been prepared and reviewed in accordance with the IMO Guidelines for
+      the Control and Management of Ships' Biofouling (MEPC.207(62)). The undersigned confirm that this plan
+      is complete, accurate, and approved for implementation aboard the vessel.
+    </p>
+
+    <!-- Prepared By Block -->
+    <div class="signoff-block">
+      <h4>Prepared By</h4>
+      <table class="signoff-table">
+        <tr>
+          <td class="signoff-label">Name</td>
+          <td>{{#if planInformation.preparedBy}}{{planInformation.preparedBy}}{{else}}&nbsp;{{/if}}</td>
+        </tr>
+        <tr>
+          <td class="signoff-label">Position / Title</td>
+          <td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td class="signoff-label">Signature</td>
+          <td>
+            <div class="signature-line"></div>
+          </td>
+        </tr>
+        <tr>
+          <td class="signoff-label">Date</td>
+          <td>{{#if planInformation.date}}{{planInformation.date}}{{else}}<div class="signature-date-line"></div>{{/if}}</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Approved By Block -->
+    <div class="signoff-block">
+      <h4>Approved By</h4>
+      <table class="signoff-table">
+        <tr>
+          <td class="signoff-label">Name</td>
+          <td>{{#if planInformation.approvedBy}}{{planInformation.approvedBy}}{{else}}&nbsp;{{/if}}</td>
+        </tr>
+        <tr>
+          <td class="signoff-label">Position / Title</td>
+          <td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td class="signoff-label">Signature</td>
+          <td>
+            <div class="signature-line"></div>
+          </td>
+        </tr>
+        <tr>
+          <td class="signoff-label">Date</td>
+          <td>{{#if planInformation.approvalDate}}{{planInformation.approvalDate}}{{else}}<div class="signature-date-line"></div>{{/if}}</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Master's Acknowledgement -->
+    <div class="signoff-block">
+      <h4>Master's Acknowledgement</h4>
+      <table class="signoff-table">
+        <tr>
+          <td class="signoff-label">Master's Name</td>
+          <td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td class="signoff-label">Signature</td>
+          <td>
+            <div class="signature-line"></div>
+          </td>
+        </tr>
+        <tr>
+          <td class="signoff-label">Date</td>
+          <td>
+            <div class="signature-date-line"></div>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="disclaimer" style="margin-top: 24px;">
+      <strong>Declaration:</strong> I confirm that this Biofouling Management Plan has been reviewed and is
+      considered suitable for the vessel named herein. All personnel responsible for biofouling management
+      have been made aware of the contents of this plan and their respective responsibilities.
+    </div>
+
+    <div class="footer-line">
+      {{#if organisation.name}}{{organisation.name}} &mdash; {{/if}}Biofouling Management Plan &mdash; Rev. {{planInformation.revision}} &mdash; {{planInformation.date}}
+    </div>
+
+  </div>
+
+
+        </td>
+      </tr>
+    </tbody>
+  </table>
 
 </body>
 </html>

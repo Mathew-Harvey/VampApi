@@ -17,6 +17,7 @@ const REPORT_TEMPLATE_NAME = 'RAN_FUSBiofouling18 (1).hbs';
 const BFMP_TEMPLATE_NAME = 'bfmp-report.hbs';
 const COMPLIANCE_TEMPLATE_NAME = 'compliance-report.hbs';
 const AUDIT_TEMPLATE_NAME = 'audit-report.hbs';
+const WORK_ORDER_TEMPLATE_NAME = 'work-order-report.hbs';
 
 type ReportAttachment = {
   path: string;
@@ -590,18 +591,45 @@ function compileAndRender(templateName: string, context: Record<string, any>): s
   if (!Handlebars.helpers['gte']) {
     Handlebars.registerHelper('gte', (a: any, b: any) => Number(a) >= Number(b));
   }
+  if (!Handlebars.helpers['statusBadge']) {
+    Handlebars.registerHelper('statusBadge', (status: string) => {
+      if (!status) return 'badge-gray';
+      const s = status.toUpperCase();
+      if (s === 'COMPLETED' || s === 'APPROVED' || s === 'ACTIVE') return 'badge-green';
+      if (s === 'IN_PROGRESS' || s === 'PENDING' || s === 'OPEN' || s === 'SUBMITTED') return 'badge-blue';
+      if (s === 'OVERDUE' || s === 'REJECTED' || s === 'CANCELLED') return 'badge-red';
+      if (s === 'DRAFT' || s === 'SCHEDULED') return 'badge-amber';
+      return 'badge-gray';
+    });
+  }
+  if (!Handlebars.helpers['severityBadge']) {
+    Handlebars.registerHelper('severityBadge', (severity: string) => {
+      if (!severity) return 'badge-gray';
+      const s = severity.toUpperCase();
+      if (s === 'CRITICAL' || s === 'HIGH') return 'badge-red';
+      if (s === 'MEDIUM' || s === 'MODERATE') return 'badge-amber';
+      if (s === 'LOW' || s === 'MINOR') return 'badge-green';
+      return 'badge-gray';
+    });
+  }
+  if (!Handlebars.helpers['isEven']) {
+    Handlebars.registerHelper('isEven', (index: number) => index % 2 === 0);
+  }
   const template = Handlebars.compile(source);
   return template(context);
 }
 
-function buildReportViewerHtml(workOrderId: string): string {
+function buildReportViewerHtml(workOrderId: string, reportType: string = 'inspection', title: string = 'Inspection Report'): string {
   const safeWorkOrderId = workOrderId.replace(/"/g, '&quot;');
+  const safeType = reportType.replace(/"/g, '&quot;');
+  const safeTitle = title.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const typeParam = safeType !== 'inspection' ? `?type=${safeType}` : '';
   return `<!doctype html>
 <html>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Inspection Report Viewer</title>
+    <title>${safeTitle} Viewer</title>
     <style>
       :root { color-scheme: light; }
       * { box-sizing: border-box; }
@@ -639,7 +667,7 @@ function buildReportViewerHtml(workOrderId: string): string {
   </head>
   <body>
     <div class="toolbar">
-      <div class="title">Inspection Report</div>
+      <div class="title">${safeTitle}</div>
       <div class="nav">
         <button id="prevBtn" type="button" title="Previous page (Left arrow)">&#9664; Prev</button>
         <span id="pager" class="pager">Loading...</span>
@@ -647,11 +675,11 @@ function buildReportViewerHtml(workOrderId: string): string {
       </div>
       <div class="actions">
         <button id="printBtn" class="primary" type="button" title="Print or save as PDF (Ctrl+P)">Print / Save PDF</button>
-        <a class="linkBtn" href="/api/v1/reports/preview/${safeWorkOrderId}" target="_blank" rel="noreferrer">Open Raw</a>
+        <a class="linkBtn" href="/api/v1/reports/preview/${safeWorkOrderId}${typeParam}" target="_blank" rel="noreferrer">Open Raw</a>
       </div>
     </div>
     <div class="container">
-      <iframe id="reportFrame" src="/api/v1/reports/preview/${safeWorkOrderId}" title="Inspection Report"></iframe>
+      <iframe id="reportFrame" src="/api/v1/reports/preview/${safeWorkOrderId}${typeParam}" title="Inspection Report"></iframe>
     </div>
     <script>
       var frame = document.getElementById('reportFrame');
@@ -768,7 +796,11 @@ function buildReportViewerHtml(workOrderId: string): string {
 
 export const reportService = {
   async getInspectionReportViewHtml(workOrderId: string) {
-    return buildReportViewerHtml(workOrderId);
+    return buildReportViewerHtml(workOrderId, 'inspection', 'Inspection Report');
+  },
+
+  async getReportViewHtml(workOrderId: string, reportType: string = 'inspection', title: string = 'Inspection Report') {
+    return buildReportViewerHtml(workOrderId, reportType, title);
   },
 
   async getInspectionReportConfig(workOrderId: string) {
@@ -843,7 +875,83 @@ export const reportService = {
       },
     });
     if (!workOrder) throw new AppError(404, 'NOT_FOUND', 'Work order not found');
-    return workOrder;
+
+    const totalFindings = (workOrder.inspections ?? []).reduce(
+      (sum, insp) => sum + (insp.findings?.length ?? 0), 0
+    );
+
+    const context: Record<string, any> = {
+      reportType: 'work-order',
+      generatedAt: new Date().toISOString().slice(0, 10),
+      organisation: workOrder.organisation ? { id: workOrder.organisation.id, name: workOrder.organisation.name } : null,
+      workOrder: {
+        id: workOrder.id,
+        referenceNumber: workOrder.referenceNumber,
+        title: workOrder.title,
+        description: workOrder.description,
+        status: workOrder.status,
+        type: (workOrder as any).type || null,
+        priority: (workOrder as any).priority || null,
+        location: (workOrder as any).location || null,
+        scheduledStart: workOrder.scheduledStart,
+        scheduledEnd: workOrder.scheduledEnd,
+        actualStart: (workOrder as any).actualStart || null,
+        actualEnd: (workOrder as any).actualEnd || null,
+        createdAt: workOrder.createdAt,
+        updatedAt: workOrder.updatedAt,
+      },
+      vessel: workOrder.vessel ? {
+        name: workOrder.vessel.name,
+        imoNumber: workOrder.vessel.imoNumber,
+        vesselType: workOrder.vessel.vesselType,
+        flagState: workOrder.vessel.flagState,
+        grossTonnage: workOrder.vessel.grossTonnage,
+        yearBuilt: workOrder.vessel.yearBuilt,
+        lengthOverall: workOrder.vessel.lengthOverall,
+        beam: workOrder.vessel.beam,
+        maxDraft: workOrder.vessel.maxDraft,
+      } : null,
+      assignments: (workOrder.assignments ?? []).map((a: any) => ({
+        role: a.role || 'Member',
+        user: a.user || { firstName: '', lastName: '', email: '' },
+      })),
+      inspections: (workOrder.inspections ?? []).map((insp: any) => ({
+        title: insp.title || 'Inspection',
+        status: insp.status,
+        type: insp.type,
+        createdAt: insp.createdAt,
+        findings: (insp.findings ?? []).map((f: any) => ({
+          component: f.component || f.location || 'N/A',
+          severity: f.severity || 'N/A',
+          description: f.description || '',
+          recommendation: f.recommendation || '',
+        })),
+      })),
+      formEntries: (workOrder.formEntries ?? []).map((fe: any) => ({
+        component: fe.component || '',
+        vesselComponent: fe.vesselComponent ? { name: fe.vesselComponent.name } : null,
+        foulingRating: fe.foulingRating,
+        coverage: fe.coverage,
+        coatingCondition: fe.coatingCondition,
+        notes: fe.notes,
+      })),
+      taskSubmissions: (workOrder.taskSubmissions ?? []).map((ts: any) => ({
+        task: ts.task ? { title: ts.task.title } : null,
+        user: ts.user || null,
+        status: ts.status,
+        notes: ts.notes,
+        createdAt: ts.createdAt,
+      })),
+      comments: (workOrder.comments ?? []).map((c: any) => ({
+        content: c.content,
+        author: c.author || null,
+        createdAt: c.createdAt,
+      })),
+      totalFindings,
+    };
+
+    const html = compileAndRender(WORK_ORDER_TEMPLATE_NAME, context);
+    return { ...context, html };
   },
 
   async getDocuments(filters: { vesselId?: string; workOrderId?: string } = {}, organisationId?: string) {

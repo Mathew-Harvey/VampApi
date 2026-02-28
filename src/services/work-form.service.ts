@@ -1,7 +1,6 @@
 import prisma from '../config/database';
 import { AppError } from '../middleware/error';
 import { auditService } from './audit.service';
-import { env } from '../config/env';
 
 const ENTRY_UPDATE_FIELDS = [
   'condition', 'foulingRating', 'foulingType', 'coverage',
@@ -213,8 +212,10 @@ export const workFormService = {
     if (!media) throw new AppError(404, 'NOT_FOUND', 'Media not found');
 
     const attachments = JSON.parse(entry.attachments || '[]');
-    const mediaUrl = toPublicMediaUrl(media.url);
-    attachments.push(mediaUrl);
+    // Store the URL as-is: relative for local storage (/uploads/…),
+    // absolute for S3 (https://…). Never bake in the API_URL origin so
+    // that clients can resolve relative paths against the correct host.
+    attachments.push(media.url);
 
     return prisma.workFormEntry.update({
       where: { id: entryId },
@@ -222,10 +223,3 @@ export const workFormService = {
     });
   },
 };
-
-function toPublicMediaUrl(url: string): string {
-  if (/^https?:\/\//i.test(url)) return url;
-  const apiBase = env.API_URL.replace(/\/+$/, '');
-  const normalizedPath = url.startsWith('/') ? url : `/${url}`;
-  return `${apiBase}${normalizedPath}`;
-}

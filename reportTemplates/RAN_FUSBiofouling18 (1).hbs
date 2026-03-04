@@ -590,29 +590,25 @@
 
                                 <tr>
                                     <td colspan="2" style="border:none;font-size:14px;text-transform: uppercase; ">
-                                        {{resetLevelOneCounter}}{{incrementLevelOneCounter}} Project Particulars
+                                        1. Project Particulars
                                     </td>
                                     <td style="border:none"></td>
                                 </tr>
-                                {{#if (hasValue data.report.overview)}}
                                 <tr>
                                     <td colspan="2" style="border:none;font-size:14px;text-transform: uppercase;">
-                                        {{incrementLevelOneCounter}} Overview
+                                        2. Overview
                                     </td>
                                     <td style="border:none"></td>
                                 </tr>
-                                {{/if}}
-                                {{#if (hasValue data.report.methodology)}}
                                 <tr>
                                     <td colspan="2" style="border:none;font-size:14px;text-transform: uppercase;">
-                                        {{incrementLevelOneCounter}} Methodology
+                                        3. Methodology
                                     </td>
                                     <td style="border:none"></td>
                                 </tr>
-                                {{/if}}
                                 <tr>
                                     <td colspan="2" style="border:none;font-size:14px;text-transform: uppercase;">
-                                        {{incrementLevelOneCounter}} Reference Tables
+                                        4. Reference Tables
                                     </td>
                                     <td style="border:none"></td>
                                 </tr>
@@ -620,7 +616,7 @@
                                 <tr>
                                     <td style="width:20px;border:none"></td>
                                     <td style="border:none;font-size:14px;text-transform: uppercase;">
-                                        {{getLevelOneCounter}}.{{resetLevelTwoCounter}}{{incrementLevelTwoCounter}}
+                                        4.{{resetLevelTwoCounter}}{{incrementLevelTwoCounter}}
                                         Level of Fouling (LOF) Scale
                                     </td>
                                     <td style="text-align: left;width:30px;border:none;font-size:14px;"></td>
@@ -629,7 +625,7 @@
                                 <tr>
                                     <td style="width:20px;border:none"></td>
                                     <td style="border:none;font-size:14px;text-transform: uppercase;">
-                                        {{getLevelOneCounter}}.{{resetLevelTwoCounter}}{{incrementLevelTwoCounter}}
+                                        4.{{resetLevelTwoCounter}}{{incrementLevelTwoCounter}}
                                         Fouling Rating (FR) Scale
                                     </td>
                                     <td style="text-align: left;width:30px;border:none;font-size:14px;"></td>
@@ -638,14 +634,14 @@
                                 <tr>
                                     <td style="width:20px;border:none"></td>
                                     <td style="border:none;font-size:14px;text-transform: uppercase;">
-                                        {{getLevelOneCounter}}.{{incrementLevelTwoCounter}} Paint Deterioration Rating
+                                        4.{{incrementLevelTwoCounter}} Paint Deterioration Rating
                                         (PDR) Scale
                                     </td>
                                     <td style="text-align: left;width:30px;border:none;font-size:14px;"></td>
                                 </tr>
                                 <tr>
                                     <td colspan="2" style="border:none;font-size:14px;text-transform: uppercase;">
-                                        3.0 General Arrangement
+                                        5. General Arrangement
                                     </td>
                                     <td style="border:none"></td>
                                 </tr>
@@ -679,20 +675,18 @@
                                     <td style="width:20px;border:none"></td>
                                     <td style="border:none;font-size:14px; text-transform: uppercase;">
                                         <a href="#{{id}}">
-                                            3.{{incrementLevelTwoCounter}} {{name}}</a>
+                                            5.{{incrementLevelTwoCounter}} {{name}}</a>
                                     </td>
                                     <td style="text-align: left;width:30px;border:none;font-size:14px;"></td>
                                 </tr>
                                 {{/if}}
                                 {{/each}}
-                                {{#if (hasValue data.report.recommendations)}}
                                 <tr>
                                     <td colspan="2" style="border:none;font-size:14px;text-transform: uppercase;">
-                                        {{incrementLevelOneCounter}} Recommendations
+                                        6. Recommendations
                                     </td>
                                     <td style="border:none"></td>
                                 </tr>
-                                {{/if}}
                             </table>
                         </div>
                         
@@ -707,7 +701,7 @@
                         {{/if}}
 
                         <div class="page">
-                            <h4>{{resetLevelOneCounter}}{{incrementLevelOneCounter}}. PROJECT PARTICULARS</h4>
+                            <h4>1. PROJECT PARTICULARS</h4>
                             <table
                                 style="border:1px solid #000; border-collapse:collapse; width:100%; position:center;">
                                 <tr>
@@ -966,32 +960,31 @@
                                 {{/if}}
                             </table>
                         </div>
-                        {{#if (lookAtMultiValue (array data.report.overview data.report.methodology ))}}
                         <div class="page">
-
+                            <h4>2. OVERVIEW</h4>
                             {{#if (hasValue data.report.overview) }}
-                            <h4>{{incrementLevelOneCounter}}. OVERVIEW</h4>
-
                             <p>{{{data.report.overview}}}</p>
-                        </div>
+                            {{else}}
+                            <p>N/A - Refer to Executive Summary.</p>
                             {{/if}}
-                            {{#if (hasValue data.report.methodology)}}
+                        </div>
                         <div class="page">
-                            <h4>{{incrementLevelOneCounter}}. METHODOLOGY</h4>
-
+                            <h4>3. METHODOLOGY</h4>
+                            {{#if (hasValue data.report.methodology)}}
                             <p>{{{data.report.methodology}}}</p>
+                            {{else}}
+                            <p>N/A - Refer to Executive Summary.</p>
                             {{/if}}
                         </div>
-                        {{/if}}
                         <div class="page">
                             <p></p>
-                            <h4>{{incrementLevelOneCounter}}. REFERENCE TABLES</h4>
+                            <h4>4. REFERENCE TABLES</h4>
                             <p style="margin-bottom: 12mm">The below tables are referenced throughout the report to
                                 formally standardise both
                                 biofouling and antifouling condition ratings referred to herein.</p>
                             {{resetLevelTwoCounter}}
                             {{#if (eq data.inspectionType "NZ CRMS Biofouling Inspection")}}
-                            <h4>{{getLevelOneCounter}}.{{incrementLevelTwoCounter}} LEVEL OF FOULING (LOF) SCALE</h4>
+                            <h4>4.{{incrementLevelTwoCounter}} LEVEL OF FOULING (LOF) SCALE</h4>
                             <table style="width:100%">
                                 <th
                                     style="background-color: #365F91; height:30px; border:1px solid #000; padding-top: 5px; padding:10px 0px;color: rgb(255, 255, 255);">
@@ -1055,7 +1048,7 @@
 
                             {{else}}
 
-                            <h4>{{getLevelOneCounter}}.{{incrementLevelTwoCounter}} FOULING RATINGS (FR) SCALE</h4>
+                            <h4>4.{{incrementLevelTwoCounter}} FOULING RATINGS (FR) SCALE</h4>
                             <table style="width:100%">
                                 <th
                                     style="background-color: #365F91; height:30px; border:1px solid #000; padding-top: 5px; padding:10px 0px;color: rgb(255, 255, 255);">
@@ -1145,7 +1138,7 @@
                             {{/if}}
                         </div>
                         <div class="page">
-                            <h4>{{getLevelOneCounter}}.{{incrementLevelTwoCounter}} PAINT DETERIORATION RATING (PDR)
+                            <h4>4.{{incrementLevelTwoCounter}} PAINT DETERIORATION RATING (PDR)
                                 SCALE</h4>
                             <table style="width:100%">
                                 <th
@@ -1248,7 +1241,7 @@
                         </div>
 
                         <div class="page">
-                            <h4>3.0 GENERAL ARRANGEMENT</h4>
+                            <h4>5. GENERAL ARRANGEMENT</h4>
                             <table id="tableLandscapeImages">
                                 {{#getImages "GeneralArrangement" attachments}}
                                     <tr>
@@ -1294,9 +1287,9 @@
                         <div class="page" id="{{id}}">
 
 
-                            <h4>3.{{incrementLevelTwoCounter}} {{name}}</h4>
+                            <h4>5.{{incrementLevelTwoCounter}} {{name}}</h4>
                             <h4 id="H4ObsFindings">
-                                3.{{getLevelTwoCounter}}.{{resetLevelThreeCounter}}{{incrementLevelThreeCounter}}
+                                5.{{getLevelTwoCounter}}.{{resetLevelThreeCounter}}{{incrementLevelThreeCounter}}
                                 Observations and Findings {{{comments}}}
                             </h4>
                             <div>
@@ -1489,9 +1482,11 @@
     </div>
     <div class="pageLast">
 
+        <h4 id="h4MarginTop">6. Recommendations </h4>
         {{#if (hasValue data.report.recommendations)}}
-        <h4 id="h4MarginTop">{{incrementLevelOneCounter}}. Recommendations </h4>
         <div class="comments-wrapper">{{{data.report.recommendations}}}</div>
+        {{else}}
+        <p>N/A</p>
         {{/if}}
         <div style="display: block; margin-left:auto; margin-right: auto">
             <b style="color: #365F91; text-align:center; display: block; margin-bottom: 25px; ">

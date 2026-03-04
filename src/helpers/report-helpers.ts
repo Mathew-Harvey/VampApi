@@ -124,6 +124,8 @@ const mathHelpers: Record<string, Handlebars.HelperDelegate> = {
   addOne: (index: number) => index + 1,
   eq: (a: unknown, b: unknown) => a === b,
   ifMatch: (value: unknown, matchString: string) => value === matchString,
+  isEven: (index: unknown) => Number(index) % 2 === 0,
+  isOdd: (index: unknown) => Number(index) % 2 !== 0,
 };
 
 // ---------------------------------------------------------------------------
@@ -135,8 +137,9 @@ const counterHelpers: Record<string, Handlebars.HelperDelegate> = {
     return '';
   },
   incrementLevelOneCounter: function (this: unknown, options: Handlebars.HelperOptions) {
-    getCounters(options).level1 += 1;
-    return '';
+    const c = getCounters(options);
+    c.level1 += 1;
+    return c.level1;
   },
   getLevelOneCounter: function (this: unknown, options: Handlebars.HelperOptions) {
     return getCounters(options).level1;
@@ -146,8 +149,9 @@ const counterHelpers: Record<string, Handlebars.HelperDelegate> = {
     return '';
   },
   incrementLevelTwoCounter: function (this: unknown, options: Handlebars.HelperOptions) {
-    getCounters(options).level2 += 1;
-    return '';
+    const c = getCounters(options);
+    c.level2 += 1;
+    return c.level2;
   },
   getLevelTwoCounter: function (this: unknown, options: Handlebars.HelperOptions) {
     return getCounters(options).level2;
@@ -157,8 +161,9 @@ const counterHelpers: Record<string, Handlebars.HelperDelegate> = {
     return '';
   },
   incrementLevelThreeCounter: function (this: unknown, options: Handlebars.HelperOptions) {
-    getCounters(options).level3 += 1;
-    return '';
+    const c = getCounters(options);
+    c.level3 += 1;
+    return c.level3;
   },
 };
 

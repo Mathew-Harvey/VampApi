@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { DeleteObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import { env } from '../config/env';
+import { storageConfigService } from './storage-config.service';
 
 /** Locally defined to avoid reliance on global Express.Multer namespace augmentation. */
 export interface MulterFile {
@@ -23,53 +23,51 @@ type StoredMedia = {
 };
 
 let s3Client: S3Client | null = null;
+let s3ConfigHash = '';
 
-function shouldUseS3(): boolean {
-  if (env.STORAGE_BACKEND === 'local') return false;
-  if (env.STORAGE_BACKEND === 's3') return true;
-  return Boolean(env.S3_ACCESS_KEY && env.S3_SECRET_KEY && env.S3_BUCKET);
-}
-
-function canUseS3Sync(): boolean {
-  return Boolean(env.S3_ACCESS_KEY && env.S3_SECRET_KEY && env.S3_BUCKET);
+function getConfigHash(): string {
+  const cfg = storageConfigService.get().s3;
+  return `${cfg.accessKey}:${cfg.secretKey}:${cfg.bucket}:${cfg.region}:${cfg.endpoint}`;
 }
 
 function getS3Client(): S3Client {
-  if (!s3Client) {
+  const hash = getConfigHash();
+  if (!s3Client || s3ConfigHash !== hash) {
+    const cfg = storageConfigService.get().s3;
     s3Client = new S3Client({
-      region: env.S3_REGION,
-      endpoint: env.S3_ENDPOINT || undefined,
-      forcePathStyle: Boolean(env.S3_ENDPOINT),
-      credentials: env.S3_ACCESS_KEY && env.S3_SECRET_KEY
-        ? {
-            accessKeyId: env.S3_ACCESS_KEY,
-            secretAccessKey: env.S3_SECRET_KEY,
-          }
+      region: cfg.region || 'ap-southeast-2',
+      endpoint: cfg.endpoint || undefined,
+      forcePathStyle: Boolean(cfg.endpoint),
+      credentials: cfg.accessKey && cfg.secretKey
+        ? { accessKeyId: cfg.accessKey, secretAccessKey: cfg.secretKey }
         : undefined,
     });
+    s3ConfigHash = hash;
   }
   return s3Client;
 }
 
 function buildPublicS3Url(key: string): string {
-  if (env.S3_PUBLIC_URL) {
-    return `${env.S3_PUBLIC_URL.replace(/\/+$/, '')}/${key}`;
+  const cfg = storageConfigService.get().s3;
+  if (cfg.publicUrl) {
+    return `${cfg.publicUrl.replace(/\/+$/, '')}/${key}`;
   }
-  if (env.S3_ENDPOINT) {
-    return `${env.S3_ENDPOINT.replace(/\/+$/, '')}/${env.S3_BUCKET}/${key}`;
+  if (cfg.endpoint) {
+    return `${cfg.endpoint.replace(/\/+$/, '')}/${cfg.bucket}/${key}`;
   }
-  return `https://${env.S3_BUCKET}.s3.${env.S3_REGION}.amazonaws.com/${key}`;
+  return `https://${cfg.bucket}.s3.${cfg.region}.amazonaws.com/${key}`;
 }
 
 function extractLocalUploadsPath(fileUrl: string): string | null {
   if (!fileUrl) return null;
+  const localMediaPath = storageConfigService.getLocalMediaPath();
   const relativeMatch = fileUrl.match(/\/uploads\/(.+)$/i);
-  if (relativeMatch?.[1]) return path.join(process.cwd(), 'uploads', relativeMatch[1]);
+  if (relativeMatch?.[1]) return path.join(localMediaPath, relativeMatch[1]);
   try {
     const parsed = new URL(fileUrl);
     const absoluteMatch = parsed.pathname.match(/\/uploads\/(.+)$/i);
     if (!absoluteMatch?.[1]) return null;
-    return path.join(process.cwd(), 'uploads', absoluteMatch[1]);
+    return path.join(localMediaPath, absoluteMatch[1]);
   } catch {
     return null;
   }
@@ -77,11 +75,11 @@ function extractLocalUploadsPath(fileUrl: string): string | null {
 
 export const storageService = {
   isRemoteSyncEnabled(): boolean {
-    return canUseS3Sync();
+    return storageConfigService.isS3Usable();
   },
 
   async saveUploadedFile(file: MulterFile): Promise<StoredMedia> {
-    if (!shouldUseS3()) {
+    if (!storageConfigService.shouldUseS3()) {
       return {
         storageKey: file.filename,
         url: `/uploads/${file.filename}`,
@@ -90,12 +88,13 @@ export const storageService = {
     }
 
     try {
+      const cfg = storageConfigService.get().s3;
       const objectKey = `uploads/${file.filename}`;
       const body = await fs.readFile(file.path);
       const client = getS3Client();
       await client.send(
         new PutObjectCommand({
-          Bucket: env.S3_BUCKET,
+          Bucket: cfg.bucket,
           Key: objectKey,
           Body: body,
           ContentType: file.mimetype,
@@ -109,7 +108,6 @@ export const storageService = {
         backend: 's3',
       };
     } catch {
-      // Fallback mode for poor/no internet: keep local file and queue for later sync.
       return {
         storageKey: file.filename,
         url: `/uploads/${file.filename}`,
@@ -119,15 +117,11 @@ export const storageService = {
   },
 
   async deleteStoredMedia(media: { storageKey?: string | null; url?: string | null }) {
-    if (shouldUseS3() && media.storageKey) {
+    if (storageConfigService.shouldUseS3() && media.storageKey) {
+      const cfg = storageConfigService.get().s3;
       const client = getS3Client();
       await client
-        .send(
-          new DeleteObjectCommand({
-            Bucket: env.S3_BUCKET,
-            Key: media.storageKey,
-          })
-        )
+        .send(new DeleteObjectCommand({ Bucket: cfg.bucket, Key: media.storageKey }))
         .catch(() => undefined);
       return;
     }
@@ -141,7 +135,7 @@ export const storageService = {
   },
 
   async syncLocalMediaToRemote(media: { filename: string; mimeType: string; storageKey?: string | null; url: string }) {
-    if (!canUseS3Sync()) {
+    if (!storageConfigService.isS3Usable()) {
       throw new Error('Remote object storage is not configured');
     }
 
@@ -150,10 +144,11 @@ export const storageService = {
     const body = await fs.readFile(localPath);
     const key = media.storageKey?.startsWith('uploads/') ? media.storageKey : `uploads/${media.filename}`;
 
+    const cfg = storageConfigService.get().s3;
     const client = getS3Client();
     await client.send(
       new PutObjectCommand({
-        Bucket: env.S3_BUCKET,
+        Bucket: cfg.bucket,
         Key: key,
         Body: body,
         ContentType: media.mimeType,

@@ -22,7 +22,9 @@ import workflowRoutes from './routes/workflow.routes';
 import notificationRoutes from './routes/notification.routes';
 import workFormRoutes from './routes/work-form.routes';
 import inviteRoutes from './routes/invite.routes';
+import storageRoutes from './routes/storage.routes';
 import prisma from './config/database';
+import { storageConfigService } from './services/storage-config.service';
 
 const app = express();
 
@@ -69,8 +71,10 @@ if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('short'));
 }
 
-// Static files (uploads)
-app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+// Static files (uploads) — served from configurable local media path
+app.use('/uploads', (req, res, next) => {
+  express.static(storageConfigService.getLocalMediaPath())(req, res, next);
+});
 
 // Email previews (dev only)
 app.use('/email-previews', express.static(path.join(process.cwd(), 'email-previews')));
@@ -113,6 +117,7 @@ app.use('/api/v1/organisations', organisationRoutes);
 app.use('/api/v1/reports', reportRoutes);
 app.use('/api/v1/workflows', workflowRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
+app.use('/api/v1/storage', storageRoutes);
 
 // Error handling
 app.use(notFound);

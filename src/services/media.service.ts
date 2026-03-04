@@ -2,6 +2,7 @@ import prisma from '../config/database';
 import { AppError } from '../middleware/error';
 import { auditService } from './audit.service';
 import { storageService, MulterFile } from './storage.service';
+import { storageConfigService } from './storage-config.service';
 
 export const mediaService = {
   async create(file: MulterFile, userId: string, metadata: Record<string, string>) {
@@ -66,8 +67,34 @@ export const mediaService = {
       orderBy: { createdAt: 'desc' },
     });
 
+    const status = storageConfigService.getStatus();
+    const totalPending = workOrders.reduce((sum, wo) => sum + wo.media.length, 0);
+
     return {
       remoteSyncEnabled: storageService.isRemoteSyncEnabled(),
+      storageStatus: {
+        overallStatus: status.overallStatus,
+        effectiveBackend: status.effectiveBackend,
+        s3Configured: status.s3Configured,
+        summary: status.summary,
+        configUrl: '/api/v1/storage/config',
+      },
+      totalPendingFiles: totalPending,
+      guidance: !storageService.isRemoteSyncEnabled()
+        ? {
+            title: 'Cloud sync is not configured',
+            message: 'To enable cloud sync, configure your S3 storage credentials in Settings > Storage. You can use AWS S3, DigitalOcean Spaces, MinIO, or any S3-compatible provider.',
+            actionLabel: 'Configure Storage',
+            actionUrl: '/settings/storage',
+          }
+        : totalPending > 0
+          ? {
+              title: `${totalPending} file(s) awaiting cloud sync`,
+              message: 'These files are stored locally and can be synced to cloud storage. Sync individual work orders below or wait for automatic background sync.',
+              actionLabel: 'Sync All',
+              actionUrl: null,
+            }
+          : null,
       jobs: workOrders.map((wo) => ({
         workOrderId: wo.id,
         referenceNumber: wo.referenceNumber,
@@ -79,7 +106,7 @@ export const mediaService = {
 
   async syncWorkOrderMedia(workOrderId: string) {
     if (!storageService.isRemoteSyncEnabled()) {
-      throw new AppError(400, 'REMOTE_SYNC_DISABLED', 'Remote storage is not configured');
+      throw new AppError(400, 'REMOTE_SYNC_DISABLED', 'Cloud storage is not configured. Go to Settings > Storage to set up your S3 credentials before syncing.');
     }
 
     const medias = await prisma.media.findMany({

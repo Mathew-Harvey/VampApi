@@ -193,30 +193,25 @@
         }
 
         .row {
-            display: flex;
-            justify-content: center !important;
-            align-items: center !important;
-            flex-direction: row;
-            flex-wrap: wrap;
-            justify-content: space-around;
-            padding: 0 4px;
             margin-top: 25px;
-        }
-
-        .column img {
-            flex: 50%;
-            height: auto;
-            width: 377px;
-            vertical-align: middle;
+            font-size: 0;
         }
 
         .column {
-
-            flex: 50%;
+            display: inline-block;
+            width: 48%;
+            margin: 0 1%;
+            vertical-align: top;
+            font-size: 12px;
             -webkit-column-break-inside: avoid;
             page-break-inside: avoid;
             break-inside: avoid;
-            position: relative;
+        }
+
+        .column img {
+            width: 100%;
+            height: auto;
+            display: block;
         }
 
         ul.a {
@@ -647,30 +642,7 @@
                                 </tr>
                                 {{resetLevelTwoCounter}}
                                 {{#each data.ranVessel.data.generalArrangement}}
-                                {{#if (lookAtMultiValue (array 
-                                                            diverSupervisorComments 
-                                                            expertInspectorComments
-                                                            frRatingData.[0].pdrRating 
-                                                            frRatingData.[0].Comments
-                                                            frRatingData.[0].levelOfFoulingLoF 
-                                                            frRatingData.[0].foulingRatingType
-                                                            frRatingData.[0].foulingCoverage
-                                                            frRatingData.[1].levelOfFoulingLoF 
-                                                            frRatingData.[1].foulingRatingType
-                                                            frRatingData.[1].foulingCoverage
-                                                            frRatingData.[1].pdrRating
-                                                            frRatingData.[1].foulingRatingType
-                                                            frRatingData.[2].levelOfFoulingLoF 
-                                                            frRatingData.[2].foulingRatingType
-                                                            frRatingData.[2].foulingCoverage
-                                                            frRatingData.[2].pdrRating
-                                                            frRatingData.[2].foulingRatingType
-                                                            frRatingData.[3].levelOfFoulingLoF 
-                                                            frRatingData.[3].foulingRatingType
-                                                            frRatingData.[3].foulingCoverage
-                                                            frRatingData.[3].pdrRating
-                                                            frRatingData.[3].foulingRatingType
-                                                            ))}}
+                                {{#if (hasValue name)}}
                                 <tr>
                                     <td style="width:20px;border:none"></td>
                                     <td style="border:none;font-size:14px; text-transform: uppercase;">
@@ -1255,34 +1227,7 @@
 
                         {{resetLevelTwoCounter}}{{resetLevelThreeCounter}}
                         {{#each data.ranVessel.data.generalArrangement}}
-                        {{#if (lookAtMultiValue (array 
-                            diverSupervisorComments 
-                            expertInspectorComments
-                            frRatingData.[0].levelOfFoulingLoF 
-                            frRatingData.[0].foulingRatingType
-                            frRatingData.[0].foulingCoverage
-                            frRatingData.[0].pdrRating
-                            frRatingData.[0].foulingRatingType
-                            frRatingData.[0].Comments                        
-                            frRatingData.[1].levelOfFoulingLoF 
-                            frRatingData.[1].foulingRatingType
-                            frRatingData.[1].foulingCoverage
-                            frRatingData.[1].pdrRating
-                            frRatingData.[1].foulingRatingType
-                            frRatingData.[1].Comments
-                            frRatingData.[2].levelOfFoulingLoF 
-                            frRatingData.[2].foulingRatingType
-                            frRatingData.[2].foulingCoverage
-                            frRatingData.[2].pdrRating
-                            frRatingData.[2].foulingRatingType
-                            frRatingData.[2].Comments
-                            frRatingData.[3].levelOfFoulingLoF 
-                            frRatingData.[3].foulingRatingType
-                            frRatingData.[3].foulingCoverage
-                            frRatingData.[3].pdrRating
-                            frRatingData.[3].foulingRatingType
-                            frRatingData.[3].Comments                                                    
-                            ))}}
+                        {{#if (hasValue name)}}
 
                         <div class="page" id="{{id}}">
 
@@ -1461,20 +1406,21 @@
                             <h4 class="custom-heading" id="h4MarginTop">Inspector Comments</h4>
                             <div class="comments-wrapper">{{{expertInspectorComments}}}</div>
                             {{/if}}
-                            <div class="row">
+                            <table style="width:100%; margin-top:25px; border:0; border-collapse:collapse;">
                                 {{#getImagesConditional name ../attachments}}
-                                <div class="column">
-                                    <img src="{{fullApiUrl}}" id="main-image-{{id}}" />
-                                    <img src="" id="{{id}}" style="position: absolute; top: 0; left: 0;" />
-
+                                {{#if (isEven @index)}}<tr>{{/if}}
+                                <td style="width:50%; padding:5px; vertical-align:top; border:0;">
+                                    <img src="{{fullApiUrl}}" style="width:100%; height:auto; display:block;" />
                                     {{#if @root.data.togglePhotoName.checked}}
-                                    <p id="caption"></p>
+                                    <p style="font-size:x-small; margin:4px 0 0 0;"></p>
                                     {{else}}
-                                    <p id="caption">{{title}}</p>
+                                    <p style="font-size:x-small; margin:4px 0 0 0;">{{title}}</p>
                                     {{/if}}
-                                </div>
+                                </td>
+                                {{#if (isOdd @index)}}</tr>{{/if}}
+                                {{#if @last}}{{#if (isEven @index)}}<td style="width:50%; border:0;"></td></tr>{{/if}}{{/if}}
                                 {{/getImagesConditional}}
-                            </div>
+                            </table>
                         </div>
                         {{/if}}
                         {{/each}}

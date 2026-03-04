@@ -5,6 +5,7 @@ import prisma from '../config/database';
 import { AppError } from '../middleware/error';
 import { workFormService } from './work-form.service';
 import { registerReportHelpers } from '../helpers/report-helpers';
+import { env } from '../config/env';
 
 // Legacy helpers (kept for any non-report templates)
 Handlebars.registerHelper('toLowerCase', (str: string) => str?.toLowerCase() || '');
@@ -293,6 +294,14 @@ function unwrapMediaRef(value: unknown): unknown {
   return value;
 }
 
+function toAbsoluteMediaUrl(url: string): string {
+  if (!url) return url;
+  if (/^https?:\/\//i.test(url) || url.startsWith('data:') || url.startsWith('blob:')) return url;
+  const apiBase = env.API_URL.replace(/\/+$/, '');
+  const normalizedPath = url.startsWith('/') ? url : `/${url}`;
+  return `${apiBase}${normalizedPath}`;
+}
+
 function resolveAttachmentSource(
   source: unknown,
   mediaMap: Map<string, MediaInfo>,
@@ -305,12 +314,12 @@ function resolveAttachmentSource(
 
   if (typeof source === 'string') {
     if (isLikelyUrl(source)) {
-      return { url: normalizeMediaUrl(source), title: defaultTitle };
+      return { url: toAbsoluteMediaUrl(normalizeMediaUrl(source)), title: defaultTitle };
     }
     const media = mediaMap.get(source);
     if (!media) return null;
     return {
-      url: normalizeMediaUrl(media.url),
+      url: toAbsoluteMediaUrl(normalizeMediaUrl(media.url)),
       idSuffix: source.slice(0, 8),
       title: buildTimestampFilename(media),
     };
@@ -318,26 +327,35 @@ function resolveAttachmentSource(
 
   if (!source || typeof source !== 'object') return null;
   const sourceObj = source as Record<string, unknown>;
+
+  // Prefer mediaId lookup over explicit URL fields — the media record in DB
+  // is the authoritative source and avoids stale/empty URL issues.
+  const mediaId = [sourceObj.mediaId, sourceObj.id]
+    .find((v) => typeof v === 'string' && v.length > 0) as string | undefined;
+  if (mediaId) {
+    const media = mediaMap.get(mediaId);
+    if (media) {
+      return {
+        url: toAbsoluteMediaUrl(normalizeMediaUrl(media.url)),
+        idSuffix: mediaId.slice(0, 8),
+        title: typeof sourceObj.title === 'string' ? sourceObj.title : buildTimestampFilename(media),
+        path: typeof sourceObj.path === 'string' ? sourceObj.path : undefined,
+      };
+    }
+  }
+
+  // Fall back to explicit URL fields if no mediaId matched a record
   const explicitUrl = [sourceObj.fullApiUrl, sourceObj.fullUri, sourceObj.url]
-    .find((v) => typeof v === 'string') as string | undefined;
+    .find((v) => typeof v === 'string' && v.length > 0) as string | undefined;
   if (explicitUrl) {
     return {
-      url: normalizeMediaUrl(explicitUrl),
+      url: toAbsoluteMediaUrl(normalizeMediaUrl(explicitUrl)),
       title: typeof sourceObj.title === 'string' ? sourceObj.title : defaultTitle,
       path: typeof sourceObj.path === 'string' ? sourceObj.path : undefined,
     };
   }
 
-  const mediaId = [sourceObj.mediaId, sourceObj.id].find((v) => typeof v === 'string') as string | undefined;
-  if (!mediaId) return null;
-  const media = mediaMap.get(mediaId);
-  if (!media) return null;
-  return {
-    url: normalizeMediaUrl(media.url),
-    idSuffix: mediaId.slice(0, 8),
-    title: typeof sourceObj.title === 'string' ? sourceObj.title : buildTimestampFilename(media),
-    path: typeof sourceObj.path === 'string' ? sourceObj.path : undefined,
-  };
+  return null;
 }
 
 function pickConfiguredImage(config: ReportConfig, keys: string[]): unknown {
@@ -495,17 +513,18 @@ async function buildInspectionReportContext(
     reviewDate: { date: dateObj },
   };
 
-  const pinnedAttachments = [
-    pickConfiguredImage(reportConfig, ['coverImage', 'coverPhoto', 'reportCover', 'reportCoverImage', 'coverImageMediaId'])
-      ? { path: 'ReportCover', attachment: pickConfiguredImage(reportConfig, ['coverImage', 'coverPhoto', 'reportCover', 'reportCoverImage', 'coverImageMediaId']), title: 'Report Cover' }
-      : null,
-    pickConfiguredImage(reportConfig, ['clientLogo', 'logo', 'clientLogoImage', 'clientLogoMediaId'])
-      ? { path: 'ClientLogo', attachment: pickConfiguredImage(reportConfig, ['clientLogo', 'logo', 'clientLogoImage', 'clientLogoMediaId']), title: 'Client Logo' }
-      : null,
-    pickConfiguredImage(reportConfig, ['generalArrangementImage', 'gaImage', 'generalArrangement', 'gaImageMediaId'])
-      ? { path: 'GeneralArrangement', attachment: pickConfiguredImage(reportConfig, ['generalArrangementImage', 'gaImage', 'generalArrangement', 'gaImageMediaId']), title: 'General Arrangement' }
-      : null,
-  ].filter(Boolean) as Array<{ path: string; attachment: unknown; title?: string }>;
+  const pinnedCandidates: Array<{ path: string; keys: string[]; title: string }> = [
+    { path: 'ReportCover', keys: ['coverImage', 'coverPhoto', 'reportCover', 'reportCoverImage', 'coverImageMediaId'], title: 'Report Cover' },
+    { path: 'ClientLogo', keys: ['clientLogo', 'logo', 'clientLogoImage', 'clientLogoMediaId'], title: 'Client Logo' },
+    { path: 'GeneralArrangement', keys: ['generalArrangementImage', 'gaImage', 'gaImageMediaId'], title: 'General Arrangement' },
+  ];
+  const pinnedAttachments: Array<{ path: string; attachment: unknown; title: string }> = [];
+  for (const candidate of pinnedCandidates) {
+    const value = pickConfiguredImage(reportConfig, candidate.keys);
+    if (value != null) {
+      pinnedAttachments.push({ path: candidate.path, attachment: value, title: candidate.title });
+    }
+  }
 
   const attachments = await buildAttachments(entries, pinnedAttachments);
 
@@ -614,6 +633,9 @@ function compileAndRender(templateName: string, context: Record<string, any>): s
   }
   if (!Handlebars.helpers['isEven']) {
     Handlebars.registerHelper('isEven', (index: number) => index % 2 === 0);
+  }
+  if (!Handlebars.helpers['isOdd']) {
+    Handlebars.registerHelper('isOdd', (index: number) => index % 2 !== 0);
   }
   const template = Handlebars.compile(source);
   return template(context);

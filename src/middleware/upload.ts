@@ -2,6 +2,7 @@ import multer from 'multer';
 import path from 'path';
 import { randomUUID } from 'crypto';
 import fs from 'fs';
+import { storageConfigService } from '../services/storage-config.service';
 
 /** Locally defined to avoid reliance on global Express.Multer namespace augmentation. */
 interface MulterFile {
@@ -16,21 +17,20 @@ interface MulterFile {
   buffer: Buffer;
 }
 
-const uploadDir = path.join(process.cwd(), 'uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+function getUploadDir(): string {
+  return storageConfigService.getLocalMediaPath();
 }
 
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => {
     try {
-      // Recreate uploads directory on-demand if it was removed while server is running.
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true });
+      const dir = getUploadDir();
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
       }
-      cb(null, uploadDir);
+      cb(null, dir);
     } catch (error) {
-      cb(error as Error, uploadDir);
+      cb(error as Error, getUploadDir());
     }
   },
   filename: (_req, file, cb) => {
@@ -57,5 +57,5 @@ const fileFilter = (_req: Express.Request, file: MulterFile, cb: multer.FileFilt
 export const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 100 * 1024 * 1024 }, // 100MB
+  limits: { fileSize: 100 * 1024 * 1024 },
 });

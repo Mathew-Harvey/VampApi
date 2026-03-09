@@ -201,6 +201,129 @@ export const workFormService = {
     });
   },
 
+  // Get the latest fouling state for each component of a vessel.
+  // Queries the most recently completed work order that has form entries with fouling data.
+  async getFoulingStateByVessel(vesselId: string) {
+    const components = await prisma.vesselComponent.findMany({
+      where: { vesselId },
+      orderBy: { sortOrder: 'asc' },
+    });
+    if (components.length === 0) return [];
+
+    // For each component, find the most recent form entry that has fouling data
+    const results = await Promise.all(
+      components.map(async (comp) => {
+        const latestEntry = await prisma.workFormEntry.findFirst({
+          where: {
+            vesselComponentId: comp.id,
+            foulingRating: { not: null },
+            workOrder: { isDeleted: false },
+          },
+          orderBy: { updatedAt: 'desc' },
+          include: {
+            workOrder: {
+              select: {
+                id: true,
+                referenceNumber: true,
+                title: true,
+                type: true,
+                completedAt: true,
+                status: true,
+              },
+            },
+          },
+        });
+
+        return {
+          componentId: comp.id,
+          componentName: comp.name,
+          category: comp.category,
+          location: comp.location,
+          condition: latestEntry?.condition ?? comp.condition,
+          foulingRating: latestEntry?.foulingRating ?? null,
+          foulingType: latestEntry?.foulingType ?? null,
+          coverage: latestEntry?.coverage ?? null,
+          coatingCondition: latestEntry?.coatingCondition ?? null,
+          lastAssessedAt: latestEntry?.updatedAt ?? null,
+          lastWorkOrder: latestEntry
+            ? {
+                id: latestEntry.workOrder.id,
+                referenceNumber: latestEntry.workOrder.referenceNumber,
+                title: latestEntry.workOrder.title,
+                type: latestEntry.workOrder.type,
+                completedAt: latestEntry.workOrder.completedAt,
+              }
+            : null,
+        };
+      })
+    );
+
+    return results;
+  },
+
+  // Get work history for a single component across all work orders
+  async getComponentWorkHistory(vesselId: string, componentId: string) {
+    const component = await prisma.vesselComponent.findFirst({
+      where: { id: componentId, vesselId },
+    });
+    if (!component) throw new AppError(404, 'NOT_FOUND', 'Component not found');
+
+    const entries = await prisma.workFormEntry.findMany({
+      where: {
+        vesselComponentId: componentId,
+        workOrder: { isDeleted: false },
+      },
+      orderBy: { updatedAt: 'desc' },
+      include: {
+        workOrder: {
+          select: {
+            id: true,
+            referenceNumber: true,
+            title: true,
+            type: true,
+            status: true,
+            location: true,
+            scheduledStart: true,
+            scheduledEnd: true,
+            actualStart: true,
+            actualEnd: true,
+            completedAt: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+
+    return {
+      component: {
+        id: component.id,
+        name: component.name,
+        category: component.category,
+        location: component.location,
+        coatingType: component.coatingType,
+        material: component.material,
+        condition: component.condition,
+      },
+      entries: entries.map((e) => ({
+        id: e.id,
+        condition: e.condition,
+        foulingRating: e.foulingRating,
+        foulingType: e.foulingType,
+        coverage: e.coverage,
+        coatingCondition: e.coatingCondition,
+        corrosionType: e.corrosionType,
+        corrosionSeverity: e.corrosionSeverity,
+        notes: e.notes,
+        recommendation: e.recommendation,
+        actionRequired: e.actionRequired,
+        status: e.status,
+        completedAt: e.completedAt,
+        updatedAt: e.updatedAt,
+        workOrder: e.workOrder,
+      })),
+    };
+  },
+
   // Add attachment (media ID) to a form entry
   async addAttachment(entryId: string, mediaId: string) {
     const entry = await prisma.workFormEntry.findUnique({ where: { id: entryId } });

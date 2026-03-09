@@ -55,6 +55,29 @@ router.delete('/components/:id', authenticate, async (req: Request, res: Respons
   }
 });
 
+// === Digital Twin — Fouling State & Work History ===
+
+router.get('/vessels/:vesselId/components/fouling-state', authenticate, async (req: Request, res: Response) => {
+  try {
+    const data = await workFormService.getFoulingStateByVessel(req.params.vesselId as string);
+    res.json({ success: true, data });
+  } catch (error: any) {
+    res.status(error.statusCode || 500).json({ success: false, error: { code: error.code || 'ERROR', message: error.message } });
+  }
+});
+
+router.get('/vessels/:vesselId/components/:componentId/work-history', authenticate, async (req: Request, res: Response) => {
+  try {
+    const data = await workFormService.getComponentWorkHistory(
+      req.params.vesselId as string,
+      req.params.componentId as string,
+    );
+    res.json({ success: true, data });
+  } catch (error: any) {
+    res.status(error.statusCode || 500).json({ success: false, error: { code: error.code || 'ERROR', message: error.message } });
+  }
+});
+
 // === Work Form Entries ===
 
 router.post('/work-orders/:workOrderId/form/generate', authenticate, async (req: Request, res: Response) => {

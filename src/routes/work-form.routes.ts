@@ -66,6 +66,25 @@ router.get('/vessels/:vesselId/components/fouling-state', authenticate, async (r
   }
 });
 
+router.get('/vessels/:vesselId/digital-twin', authenticate, async (req: Request, res: Response) => {
+  try {
+    const data = await workFormService.getDigitalTwinFoulingState(req.params.vesselId as string);
+    res.json({ success: true, data });
+  } catch (error: any) {
+    res.status(error.statusCode || 500).json({ success: false, error: { code: error.code || 'ERROR', message: error.message } });
+  }
+});
+
+router.put('/vessels/:vesselId/components/:componentId/ga-mapping', authenticate, async (req: Request, res: Response) => {
+  try {
+    const { gaComponentId } = req.body;
+    const component = await vesselComponentService.update(req.params.componentId as string, { gaComponentId: gaComponentId || null });
+    res.json({ success: true, data: component });
+  } catch (error: any) {
+    res.status(error.statusCode || 500).json({ success: false, error: { code: error.code || 'ERROR', message: error.message } });
+  }
+});
+
 router.get('/vessels/:vesselId/components/:componentId/work-history', authenticate, async (req: Request, res: Response) => {
   try {
     const data = await workFormService.getComponentWorkHistory(

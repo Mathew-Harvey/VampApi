@@ -179,6 +179,7 @@ model VesselComponent {
   vesselId     String
   name         String   // e.g. "Sea Chest Port 1", "Bow Thruster", "Rudder"
   category     String   // e.g. "HULL", "SEA_CHEST", "THRUSTER", "RUDDER", "PROPELLER", "KEEL", "ANODES", "INTAKE"
+  gaComponentId String? // Maps to a Digital Twin GA zone ID (e.g. "hull_fwd", "rudder", "prop_p")
   location     String?  // descriptive location on vessel
   description  String?
   sortOrder    Int      @default(0)

@@ -261,6 +261,67 @@ export const workFormService = {
     return results;
   },
 
+  // Get fouling state keyed by Digital Twin GA component IDs.
+  // Only components that have a gaComponentId mapping are included.
+  async getDigitalTwinFoulingState(vesselId: string) {
+    const components = await prisma.vesselComponent.findMany({
+      where: { vesselId, gaComponentId: { not: null } },
+      orderBy: { sortOrder: 'asc' },
+    });
+    if (components.length === 0) return { foulingData: {}, componentMap: [] };
+
+    const foulingData: Record<string, { foulingRating: number }> = {};
+    const componentMap: Array<{
+      componentId: string;
+      componentName: string;
+      category: string;
+      location: string | null;
+      gaComponentId: string;
+      foulingRating: number | null;
+      foulingType: string | null;
+      coverage: number | null;
+      condition: string | null;
+      coatingCondition: string | null;
+      lastAssessedAt: Date | null;
+    }> = [];
+
+    await Promise.all(
+      components.map(async (comp) => {
+        const latestEntry = await prisma.workFormEntry.findFirst({
+          where: {
+            vesselComponentId: comp.id,
+            foulingRating: { not: null },
+            workOrder: { isDeleted: false },
+          },
+          orderBy: { updatedAt: 'desc' },
+        });
+
+        const gaId = comp.gaComponentId!;
+        const rating = latestEntry?.foulingRating ?? null;
+
+        if (rating != null) {
+          foulingData[gaId] = { foulingRating: rating };
+        }
+
+        componentMap.push({
+          componentId: comp.id,
+          componentName: comp.name,
+          category: comp.category,
+          location: comp.location,
+          gaComponentId: gaId,
+          foulingRating: rating,
+          foulingType: latestEntry?.foulingType ?? null,
+          coverage: latestEntry?.coverage ?? null,
+          condition: latestEntry?.condition ?? comp.condition,
+          coatingCondition: latestEntry?.coatingCondition ?? null,
+          lastAssessedAt: latestEntry?.updatedAt ?? null,
+        });
+      })
+    );
+
+    return { foulingData, componentMap };
+  },
+
   // Get work history for a single component across all work orders
   async getComponentWorkHistory(vesselId: string, componentId: string) {
     const component = await prisma.vesselComponent.findFirst({

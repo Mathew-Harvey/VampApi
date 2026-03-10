@@ -214,7 +214,14 @@ function isLikelyUrl(value: string): boolean {
 
 function normalizeMediaUrl(url: string): string {
   if (!url) return url;
-  if (isLikelyUrl(url)) return url;
+  // Strip legacy baked-in absolute origins (e.g. http://localhost:3001/uploads/x.jpg → /uploads/x.jpg)
+  if (/^https?:\/\//i.test(url)) {
+    try {
+      const parsed = new URL(url);
+      if (parsed.pathname.startsWith('/uploads/')) return parsed.pathname;
+    } catch { /* not a valid URL, continue */ }
+    return url;
+  }
   if (url.startsWith('uploads/')) return `/${url}`;
   return url;
 }

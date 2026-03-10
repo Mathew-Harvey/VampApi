@@ -114,7 +114,7 @@ export const workFormService = {
     for (const key of ENTRY_UPDATE_FIELDS) {
       if (key in data) {
         if (key === 'attachments') {
-          const arr = Array.isArray(data[key]) ? data[key] : safeParseJsonArray(data[key]);
+          const arr = (Array.isArray(data[key]) ? data[key] : safeParseJsonArray(data[key])).map(toRelativePath);
           updateData[key] = JSON.stringify(arr);
         } else {
           updateData[key] = data[key];
@@ -266,7 +266,7 @@ export const workFormService = {
     const entry = await prisma.workFormEntry.findUnique({ where: { id: entryId } });
     if (!entry) throw new AppError(404, 'NOT_FOUND', 'Form entry not found');
 
-    const attachments: string[] = safeParseJsonArray(entry.attachments);
+    const attachments: string[] = safeParseJsonArray(entry.attachments).map(toRelativePath);
     if (index >= 0 && index < attachments.length) {
       attachments.splice(index, 1);
     }
@@ -411,9 +411,8 @@ export const workFormService = {
     });
     if (!media) throw new AppError(404, 'NOT_FOUND', 'Media not found');
 
-    const attachments: string[] = safeParseJsonArray(entry.attachments);
-    const mediaUrl = toPublicMediaUrl(media.url);
-    attachments.push(mediaUrl);
+    const attachments: string[] = safeParseJsonArray(entry.attachments).map(toRelativePath);
+    attachments.push(toRelativePath(media.url));
 
     const updated = await prisma.workFormEntry.update({
       where: { id: entryId },
@@ -421,20 +420,34 @@ export const workFormService = {
       include: { vesselComponent: true },
     });
 
+    const resolvedUrl = toPublicMediaUrl(media.url);
     return {
       ...updated,
-      attachments: attachments,
+      attachments: attachments.map(toPublicMediaUrl),
       mediaId: media.id,
-      mediaUrl,
+      mediaUrl: resolvedUrl,
     };
   },
 };
 
+/** Resolve a relative path like /uploads/x.jpg to a full URL using the current API_URL. */
 function toPublicMediaUrl(url: string): string {
   if (/^https?:\/\//i.test(url)) return url;
   const apiBase = env.API_URL.replace(/\/+$/, '');
   const normalizedPath = url.startsWith('/') ? url : `/${url}`;
   return `${apiBase}${normalizedPath}`;
+}
+
+/** Strip any baked-in absolute API origin, keeping only the path (e.g. /uploads/x.jpg). */
+function toRelativePath(url: string): string {
+  if (!url) return url;
+  try {
+    const parsed = new URL(url);
+    if (parsed.pathname.startsWith('/uploads/')) return parsed.pathname;
+  } catch {
+    // not a full URL — already relative
+  }
+  return url;
 }
 
 function safeParseJsonArray(raw: unknown): string[] {
@@ -448,7 +461,10 @@ function safeParseJsonArray(raw: unknown): string[] {
   }
 }
 
-/** Parse the attachments JSON string on an entry so consumers get an array. */
+/** Parse attachments JSON, normalize legacy absolute URLs, and resolve to current API_URL. */
 function withParsedAttachments<T extends { attachments: unknown }>(entry: T): T & { attachments: string[] } {
-  return { ...entry, attachments: safeParseJsonArray(entry.attachments) };
+  return {
+    ...entry,
+    attachments: safeParseJsonArray(entry.attachments).map((u) => toPublicMediaUrl(toRelativePath(u))),
+  };
 }

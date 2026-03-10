@@ -84,6 +84,7 @@ type MediaInfo = {
 
 type FrRatingDataRow = {
   description: string;
+  conditionRating?: string | null;
   levelOfFoulingLoF?: string | null;
   foulingRatingType?: string | null;
   foulingCoverage?: string | null;
@@ -382,18 +383,51 @@ async function buildInspectionReportContext(
   const hasLoF = workOrder.type?.toLowerCase().includes('biofouling') || workOrder.type === 'NZ CRMS Biofouling Inspection';
 
   function buildFrRow(desc: string, e: typeof entries[0], isSub = false): FrRatingDataRow | null {
+    const cat = e.category ?? '';
+
+    if (cat === 'ANODES') {
+      const wastage = (e as any).measurementValue;
+      if (e.condition || wastage != null || e.notes) {
+        return {
+          description: desc,
+          conditionRating: e.condition ?? null,
+          foulingRatingType: e.condition ?? null,
+          foulingCoverage: wastage != null ? `${wastage}% wastage` : null,
+          Comments: e.notes ?? null,
+          isSubComponent: isSub,
+        };
+      }
+      return null;
+    }
+
+    if (cat === 'PROPELLER') {
+      if (e.condition || e.coatingCondition || e.corrosionType || e.notes) {
+        return {
+          description: desc,
+          conditionRating: e.condition ?? null,
+          foulingRatingType: e.corrosionType ? `${e.corrosionType}${e.corrosionSeverity ? ` (${e.corrosionSeverity})` : ''}` : null,
+          pdrRating: e.coatingCondition ?? null,
+          Comments: e.notes ?? null,
+          isSubComponent: isSub,
+        };
+      }
+      return null;
+    }
+
     if (hasLoF && (e.foulingRating != null || e.notes || e.coatingCondition)) {
       return {
         description: desc,
+        conditionRating: e.condition ?? null,
         levelOfFoulingLoF: e.foulingRating != null ? `Rank: ${e.foulingRating}` : null,
         pdrRating: e.coatingCondition ?? null,
         Comments: e.notes ?? null,
         isSubComponent: isSub,
       };
     }
-    if (e.foulingRating != null || e.foulingType || e.coverage != null || e.coatingCondition || e.notes) {
+    if (e.foulingRating != null || e.foulingType || e.coverage != null || e.coatingCondition || e.notes || e.condition) {
       return {
         description: desc,
+        conditionRating: e.condition ?? null,
         foulingRatingType: e.foulingType ?? null,
         foulingCoverage: e.coverage != null ? `${e.coverage}%` : null,
         pdrRating: e.coatingCondition ?? null,
@@ -443,7 +477,7 @@ async function buildInspectionReportContext(
       name: entry.component || 'Section',
       diverSupervisorComments,
       expertInspectorComments,
-      frRatingData: frRatingData.length ? frRatingData : [{ description: desc, levelOfFoulingLoF: null, foulingRatingType: null, foulingCoverage: null, pdrRating: null, Comments: null }],
+      frRatingData: frRatingData.length ? frRatingData : [{ description: desc, conditionRating: null, levelOfFoulingLoF: null, foulingRatingType: null, foulingCoverage: null, pdrRating: null, Comments: null }],
       comments,
       hasSubComponents: subComponentNames.length > 0,
       subComponentNames,

@@ -5,6 +5,7 @@ import { authenticate } from '../middleware/auth';
 import { hasAnyPermission } from '../middleware/permissions';
 import { workOrderService } from '../services/work-order.service';
 import prisma from '../config/database';
+import { CATEGORY_FIELD_CONFIG, getCategoryConfig } from '../config/category-field-config';
 
 const router = Router();
 
@@ -100,6 +101,17 @@ router.get('/component-templates/:category', authenticate, async (req: Request, 
   } catch (error: any) {
     res.status(error.statusCode || 500).json({ success: false, error: { code: error.code || 'ERROR', message: error.message } });
   }
+});
+
+// === Category Field Configuration ===
+
+router.get('/category-config', authenticate, (_req: Request, res: Response) => {
+  res.json({ success: true, data: CATEGORY_FIELD_CONFIG });
+});
+
+router.get('/category-config/:category', authenticate, (req: Request, res: Response) => {
+  const config = getCategoryConfig(req.params.category as string);
+  res.json({ success: true, data: config });
 });
 
 // === GA Zone Mapping ===

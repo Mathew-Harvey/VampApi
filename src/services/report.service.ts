@@ -89,6 +89,7 @@ type FrRatingDataRow = {
   foulingCoverage?: string | null;
   pdrRating?: string | null;
   Comments?: string | null;
+  isSubComponent?: boolean;
 };
 
 /** Build attachments list for template: path + fullApiUrl per image, keyed by component or special labels */
@@ -377,32 +378,65 @@ async function buildInspectionReportContext(
   const dateObj = inspectionDate instanceof Date ? inspectionDate : new Date(inspectionDate);
 
   // generalArrangement: one block per entry, with frRatingData for template tables (never empty so TOC safe)
+  // Sub-component entries appear as additional rows within the parent's frRatingData table.
+  const hasLoF = workOrder.type?.toLowerCase().includes('biofouling') || workOrder.type === 'NZ CRMS Biofouling Inspection';
+
+  function buildFrRow(desc: string, e: typeof entries[0], isSub = false): FrRatingDataRow | null {
+    if (hasLoF && (e.foulingRating != null || e.notes || e.coatingCondition)) {
+      return {
+        description: desc,
+        levelOfFoulingLoF: e.foulingRating != null ? `Rank: ${e.foulingRating}` : null,
+        pdrRating: e.coatingCondition ?? null,
+        Comments: e.notes ?? null,
+        isSubComponent: isSub,
+      };
+    }
+    if (e.foulingRating != null || e.foulingType || e.coverage != null || e.coatingCondition || e.notes) {
+      return {
+        description: desc,
+        foulingRatingType: e.foulingType ?? null,
+        foulingCoverage: e.coverage != null ? `${e.coverage}%` : null,
+        pdrRating: e.coatingCondition ?? null,
+        Comments: e.notes ?? null,
+        isSubComponent: isSub,
+      };
+    }
+    return null;
+  }
+
   const generalArrangement = entries.length === 0
     ? [{ id: '', name: '—', diverSupervisorComments: '', expertInspectorComments: '', frRatingData: [{}], comments: '' }]
     : entries.map((entry) => {
-    const hasLoF = workOrder.type?.toLowerCase().includes('biofouling') || workOrder.type === 'NZ CRMS Biofouling Inspection';
     const frRatingData: FrRatingDataRow[] = [];
     const desc = entry.component || 'No description';
-    if (hasLoF && (entry.foulingRating != null || entry.notes || entry.coatingCondition)) {
-      frRatingData.push({
-        description: desc,
-        levelOfFoulingLoF: entry.foulingRating != null ? `Rank: ${entry.foulingRating}` : null,
-        pdrRating: entry.coatingCondition ?? null,
-        Comments: entry.notes ?? null,
-      });
-    } else if (entry.foulingRating != null || entry.foulingType || entry.coverage != null || entry.coatingCondition || entry.notes) {
-      frRatingData.push({
-        description: desc,
-        foulingRatingType: entry.foulingType ?? null,
-        foulingCoverage: entry.coverage != null ? `${entry.coverage}%` : null,
-        pdrRating: entry.coatingCondition ?? null,
-        Comments: entry.notes ?? null,
-      });
+
+    const parentRow = buildFrRow(desc, entry);
+    if (parentRow) frRatingData.push(parentRow);
+
+    // Append sub-component rows under the parent, visually distinct in the table
+    const subEntries = (entry as any).subEntries as typeof entries | undefined;
+    const subComponentNames: string[] = [];
+    if (subEntries && subEntries.length > 0) {
+      for (const sub of subEntries) {
+        const subName = sub.component || 'Sub-component';
+        subComponentNames.push(subName);
+        const subRow = buildFrRow(subName, sub, true);
+        if (subRow) frRatingData.push(subRow);
+      }
     }
 
-    const diverSupervisorComments = entry.notes ? `<p>${escapeHtml(String(entry.notes))}</p>` : '';
-    const expertInspectorComments = entry.recommendation ? `<p>${escapeHtml(String(entry.recommendation))}</p>` : '';
-    const comments = [entry.notes, entry.recommendation].filter(Boolean).join(' ') || '';
+    const allNotes = [entry.notes];
+    const allRecs = [entry.recommendation];
+    if (subEntries) {
+      for (const sub of subEntries) {
+        if (sub.notes) allNotes.push(`${sub.component}: ${sub.notes}`);
+        if (sub.recommendation) allRecs.push(`${sub.component}: ${sub.recommendation}`);
+      }
+    }
+
+    const diverSupervisorComments = allNotes.filter(Boolean).map((n) => `<p>${escapeHtml(String(n))}</p>`).join('');
+    const expertInspectorComments = allRecs.filter(Boolean).map((r) => `<p>${escapeHtml(String(r))}</p>`).join('');
+    const comments = [...allNotes, ...allRecs].filter(Boolean).join(' ') || '';
 
     return {
       id: (entry as any).id ?? entry.component?.replace(/\s+/g, '-') ?? '',
@@ -411,6 +445,8 @@ async function buildInspectionReportContext(
       expertInspectorComments,
       frRatingData: frRatingData.length ? frRatingData : [{ description: desc, levelOfFoulingLoF: null, foulingRatingType: null, foulingCoverage: null, pdrRating: null, Comments: null }],
       comments,
+      hasSubComponents: subComponentNames.length > 0,
+      subComponentNames,
     };
   });
 
@@ -526,7 +562,17 @@ async function buildInspectionReportContext(
     }
   }
 
-  const attachments = await buildAttachments(entries, pinnedAttachments);
+  // Flatten sub-entries alongside parents so buildAttachments picks up sub-component photos
+  const allEntriesFlat: Array<{ component: string; attachments: unknown }> = [];
+  for (const entry of entries) {
+    allEntriesFlat.push(entry);
+    const subs = (entry as any).subEntries as typeof entries | undefined;
+    if (subs) {
+      for (const sub of subs) allEntriesFlat.push(sub);
+    }
+  }
+
+  const attachments = await buildAttachments(allEntriesFlat, pinnedAttachments);
 
   return {
     data,

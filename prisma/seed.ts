@@ -193,7 +193,7 @@ async function main() {
     { name: 'Speed Log Transducer', category: 'INTAKE', location: 'Forward bottom', sortOrder: 18 },
   ];
 
-  await Promise.all(
+  const createdComponents = await Promise.all(
     componentCategories.map((comp) =>
       prisma.vesselComponent.create({
         data: { vesselId: vessels[0].id, ...comp },
@@ -201,6 +201,58 @@ async function main() {
     )
   );
   console.log('Created', componentCategories.length, 'vessel components');
+
+  // 6c. Create sub-components for Propeller - Port (4-blade example)
+  const propellerPort = createdComponents.find((c) => c.name === 'Propeller - Port')!;
+  const propSubComponents = [
+    { name: 'Blade 1', material: 'Bronze', sortOrder: 1 },
+    { name: 'Blade 2', material: 'Bronze', sortOrder: 2 },
+    { name: 'Blade 3', material: 'Bronze', sortOrder: 3 },
+    { name: 'Blade 4', material: 'Bronze', sortOrder: 4 },
+    { name: 'Boss / Hub', material: 'Bronze', sortOrder: 5 },
+    { name: 'Rope Guard', material: 'Steel', sortOrder: 6 },
+  ];
+  await Promise.all(
+    propSubComponents.map((sc) =>
+      prisma.vesselComponent.create({
+        data: { vesselId: vessels[0].id, parentId: propellerPort.id, category: 'PROPELLER', ...sc },
+      })
+    )
+  );
+
+  // Sub-components for Rudder - Port
+  const rudderPort = createdComponents.find((c) => c.name === 'Rudder - Port')!;
+  const rudderSubComponents = [
+    { name: 'Rudder Blade', material: 'Steel', sortOrder: 1 },
+    { name: 'Rudder Stock', material: 'Steel', sortOrder: 2 },
+    { name: 'Pintle & Gudgeon', material: 'Steel', sortOrder: 3 },
+    { name: 'Zinc Anodes', material: 'Zinc', sortOrder: 4 },
+  ];
+  await Promise.all(
+    rudderSubComponents.map((sc) =>
+      prisma.vesselComponent.create({
+        data: { vesselId: vessels[0].id, parentId: rudderPort.id, category: 'RUDDER', ...sc },
+      })
+    )
+  );
+
+  // Sub-components for Bow Thruster
+  const bowThruster = createdComponents.find((c) => c.name === 'Bow Thruster')!;
+  const thrusterSubComponents = [
+    { name: 'Thruster Tunnel', material: 'Steel', sortOrder: 1 },
+    { name: 'Propeller', material: 'Bronze', sortOrder: 2 },
+    { name: 'Tunnel Grilles (Port)', material: 'Steel', sortOrder: 3 },
+    { name: 'Tunnel Grilles (Starboard)', material: 'Steel', sortOrder: 4 },
+    { name: 'Zinc Anodes', material: 'Zinc', sortOrder: 5 },
+  ];
+  await Promise.all(
+    thrusterSubComponents.map((sc) =>
+      prisma.vesselComponent.create({
+        data: { vesselId: vessels[0].id, parentId: bowThruster.id, category: 'THRUSTER', ...sc },
+      })
+    )
+  );
+  console.log('Created sub-components for Propeller-Port, Rudder-Port, Bow Thruster');
 
   // 7. Create workflow templates
   const bioInspectionWF = await prisma.workflow.create({

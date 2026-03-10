@@ -177,7 +177,8 @@ model NicheArea {
 model VesselComponent {
   id           String   @id @default(cuid())
   vesselId     String
-  name         String   // e.g. "Sea Chest Port 1", "Bow Thruster", "Rudder"
+  parentId     String?  // self-ref: null = top-level GA section, set = sub-component
+  name         String   // e.g. "Sea Chest Port 1", "Bow Thruster", "Blade 1"
   category     String   // e.g. "HULL", "SEA_CHEST", "THRUSTER", "RUDDER", "PROPELLER", "KEEL", "ANODES", "INTAKE"
   location     String?  // descriptive location on vessel
   description  String?
@@ -190,7 +191,9 @@ model VesselComponent {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  vessel          Vessel          @relation(fields: [vesselId], references: [id], onDelete: Cascade)
+  vessel          Vessel            @relation(fields: [vesselId], references: [id], onDelete: Cascade)
+  parent          VesselComponent?  @relation("SubComponents", fields: [parentId], references: [id], onDelete: Cascade)
+  subComponents   VesselComponent[] @relation("SubComponents")
   workFormEntries WorkFormEntry[]
 
   @@map("vessel_components")

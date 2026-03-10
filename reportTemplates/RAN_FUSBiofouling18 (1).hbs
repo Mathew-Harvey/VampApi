@@ -1290,10 +1290,10 @@
                                     </thead>
                                     <tbody>
                                         {{#each frRatingData}}
-                                        <tr>
+                                        <tr style="{{#if isSubComponent}}background-color:#F2F6FA;{{/if}}">
                                             {{#if description}}
-                                            <td style="border:1px solid; padding:5px 5px; word-wrap:break-word;">
-                                                {{description}}</td>
+                                            <td style="border:1px solid; padding:5px {{#if isSubComponent}}5px 5px 18px{{else}}5px{{/if}}; word-wrap:break-word;{{#unless isSubComponent}}{{#if ../hasSubComponents}}font-weight:bold;{{/if}}{{/unless}}">
+                                                {{#if isSubComponent}}<span style="color:#666; margin-right:4px;">&#8627;</span>{{/if}}{{description}}</td>
                                             {{else}}
                                             <td style="border:1px solid; padding:5px 5px; word-wrap:break-word;">No
                                                 description available</td>
@@ -1302,22 +1302,22 @@
                                             <td style="border:1px solid; padding:5px 5px; word-wrap:break-word;">
                                                 {{levelOfFoulingLoF}}</td>
                                             {{else}}
-                                            <td style="border:1px solid; padding:5px 5px; word-wrap:break-word;">No
-                                                level of fouling data available</td>
+                                            <td style="border:1px solid; padding:5px 5px; word-wrap:break-word;{{#if isSubComponent}}color:#999;font-style:italic;{{/if}}">{{#if isSubComponent}}—{{else}}No
+                                                level of fouling data available{{/if}}</td>
                                             {{/if}}
                                             {{#if pdrRating}}
                                             <td style="border:1px solid; padding:5px 5px; word-wrap:break-word;">
                                                 {{pdrRating}}</td>
                                             {{else}}
-                                            <td style="border:1px solid; padding:5px 5px; word-wrap:break-word;">No PDR
-                                                rating allocated</td>
+                                            <td style="border:1px solid; padding:5px 5px; word-wrap:break-word;{{#if isSubComponent}}color:#999;font-style:italic;{{/if}}">{{#if isSubComponent}}—{{else}}No PDR
+                                                rating allocated{{/if}}</td>
                                             {{/if}}
                                             {{#if Comments}}
                                             <td style="border:1px solid; padding:5px 5px; word-wrap:break-word;">
                                                 {{Comments}}</td>
                                             {{else}}
-                                            <td style="border:1px solid; padding:5px 5px; word-wrap:break-word;">No
-                                                additional comments</td>
+                                            <td style="border:1px solid; padding:5px 5px; word-wrap:break-word;{{#if isSubComponent}}color:#999;font-style:italic;{{/if}}">{{#if isSubComponent}}—{{else}}No
+                                                additional comments{{/if}}</td>
                                             {{/if}}
                                         </tr>
                                         {{/each}}
@@ -1354,11 +1354,12 @@
                                                                     foulingCoverage 
                                                                     pdrRating
                                                                     Comments
+                                                                    isSubComponent
                                                                     ))}}
-                                        <tr>
+                                        <tr style="{{#if isSubComponent}}background-color:#F2F6FA;{{/if}}">
                                             {{#if description}}
-                                            <td style="border:1px solid; padding:5px 5px; word-wrap:break-word;">
-                                                {{description}}</td>
+                                            <td style="border:1px solid; padding:5px {{#if isSubComponent}}5px 5px 18px{{else}}5px{{/if}}; word-wrap:break-word;{{#unless isSubComponent}}{{#if ../hasSubComponents}}font-weight:bold;{{/if}}{{/unless}}">
+                                                {{#if isSubComponent}}<span style="color:#666; margin-right:4px;">&#8627;</span>{{/if}}{{description}}</td>
                                             {{else}}
                                             <td style="border:1px solid; padding:5px 5px; word-wrap:break-word;">No
                                                 description available</td>
@@ -1367,29 +1368,29 @@
                                             <td style="border:1px solid; padding:5px 5px; word-wrap:break-word;">
                                                 {{foulingRatingType}}</td>
                                             {{else}}
-                                            <td style="border:1px solid; padding:5px 5px; word-wrap:break-word;">No
-                                                fouling rating allocated</td>
+                                            <td style="border:1px solid; padding:5px 5px; word-wrap:break-word;{{#if isSubComponent}}color:#999;font-style:italic;{{/if}}">{{#if isSubComponent}}—{{else}}No
+                                                fouling rating allocated{{/if}}</td>
                                             {{/if}}
                                             {{#if foulingCoverage}}
                                             <td style="border:1px solid; padding:5px 5px; word-wrap:break-word;">
                                                 {{foulingCoverage}}</td>
                                             {{else}}
-                                            <td style="border:1px solid; padding:5px 5px; word-wrap:break-word;">No
-                                                fouling coverage allocated</td>
+                                            <td style="border:1px solid; padding:5px 5px; word-wrap:break-word;{{#if isSubComponent}}color:#999;font-style:italic;{{/if}}">{{#if isSubComponent}}—{{else}}No
+                                                fouling coverage allocated{{/if}}</td>
                                             {{/if}}
                                             {{#if pdrRating}}
                                             <td style="border:1px solid; padding:5px 5px; word-wrap:break-word;">
                                                 {{pdrRating}}</td>
                                             {{else}}
-                                            <td style="border:1px solid; padding:5px 5px; word-wrap:break-word;">No PDR
-                                                rating allocated</td>
+                                            <td style="border:1px solid; padding:5px 5px; word-wrap:break-word;{{#if isSubComponent}}color:#999;font-style:italic;{{/if}}">{{#if isSubComponent}}—{{else}}No PDR
+                                                rating allocated{{/if}}</td>
                                             {{/if}}
                                             {{#if Comments}}
                                             <td style="border:1px solid; padding:5px 5px; word-wrap:break-word;">
                                                 {{Comments}}</td>
                                             {{else}}
-                                            <td style="border:1px solid; padding:5px 5px; word-wrap:break-word;">No
-                                                additional comments</td>
+                                            <td style="border:1px solid; padding:5px 5px; word-wrap:break-word;{{#if isSubComponent}}color:#999;font-style:italic;{{/if}}">{{#if isSubComponent}}—{{else}}No
+                                                additional comments{{/if}}</td>
                                             {{/if}}
                                         </tr>
                                         {{/if}}
@@ -1421,6 +1422,28 @@
                                 {{#if @last}}{{#if (isEven @index)}}<td style="width:50%; border:0;"></td></tr>{{/if}}{{/if}}
                                 {{/getImagesConditional}}
                             </table>
+                            {{!-- Sub-component photos: render a labelled photo grid per sub-component --}}
+                            {{#if hasSubComponents}}
+                            {{#each subComponentNames}}
+                            <table style="width:100%; margin-top:10px; border:0; border-collapse:collapse;">
+                                {{#getImagesConditional this ../../attachments}}
+                                {{#if (isEven @index)}}
+                                {{#if (eq @index 0)}}<tr><td colspan="2" style="border:0; padding:5px 5px 2px 5px; font-size:9pt; font-weight:bold; color:#365F91;">{{../this}}</td></tr>{{/if}}
+                                <tr>{{/if}}
+                                <td style="width:50%; padding:5px; vertical-align:top; border:0;">
+                                    <img src="{{fullApiUrl}}" style="width:100%; height:auto; display:block;" />
+                                    {{#if @root.data.togglePhotoName.checked}}
+                                    <p style="font-size:x-small; margin:4px 0 0 0;"></p>
+                                    {{else}}
+                                    <p style="font-size:x-small; margin:4px 0 0 0;">{{title}}</p>
+                                    {{/if}}
+                                </td>
+                                {{#if (isOdd @index)}}</tr>{{/if}}
+                                {{#if @last}}{{#if (isEven @index)}}<td style="width:50%; border:0;"></td></tr>{{/if}}{{/if}}
+                                {{/getImagesConditional}}
+                            </table>
+                            {{/each}}
+                            {{/if}}
                         </div>
                         {{/if}}
                         {{/each}}

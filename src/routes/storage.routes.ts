@@ -13,8 +13,10 @@ const adminOnly = requirePermission('ADMIN_FULL_ACCESS');
 
 // ---------------------------------------------------------------------------
 // GET /config — full configuration status with per-field guidance
+// Accessible to any authenticated user so the frontend can check storage
+// status without triggering a 403 loop. Write operations remain admin-only.
 // ---------------------------------------------------------------------------
-router.get('/config', authenticate, adminOnly, async (_req: Request, res: Response) => {
+router.get('/config', authenticate, async (_req: Request, res: Response) => {
   try {
     const status = storageConfigService.getStatus();
     res.json({ success: true, data: status });
@@ -77,7 +79,7 @@ router.put('/config', authenticate, adminOnly, async (req: Request, res: Respons
 // ---------------------------------------------------------------------------
 // POST /config/test-s3 — test S3 connectivity with current or supplied creds
 // ---------------------------------------------------------------------------
-router.post('/config/test-s3', authenticate, adminOnly, async (req: Request, res: Response) => {
+router.post('/config/test-s3', authenticate, async (req: Request, res: Response) => {
   try {
     const cfg = storageConfigService.get();
     const s3 = { ...cfg.s3, ...(req.body.s3 ?? {}) };
@@ -173,7 +175,7 @@ router.post('/config/test-s3', authenticate, adminOnly, async (req: Request, res
 // ---------------------------------------------------------------------------
 // POST /config/test-local — validate a local path is writable
 // ---------------------------------------------------------------------------
-router.post('/config/test-local', authenticate, adminOnly, async (req: Request, res: Response) => {
+router.post('/config/test-local', authenticate, async (req: Request, res: Response) => {
   try {
     const requestedPath = req.body.localMediaPath || storageConfigService.get().localMediaPath;
     const resolved = path.resolve(requestedPath);
@@ -236,8 +238,9 @@ router.post('/config/test-local', authenticate, adminOnly, async (req: Request, 
 
 // ---------------------------------------------------------------------------
 // GET /stats — storage usage overview
+// Accessible to any authenticated user (read-only, no secrets exposed).
 // ---------------------------------------------------------------------------
-router.get('/stats', authenticate, adminOnly, async (_req: Request, res: Response) => {
+router.get('/stats', authenticate, async (_req: Request, res: Response) => {
   try {
     const cfg = storageConfigService.get();
     const localPath = cfg.localMediaPath;
@@ -277,6 +280,10 @@ router.get('/stats', authenticate, adminOnly, async (_req: Request, res: Respons
       data: {
         effectiveBackend: status.effectiveBackend,
         s3Configured: status.s3Configured,
+        localFileCount: localFiles,
+        totalSizeMB: Math.round((localSizeBytes / (1024 * 1024)) * 100) / 100,
+        diskFreeBytes: diskFreeBytes ?? 0,
+        diskTotalBytes: diskTotalBytes ?? 0,
         local: {
           path: localPath,
           fileCount: localFiles,

@@ -70,8 +70,38 @@ export const mediaService = {
     const status = storageConfigService.getStatus();
     const totalPending = workOrders.reduce((sum, wo) => sum + wo.media.length, 0);
 
+    const remoteSyncEnabled = storageService.isRemoteSyncEnabled();
+
+    let guidance: {
+      title: string;
+      message: string;
+      actionLabel: string;
+      actionUrl: string | null;
+    } | null = null;
+
+    if (!remoteSyncEnabled) {
+      guidance = {
+        title: 'Using Local Storage',
+        message:
+          `Cloud sync is not configured. Media files will be stored locally.` +
+          `\n\nStorage path: ${status.localMediaPath}` +
+          `\n\nYou can configure cloud storage anytime in Settings > Storage for automatic sync.`,
+        actionLabel: 'OK',
+        actionUrl: null,
+      };
+    } else if (totalPending > 0) {
+      guidance = {
+        title: `${totalPending} file(s) awaiting cloud sync`,
+        message:
+          'These files are stored locally and can be synced to cloud storage. ' +
+          'Sync individual work orders below or wait for automatic background sync.',
+        actionLabel: 'Sync All',
+        actionUrl: null,
+      };
+    }
+
     return {
-      remoteSyncEnabled: storageService.isRemoteSyncEnabled(),
+      remoteSyncEnabled,
       storageStatus: {
         overallStatus: status.overallStatus,
         effectiveBackend: status.effectiveBackend,
@@ -80,21 +110,7 @@ export const mediaService = {
         configUrl: '/api/v1/storage/config',
       },
       totalPendingFiles: totalPending,
-      guidance: !storageService.isRemoteSyncEnabled()
-        ? {
-            title: 'Cloud sync is not configured',
-            message: 'To enable cloud sync, configure your S3 storage credentials in Settings > Storage. You can use AWS S3, DigitalOcean Spaces, MinIO, or any S3-compatible provider.',
-            actionLabel: 'Configure Storage',
-            actionUrl: '/settings/storage',
-          }
-        : totalPending > 0
-          ? {
-              title: `${totalPending} file(s) awaiting cloud sync`,
-              message: 'These files are stored locally and can be synced to cloud storage. Sync individual work orders below or wait for automatic background sync.',
-              actionLabel: 'Sync All',
-              actionUrl: null,
-            }
-          : null,
+      guidance,
       jobs: workOrders.map((wo) => ({
         workOrderId: wo.id,
         referenceNumber: wo.referenceNumber,

@@ -55,6 +55,53 @@ router.delete('/components/:id', authenticate, async (req: Request, res: Respons
   }
 });
 
+// === Sub-Components ===
+
+router.get('/components/:parentId/sub-components', authenticate, async (req: Request, res: Response) => {
+  try {
+    const subs = await vesselComponentService.listSubComponents(req.params.parentId as string);
+    res.json({ success: true, data: subs });
+  } catch (error: any) {
+    res.status(error.statusCode || 500).json({ success: false, error: { code: error.code || 'ERROR', message: error.message } });
+  }
+});
+
+router.post('/components/:parentId/sub-components', authenticate, async (req: Request, res: Response) => {
+  try {
+    const sub = await vesselComponentService.addSubComponent(req.params.parentId as string, req.body);
+    res.status(201).json({ success: true, data: sub });
+  } catch (error: any) {
+    res.status(error.statusCode || 500).json({ success: false, error: { code: error.code || 'ERROR', message: error.message } });
+  }
+});
+
+router.post('/components/:parentId/apply-template', authenticate, async (req: Request, res: Response) => {
+  try {
+    const result = await vesselComponentService.applyTemplate(req.params.parentId as string, req.body.templateName);
+    res.json({ success: true, data: result });
+  } catch (error: any) {
+    res.status(error.statusCode || 500).json({ success: false, error: { code: error.code || 'ERROR', message: error.message } });
+  }
+});
+
+router.put('/components/:parentId/sub-components/reorder', authenticate, async (req: Request, res: Response) => {
+  try {
+    const subs = await vesselComponentService.reorderSubComponents(req.params.parentId as string, req.body.ordering);
+    res.json({ success: true, data: subs });
+  } catch (error: any) {
+    res.status(error.statusCode || 500).json({ success: false, error: { code: error.code || 'ERROR', message: error.message } });
+  }
+});
+
+router.get('/component-templates/:category', authenticate, async (req: Request, res: Response) => {
+  try {
+    const templates = vesselComponentService.getTemplatesForCategory(req.params.category as string);
+    res.json({ success: true, data: templates });
+  } catch (error: any) {
+    res.status(error.statusCode || 500).json({ success: false, error: { code: error.code || 'ERROR', message: error.message } });
+  }
+});
+
 // === Work Form Entries ===
 
 router.post('/work-orders/:workOrderId/form/generate', authenticate, async (req: Request, res: Response) => {

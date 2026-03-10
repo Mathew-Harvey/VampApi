@@ -11,24 +11,35 @@ const ENTRY_UPDATE_FIELDS = [
 ] as const;
 
 export const workFormService = {
-  // Generate form entries from vessel components when starting a work order
+  /**
+   * Generate form entries from vessel components when starting a work order.
+   * Creates entries for top-level components AND their sub-components.
+   */
   async generateForm(workOrderId: string, userId: string) {
     const workOrder = await prisma.workOrder.findFirst({
       where: { id: workOrderId, isDeleted: false },
-      include: { vessel: { include: { components: { orderBy: { sortOrder: 'asc' } } } } },
+      include: {
+        vessel: {
+          include: {
+            components: {
+              orderBy: { sortOrder: 'asc' },
+            },
+          },
+        },
+      },
     });
     if (!workOrder) throw new AppError(404, 'NOT_FOUND', 'Work order not found');
-    if (workOrder.vessel.components.length === 0) {
+
+    const allComponents = workOrder.vessel.components;
+    if (allComponents.length === 0) {
       throw new AppError(400, 'NO_COMPONENTS', 'Vessel has no components defined in its general arrangement');
     }
 
-    // Check if form already exists
     const existing = await prisma.workFormEntry.findMany({ where: { workOrderId } });
     if (existing.length > 0) return existing;
 
-    // Create one form entry per vessel component
     const entries = await Promise.all(
-      workOrder.vessel.components.map((comp) =>
+      allComponents.map((comp) =>
         prisma.workFormEntry.create({
           data: {
             workOrderId,
@@ -50,16 +61,40 @@ export const workFormService = {
     return entries;
   },
 
-  // Get all form entries for a work order with component details
+  /**
+   * Get all form entries for a work order with component details.
+   * Returns a nested structure: top-level entries include a `subEntries` array.
+   */
   async getFormEntries(workOrderId: string) {
-    return prisma.workFormEntry.findMany({
+    const entries = await prisma.workFormEntry.findMany({
       where: { workOrderId },
-      include: { vesselComponent: true },
+      include: {
+        vesselComponent: {
+          include: { subComponents: { orderBy: { sortOrder: 'asc' } } },
+        },
+      },
       orderBy: { vesselComponent: { sortOrder: 'asc' } },
+    });
+
+    // Build a map of componentId -> entry for nesting
+    const entryByComponentId = new Map(entries.map((e) => [e.vesselComponentId, e]));
+
+    // Separate top-level entries from sub-component entries
+    const topLevelEntries = entries.filter((e) => !e.vesselComponent.parentId);
+
+    return topLevelEntries.map((entry) => {
+      const subComponentIds = entry.vesselComponent.subComponents.map((sc: any) => sc.id);
+      const subEntries = subComponentIds
+        .map((scId: string) => entryByComponentId.get(scId))
+        .filter(Boolean);
+
+      return {
+        ...entry,
+        subEntries,
+      };
     });
   },
 
-  // Update a single form entry
   async updateEntry(entryId: string, data: any, userId: string) {
     const existing = await prisma.workFormEntry.findUnique({ where: { id: entryId } });
     if (!existing) throw new AppError(404, 'NOT_FOUND', 'Form entry not found');
@@ -82,7 +117,10 @@ export const workFormService = {
     });
   },
 
-  // Get the complete form data as JSON for report generation
+  /**
+   * Get the complete form data as JSON for report generation.
+   * Includes nested sub-component entries under each parent entry.
+   */
   async getFormDataJson(workOrderId: string) {
     const workOrder = await prisma.workOrder.findFirst({
       where: { id: workOrderId, isDeleted: false },
@@ -99,6 +137,39 @@ export const workFormService = {
       include: { vesselComponent: true },
       orderBy: { vesselComponent: { sortOrder: 'asc' } },
     });
+
+    // Split into top-level and sub-component entries
+    const topLevel = entries.filter((e) => !e.vesselComponent.parentId);
+    const subByParent = new Map<string, typeof entries>();
+    for (const e of entries) {
+      if (e.vesselComponent.parentId) {
+        const arr = subByParent.get(e.vesselComponent.parentId) || [];
+        arr.push(e);
+        subByParent.set(e.vesselComponent.parentId, arr);
+      }
+    }
+
+    function mapEntry(e: typeof entries[0]) {
+      return {
+        id: e.id,
+        component: e.vesselComponent.name,
+        category: e.vesselComponent.category,
+        location: e.vesselComponent.location,
+        material: e.vesselComponent.material,
+        condition: e.condition,
+        foulingRating: e.foulingRating,
+        foulingType: e.foulingType,
+        coverage: e.coverage,
+        coatingCondition: e.coatingCondition,
+        corrosionType: e.corrosionType,
+        corrosionSeverity: e.corrosionSeverity,
+        notes: e.notes,
+        recommendation: e.recommendation,
+        actionRequired: e.actionRequired,
+        status: e.status,
+        attachments: e.attachments,
+      };
+    }
 
     return {
       workOrder: {
@@ -134,29 +205,14 @@ export const workFormService = {
         email: a.user.email,
         role: a.role,
       })),
-      entries: entries.map((e) => ({
-        id: e.id,
-        component: e.vesselComponent.name,
-        category: e.vesselComponent.category,
-        location: e.vesselComponent.location,
-        condition: e.condition,
-        foulingRating: e.foulingRating,
-        foulingType: e.foulingType,
-        coverage: e.coverage,
-        coatingCondition: e.coatingCondition,
-        corrosionType: e.corrosionType,
-        corrosionSeverity: e.corrosionSeverity,
-        notes: e.notes,
-        recommendation: e.recommendation,
-        actionRequired: e.actionRequired,
-        status: e.status,
-        attachments: e.attachments,
+      entries: topLevel.map((e) => ({
+        ...mapEntry(e),
+        subEntries: (subByParent.get(e.vesselComponentId) || []).map(mapEntry),
       })),
       generatedAt: new Date().toISOString(),
     };
   },
 
-  // Update a single field on a form entry (for real-time collaboration)
   async updateField(entryId: string, field: string, value: any, userId: string) {
     const existing = await prisma.workFormEntry.findUnique({ where: { id: entryId } });
     if (!existing) throw new AppError(404, 'NOT_FOUND', 'Form entry not found');
@@ -184,7 +240,6 @@ export const workFormService = {
     });
   },
 
-  // Remove a screenshot from a form entry's attachments by index
   async removeScreenshot(entryId: string, index: number) {
     const entry = await prisma.workFormEntry.findUnique({ where: { id: entryId } });
     if (!entry) throw new AppError(404, 'NOT_FOUND', 'Form entry not found');
@@ -201,7 +256,6 @@ export const workFormService = {
     });
   },
 
-  // Add attachment (media ID) to a form entry
   async addAttachment(entryId: string, mediaId: string) {
     const entry = await prisma.workFormEntry.findUnique({ where: { id: entryId } });
     if (!entry) throw new AppError(404, 'NOT_FOUND', 'Form entry not found');

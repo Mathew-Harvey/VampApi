@@ -2,74 +2,55 @@ import prisma from '../config/database';
 import { AppError } from '../middleware/error';
 import { SUB_COMPONENT_TEMPLATES } from '../config/sub-component-templates';
 
-const SUB_COMPONENT_INCLUDE = {
-  subComponents: { orderBy: { sortOrder: 'asc' as const } },
+const CHILDREN_INCLUDE = {
+  children: { orderBy: { sortOrder: 'asc' as const } },
 };
 
 export const vesselComponentService = {
-  /**
-   * List top-level components for a vessel, each with its sub-components.
-   * Only returns root components (parentId is null).
-   */
   async listByVessel(vesselId: string) {
     return prisma.vesselComponent.findMany({
       where: { vesselId, parentId: null },
-      include: SUB_COMPONENT_INCLUDE,
+      include: CHILDREN_INCLUDE,
       orderBy: { sortOrder: 'asc' },
     });
   },
 
-  /**
-   * Get a single component with its sub-components.
-   */
   async getById(id: string) {
     const component = await prisma.vesselComponent.findUnique({
       where: { id },
-      include: SUB_COMPONENT_INCLUDE,
+      include: CHILDREN_INCLUDE,
     });
     if (!component) throw new AppError(404, 'NOT_FOUND', 'Component not found');
     return component;
   },
 
-  /**
-   * Create a top-level GA component.
-   */
   async create(vesselId: string, data: any) {
     return prisma.vesselComponent.create({
       data: { vesselId, ...data },
-      include: SUB_COMPONENT_INCLUDE,
+      include: CHILDREN_INCLUDE,
     });
   },
 
-  /**
-   * Update a component (top-level or sub-component).
-   */
   async update(id: string, data: any) {
     const existing = await prisma.vesselComponent.findUnique({ where: { id } });
     if (!existing) throw new AppError(404, 'NOT_FOUND', 'Component not found');
     return prisma.vesselComponent.update({
       where: { id },
       data,
-      include: SUB_COMPONENT_INCLUDE,
+      include: CHILDREN_INCLUDE,
     });
   },
 
-  /**
-   * Delete a component and all its sub-components (cascade).
-   */
   async delete(id: string) {
     await prisma.vesselComponent.delete({ where: { id } });
   },
 
-  /**
-   * Bulk-create top-level components.
-   */
   async bulkCreate(vesselId: string, components: any[]) {
     return Promise.all(
       components.map((comp, i) =>
         prisma.vesselComponent.create({
           data: { vesselId, sortOrder: i + 1, ...comp },
-          include: SUB_COMPONENT_INCLUDE,
+          include: CHILDREN_INCLUDE,
         })
       )
     );
@@ -77,9 +58,6 @@ export const vesselComponentService = {
 
   // ── Sub-component operations ────────────────────────────────
 
-  /**
-   * Add a single sub-component to a parent GA component.
-   */
   async addSubComponent(parentId: string, data: any) {
     const parent = await prisma.vesselComponent.findUnique({ where: { id: parentId } });
     if (!parent) throw new AppError(404, 'NOT_FOUND', 'Parent component not found');
@@ -101,9 +79,6 @@ export const vesselComponentService = {
     });
   },
 
-  /**
-   * List sub-components for a given parent.
-   */
   async listSubComponents(parentId: string) {
     return prisma.vesselComponent.findMany({
       where: { parentId },
@@ -111,10 +86,6 @@ export const vesselComponentService = {
     });
   },
 
-  /**
-   * Apply a template to a parent component — bulk-creates sub-components.
-   * Existing sub-components are removed first so the template is applied cleanly.
-   */
   async applyTemplate(parentId: string, templateName: string) {
     const parent = await prisma.vesselComponent.findUnique({ where: { id: parentId } });
     if (!parent) throw new AppError(404, 'NOT_FOUND', 'Parent component not found');
@@ -131,7 +102,6 @@ export const vesselComponentService = {
       throw new AppError(400, 'TEMPLATE_NOT_FOUND', `Template "${templateName}" not found. Available: ${available}`);
     }
 
-    // Remove existing sub-components, then create from template
     await prisma.vesselComponent.deleteMany({ where: { parentId } });
 
     const created = await Promise.all(
@@ -154,16 +124,13 @@ export const vesselComponentService = {
     return {
       parent: await prisma.vesselComponent.findUnique({
         where: { id: parentId },
-        include: SUB_COMPONENT_INCLUDE,
+        include: CHILDREN_INCLUDE,
       }),
       applied: template.templateName,
       count: created.length,
     };
   },
 
-  /**
-   * List available templates for a given category.
-   */
   getTemplatesForCategory(category: string) {
     const templates = SUB_COMPONENT_TEMPLATES[category];
     if (!templates) return [];
@@ -174,10 +141,6 @@ export const vesselComponentService = {
     }));
   },
 
-  /**
-   * Reorder sub-components within a parent.
-   * Expects an array of { id, sortOrder } objects.
-   */
   async reorderSubComponents(parentId: string, ordering: { id: string; sortOrder: number }[]) {
     const parent = await prisma.vesselComponent.findUnique({ where: { id: parentId } });
     if (!parent) throw new AppError(404, 'NOT_FOUND', 'Parent component not found');
@@ -197,14 +160,70 @@ export const vesselComponentService = {
     });
   },
 
-  /**
-   * Flat list of ALL components for a vessel (top-level + sub-components).
-   * Used internally by work form generation.
-   */
   async listAllFlat(vesselId: string) {
     return prisma.vesselComponent.findMany({
       where: { vesselId },
       orderBy: [{ sortOrder: 'asc' }],
     });
+  },
+
+  // ── GA Zone Mapping operations ──────────────────────────────
+
+  async mapToZone(componentId: string, gaZoneId: string) {
+    const existing = await prisma.vesselComponent.findUnique({ where: { id: componentId } });
+    if (!existing) throw new AppError(404, 'NOT_FOUND', 'Component not found');
+    return prisma.vesselComponent.update({
+      where: { id: componentId },
+      data: { gaZoneId },
+    });
+  },
+
+  async unmapFromZone(componentId: string) {
+    const existing = await prisma.vesselComponent.findUnique({ where: { id: componentId } });
+    if (!existing) throw new AppError(404, 'NOT_FOUND', 'Component not found');
+    return prisma.vesselComponent.update({
+      where: { id: componentId },
+      data: { gaZoneId: null },
+    });
+  },
+
+  async bulkMapZones(vesselId: string, mappings: { componentId: string; gaZoneId: string | null }[]) {
+    await prisma.$transaction(
+      mappings.map(({ componentId, gaZoneId }) =>
+        prisma.vesselComponent.update({
+          where: { id: componentId },
+          data: { gaZoneId },
+        })
+      )
+    );
+
+    return this.getZoneMappings(vesselId);
+  },
+
+  async listByZone(vesselId: string, gaZoneId: string) {
+    return prisma.vesselComponent.findMany({
+      where: { vesselId, gaZoneId },
+      orderBy: { sortOrder: 'asc' },
+    });
+  },
+
+  async getZoneMappings(vesselId: string) {
+    const components = await prisma.vesselComponent.findMany({
+      where: { vesselId },
+      select: { id: true, name: true, category: true, gaZoneId: true, sortOrder: true },
+      orderBy: { sortOrder: 'asc' },
+    });
+
+    const mapped = components.filter((c) => c.gaZoneId);
+    const unmapped = components.filter((c) => !c.gaZoneId);
+
+    const byZone: Record<string, typeof components> = {};
+    for (const comp of mapped) {
+      const zone = comp.gaZoneId!;
+      if (!byZone[zone]) byZone[zone] = [];
+      byZone[zone].push(comp);
+    }
+
+    return { mapped, unmapped, byZone };
   },
 };

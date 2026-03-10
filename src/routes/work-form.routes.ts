@@ -102,6 +102,99 @@ router.get('/component-templates/:category', authenticate, async (req: Request, 
   }
 });
 
+// === GA Zone Mapping ===
+
+router.get('/vessels/:vesselId/components/zone-mappings', authenticate, async (req: Request, res: Response) => {
+  try {
+    const data = await vesselComponentService.getZoneMappings(req.params.vesselId as string);
+    res.json({ success: true, data });
+  } catch (error: any) {
+    res.status(error.statusCode || 500).json({ success: false, error: { code: error.code || 'ERROR', message: error.message } });
+  }
+});
+
+router.get('/vessels/:vesselId/components/by-zone/:gaZoneId', authenticate, async (req: Request, res: Response) => {
+  try {
+    const components = await vesselComponentService.listByZone(
+      req.params.vesselId as string,
+      req.params.gaZoneId as string,
+    );
+    res.json({ success: true, data: components });
+  } catch (error: any) {
+    res.status(error.statusCode || 500).json({ success: false, error: { code: error.code || 'ERROR', message: error.message } });
+  }
+});
+
+router.put('/components/:id/zone', authenticate, async (req: Request, res: Response) => {
+  try {
+    const { gaZoneId } = req.body;
+    if (!gaZoneId || typeof gaZoneId !== 'string') {
+      res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'gaZoneId is required and must be a string' } });
+      return;
+    }
+    const component = await vesselComponentService.mapToZone(req.params.id as string, gaZoneId);
+    res.json({ success: true, data: component });
+  } catch (error: any) {
+    res.status(error.statusCode || 500).json({ success: false, error: { code: error.code || 'ERROR', message: error.message } });
+  }
+});
+
+router.delete('/components/:id/zone', authenticate, async (req: Request, res: Response) => {
+  try {
+    const component = await vesselComponentService.unmapFromZone(req.params.id as string);
+    res.json({ success: true, data: component });
+  } catch (error: any) {
+    res.status(error.statusCode || 500).json({ success: false, error: { code: error.code || 'ERROR', message: error.message } });
+  }
+});
+
+router.put('/vessels/:vesselId/components/zone-mappings', authenticate, async (req: Request, res: Response) => {
+  try {
+    const { mappings } = req.body;
+    if (!Array.isArray(mappings)) {
+      res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'mappings must be an array of { componentId, gaZoneId }' } });
+      return;
+    }
+    for (const m of mappings) {
+      if (!m.componentId || typeof m.componentId !== 'string') {
+        res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Each mapping must have a componentId string' } });
+        return;
+      }
+      if (m.gaZoneId !== null && typeof m.gaZoneId !== 'string') {
+        res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'gaZoneId must be a string or null' } });
+        return;
+      }
+    }
+    const data = await vesselComponentService.bulkMapZones(req.params.vesselId as string, mappings);
+    res.json({ success: true, data });
+  } catch (error: any) {
+    res.status(error.statusCode || 500).json({ success: false, error: { code: error.code || 'ERROR', message: error.message } });
+  }
+});
+
+// === Digital Twin — Fouling State & Work History ===
+
+router.get('/vessels/:vesselId/components/fouling-state', authenticate, async (req: Request, res: Response) => {
+  try {
+    const data = await workFormService.getFoulingStateByVessel(req.params.vesselId as string);
+    res.json({ success: true, data });
+  } catch (error: any) {
+    res.status(error.statusCode || 500).json({ success: false, error: { code: error.code || 'ERROR', message: error.message } });
+  }
+});
+
+router.get('/vessels/:vesselId/components/:componentId/work-history', authenticate, async (req: Request, res: Response) => {
+  try {
+    const data = await workFormService.getComponentWorkHistory(
+      req.params.vesselId as string,
+      req.params.componentId as string,
+    );
+    res.json({ success: true, data });
+  } catch (error: any) {
+    res.status(error.statusCode || 500).json({ success: false, error: { code: error.code || 'ERROR', message: error.message } });
+  }
+});
+
 // === Work Form Entries ===
 
 router.post('/work-orders/:workOrderId/form/generate', authenticate, async (req: Request, res: Response) => {

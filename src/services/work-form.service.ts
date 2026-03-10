@@ -70,7 +70,7 @@ export const workFormService = {
       where: { workOrderId },
       include: {
         vesselComponent: {
-          include: { subComponents: { orderBy: { sortOrder: 'asc' } } },
+          include: { children: { orderBy: { sortOrder: 'asc' } } },
         },
       },
       orderBy: { vesselComponent: { sortOrder: 'asc' } },
@@ -83,7 +83,7 @@ export const workFormService = {
     const topLevelEntries = entries.filter((e) => !e.vesselComponent.parentId);
 
     return topLevelEntries.map((entry) => {
-      const subComponentIds = entry.vesselComponent.subComponents.map((sc: any) => sc.id);
+      const subComponentIds = entry.vesselComponent.children.map((sc: any) => sc.id);
       const subEntries = subComponentIds
         .map((scId: string) => entryByComponentId.get(scId))
         .filter(Boolean);
@@ -155,6 +155,7 @@ export const workFormService = {
         component: e.vesselComponent.name,
         category: e.vesselComponent.category,
         location: e.vesselComponent.location,
+        gaZoneId: e.vesselComponent.gaZoneId ?? null,
         material: e.vesselComponent.material,
         condition: e.condition,
         foulingRating: e.foulingRating,
@@ -254,6 +255,127 @@ export const workFormService = {
       data: { attachments: JSON.stringify(attachments), updatedAt: new Date() },
       include: { vesselComponent: true },
     });
+  },
+
+  async getFoulingStateByVessel(vesselId: string) {
+    const components = await prisma.vesselComponent.findMany({
+      where: { vesselId },
+      orderBy: { sortOrder: 'asc' },
+    });
+    if (components.length === 0) return [];
+
+    const results = await Promise.all(
+      components.map(async (comp) => {
+        const latestEntry = await prisma.workFormEntry.findFirst({
+          where: {
+            vesselComponentId: comp.id,
+            foulingRating: { not: null },
+            workOrder: { isDeleted: false },
+          },
+          orderBy: { updatedAt: 'desc' },
+          include: {
+            workOrder: {
+              select: {
+                id: true,
+                referenceNumber: true,
+                title: true,
+                type: true,
+                completedAt: true,
+                status: true,
+              },
+            },
+          },
+        });
+
+        return {
+          componentId: comp.id,
+          componentName: comp.name,
+          category: comp.category,
+          location: comp.location,
+          gaZoneId: comp.gaZoneId ?? null,
+          condition: latestEntry?.condition ?? comp.condition,
+          foulingRating: latestEntry?.foulingRating ?? null,
+          foulingType: latestEntry?.foulingType ?? null,
+          coverage: latestEntry?.coverage ?? null,
+          coatingCondition: latestEntry?.coatingCondition ?? null,
+          lastAssessedAt: latestEntry?.updatedAt ?? null,
+          lastWorkOrder: latestEntry
+            ? {
+                id: latestEntry.workOrder.id,
+                referenceNumber: latestEntry.workOrder.referenceNumber,
+                title: latestEntry.workOrder.title,
+                type: latestEntry.workOrder.type,
+                completedAt: latestEntry.workOrder.completedAt,
+              }
+            : null,
+        };
+      })
+    );
+
+    return results;
+  },
+
+  async getComponentWorkHistory(vesselId: string, componentId: string) {
+    const component = await prisma.vesselComponent.findFirst({
+      where: { id: componentId, vesselId },
+    });
+    if (!component) throw new AppError(404, 'NOT_FOUND', 'Component not found');
+
+    const entries = await prisma.workFormEntry.findMany({
+      where: {
+        vesselComponentId: componentId,
+        workOrder: { isDeleted: false },
+      },
+      orderBy: { updatedAt: 'desc' },
+      include: {
+        workOrder: {
+          select: {
+            id: true,
+            referenceNumber: true,
+            title: true,
+            type: true,
+            status: true,
+            location: true,
+            scheduledStart: true,
+            scheduledEnd: true,
+            actualStart: true,
+            actualEnd: true,
+            completedAt: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+
+    return {
+      component: {
+        id: component.id,
+        name: component.name,
+        category: component.category,
+        location: component.location,
+        gaZoneId: component.gaZoneId ?? null,
+        coatingType: component.coatingType,
+        material: component.material,
+        condition: component.condition,
+      },
+      entries: entries.map((e) => ({
+        id: e.id,
+        condition: e.condition,
+        foulingRating: e.foulingRating,
+        foulingType: e.foulingType,
+        coverage: e.coverage,
+        coatingCondition: e.coatingCondition,
+        corrosionType: e.corrosionType,
+        corrosionSeverity: e.corrosionSeverity,
+        notes: e.notes,
+        recommendation: e.recommendation,
+        actionRequired: e.actionRequired,
+        status: e.status,
+        completedAt: e.completedAt,
+        updatedAt: e.updatedAt,
+        workOrder: e.workOrder,
+      })),
+    };
   },
 
   async addAttachment(entryId: string, mediaId: string) {

@@ -631,13 +631,13 @@ function buildPhotoPages(entries: Array<{ component: string; attachments: unknow
   for (const entry of entries) {
     let attachments: string[] = [];
     try {
-      attachments = typeof entry.attachments === 'string' ? JSON.parse(entry.attachments) : (entry.attachments || []);
+      attachments = typeof entry.attachments === 'string' ? JSON.parse(entry.attachments) : Array.isArray(entry.attachments) ? entry.attachments : [];
     } catch { /* ignore */ }
 
     if (attachments.length === 0) continue;
 
     const photos = attachments.map((src: string, i: number) => ({
-      src,
+      src: toAbsoluteMediaUrl(normalizeMediaUrl(src)),
       caption: `${entry.component} - Photo ${i + 1}`,
     }));
 

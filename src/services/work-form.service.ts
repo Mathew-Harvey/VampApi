@@ -96,10 +96,11 @@ export const workFormService = {
       const subComponentIds = entry.vesselComponent.children.map((sc: any) => sc.id);
       const subEntries = subComponentIds
         .map((scId: string) => entryByComponentId.get(scId))
-        .filter(Boolean);
+        .filter(Boolean)
+        .map((sub) => withParsedAttachments(sub!));
 
       return {
-        ...entry,
+        ...withParsedAttachments(entry),
         subEntries,
       };
     });
@@ -112,7 +113,12 @@ export const workFormService = {
     const updateData: Record<string, unknown> = { updatedAt: new Date() };
     for (const key of ENTRY_UPDATE_FIELDS) {
       if (key in data) {
-        updateData[key] = data[key];
+        if (key === 'attachments') {
+          const arr = Array.isArray(data[key]) ? data[key] : safeParseJsonArray(data[key]);
+          updateData[key] = JSON.stringify(arr);
+        } else {
+          updateData[key] = data[key];
+        }
       }
     }
     if (data.status === 'COMPLETED' && !existing.completedAt) {
@@ -120,11 +126,13 @@ export const workFormService = {
       updateData.completedBy = userId;
     }
 
-    return prisma.workFormEntry.update({
+    const updated = await prisma.workFormEntry.update({
       where: { id: entryId },
       data: updateData,
       include: { vesselComponent: true },
     });
+
+    return withParsedAttachments(updated);
   },
 
   /**
@@ -258,16 +266,18 @@ export const workFormService = {
     const entry = await prisma.workFormEntry.findUnique({ where: { id: entryId } });
     if (!entry) throw new AppError(404, 'NOT_FOUND', 'Form entry not found');
 
-    const attachments = JSON.parse(entry.attachments || '[]');
+    const attachments: string[] = safeParseJsonArray(entry.attachments);
     if (index >= 0 && index < attachments.length) {
       attachments.splice(index, 1);
     }
 
-    return prisma.workFormEntry.update({
+    const updated = await prisma.workFormEntry.update({
       where: { id: entryId },
       data: { attachments: JSON.stringify(attachments), updatedAt: new Date() },
       include: { vesselComponent: true },
     });
+
+    return withParsedAttachments(updated);
   },
 
   async getFoulingStateByVessel(vesselId: string) {
@@ -401,14 +411,22 @@ export const workFormService = {
     });
     if (!media) throw new AppError(404, 'NOT_FOUND', 'Media not found');
 
-    const attachments = JSON.parse(entry.attachments || '[]');
+    const attachments: string[] = safeParseJsonArray(entry.attachments);
     const mediaUrl = toPublicMediaUrl(media.url);
     attachments.push(mediaUrl);
 
-    return prisma.workFormEntry.update({
+    const updated = await prisma.workFormEntry.update({
       where: { id: entryId },
       data: { attachments: JSON.stringify(attachments) },
+      include: { vesselComponent: true },
     });
+
+    return {
+      ...updated,
+      attachments: attachments,
+      mediaId: media.id,
+      mediaUrl,
+    };
   },
 };
 
@@ -417,4 +435,20 @@ function toPublicMediaUrl(url: string): string {
   const apiBase = env.API_URL.replace(/\/+$/, '');
   const normalizedPath = url.startsWith('/') ? url : `/${url}`;
   return `${apiBase}${normalizedPath}`;
+}
+
+function safeParseJsonArray(raw: unknown): string[] {
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw !== 'string' || !raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Parse the attachments JSON string on an entry so consumers get an array. */
+function withParsedAttachments<T extends { attachments: unknown }>(entry: T): T & { attachments: string[] } {
+  return { ...entry, attachments: safeParseJsonArray(entry.attachments) };
 }

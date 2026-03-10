@@ -219,22 +219,12 @@ export function initSignaling(httpServer: HTTPServer) {
         }
 
         const updated = await workFormService.addAttachment(entryId, mediaId);
-        let mediaUrl: string | null = null;
-        try {
-          const parsed = typeof updated.attachments === 'string' ? JSON.parse(updated.attachments) : updated.attachments;
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            const last = parsed[parsed.length - 1];
-            mediaUrl = typeof last === 'string' ? last : null;
-          }
-        } catch {
-          // ignore parse issues; attachments still sent as-is
-        }
         const formRoomId = `form-${workOrderId}`;
         io.to(formRoomId).emit('form:screenshot-added', {
           workOrderId,
           entryId,
-          mediaId,
-          mediaUrl,
+          mediaId: updated.mediaId,
+          mediaUrl: updated.mediaUrl,
           attachments: updated.attachments,
           userId: user.userId,
         });
@@ -246,11 +236,11 @@ export function initSignaling(httpServer: HTTPServer) {
     // Remove screenshot from a form entry
     socket.on('form:screenshot-remove', async ({ workOrderId, entryId, index }: { workOrderId: string; entryId: string; index: number }) => {
       try {
-        const updated = await workFormService.removeScreenshot(entryId, index);
+        const result = await workFormService.removeScreenshot(entryId, index);
         const formRoomId = `form-${workOrderId}`;
         io.to(formRoomId).emit('form:screenshot-removed', {
           workOrderId, entryId,
-          attachments: updated.attachments,
+          attachments: result.attachments,
           userId: user.userId,
         });
       } catch (err: any) {

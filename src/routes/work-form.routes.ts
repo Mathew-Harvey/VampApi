@@ -68,8 +68,8 @@ router.get('/components/:parentId/sub-components', authenticate, async (req: Req
 
 router.post('/components/:parentId/sub-components', authenticate, async (req: Request, res: Response) => {
   try {
-    const sub = await vesselComponentService.addSubComponent(req.params.parentId as string, req.body);
-    res.status(201).json({ success: true, data: sub });
+    const parent = await vesselComponentService.addSubComponent(req.params.parentId as string, req.body);
+    res.status(201).json({ success: true, data: parent });
   } catch (error: any) {
     res.status(error.statusCode || 500).json({ success: false, error: { code: error.code || 'ERROR', message: error.message } });
   }

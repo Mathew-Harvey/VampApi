@@ -42,6 +42,9 @@ export const vesselComponentService = {
   },
 
   async delete(id: string) {
+    const children = await prisma.vesselComponent.findMany({ where: { parentId: id }, select: { id: true } });
+    const idsToRemove = [id, ...children.map((c) => c.id)];
+    await prisma.workFormEntry.deleteMany({ where: { vesselComponentId: { in: idsToRemove } } });
     await prisma.vesselComponent.delete({ where: { id } });
   },
 
@@ -63,19 +66,56 @@ export const vesselComponentService = {
     if (!parent) throw new AppError(404, 'NOT_FOUND', 'Parent component not found');
     if (parent.parentId) throw new AppError(400, 'NESTING_NOT_ALLOWED', 'Sub-components cannot have their own sub-components');
 
+    if (!data.name || typeof data.name !== 'string' || !data.name.trim()) {
+      throw new AppError(400, 'VALIDATION_ERROR', 'Sub-component name is required');
+    }
+
     const maxSort = await prisma.vesselComponent.aggregate({
       where: { parentId },
       _max: { sortOrder: true },
     });
 
-    return prisma.vesselComponent.create({
+    const subComponent = await prisma.vesselComponent.create({
       data: {
-        vesselId: parent.vesselId,
-        parentId,
+        name: data.name.trim(),
+        vessel: { connect: { id: parent.vesselId } },
+        parent: { connect: { id: parentId } },
         category: parent.category,
         sortOrder: (maxSort._max.sortOrder ?? 0) + 1,
-        ...data,
+        location: data.location ?? null,
+        description: data.description ?? null,
+        coatingType: data.coatingType ?? null,
+        material: data.material ?? null,
+        metadata: data.metadata ?? null,
       },
+    });
+
+    // Auto-create work form entries for any active work orders on this vessel
+    const activeWorkOrders = await prisma.workOrder.findMany({
+      where: {
+        vesselId: parent.vesselId,
+        isDeleted: false,
+        status: { in: ['DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'IN_PROGRESS', 'AWAITING_REVIEW', 'UNDER_REVIEW'] },
+        formEntries: { some: {} },
+      },
+      select: { id: true },
+    });
+
+    if (activeWorkOrders.length > 0) {
+      await Promise.all(
+        activeWorkOrders.map((wo) =>
+          prisma.workFormEntry.upsert({
+            where: { workOrderId_vesselComponentId: { workOrderId: wo.id, vesselComponentId: subComponent.id } },
+            create: { workOrderId: wo.id, vesselComponentId: subComponent.id, status: 'PENDING' },
+            update: {},
+          })
+        )
+      );
+    }
+
+    return prisma.vesselComponent.findUnique({
+      where: { id: parentId },
+      include: CHILDREN_INCLUDE,
     });
   },
 
@@ -102,7 +142,15 @@ export const vesselComponentService = {
       throw new AppError(400, 'TEMPLATE_NOT_FOUND', `Template "${templateName}" not found. Available: ${available}`);
     }
 
-    await prisma.vesselComponent.deleteMany({ where: { parentId } });
+    const oldSubIds = (await prisma.vesselComponent.findMany({
+      where: { parentId },
+      select: { id: true },
+    })).map((c) => c.id);
+
+    if (oldSubIds.length > 0) {
+      await prisma.workFormEntry.deleteMany({ where: { vesselComponentId: { in: oldSubIds } } });
+      await prisma.vesselComponent.deleteMany({ where: { parentId } });
+    }
 
     const created = await Promise.all(
       template.subComponents.map((sc, i) =>
@@ -120,6 +168,31 @@ export const vesselComponentService = {
         })
       )
     );
+
+    // Auto-create work form entries for active work orders
+    const activeWorkOrders = await prisma.workOrder.findMany({
+      where: {
+        vesselId: parent.vesselId,
+        isDeleted: false,
+        status: { in: ['DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'IN_PROGRESS', 'AWAITING_REVIEW', 'UNDER_REVIEW'] },
+        formEntries: { some: {} },
+      },
+      select: { id: true },
+    });
+
+    if (activeWorkOrders.length > 0) {
+      await Promise.all(
+        activeWorkOrders.flatMap((wo) =>
+          created.map((sc) =>
+            prisma.workFormEntry.upsert({
+              where: { workOrderId_vesselComponentId: { workOrderId: wo.id, vesselComponentId: sc.id } },
+              create: { workOrderId: wo.id, vesselComponentId: sc.id, status: 'PENDING' },
+              update: {},
+            })
+          )
+        )
+      );
+    }
 
     return {
       parent: await prisma.vesselComponent.findUnique({

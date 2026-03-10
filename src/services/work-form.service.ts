@@ -36,10 +36,13 @@ export const workFormService = {
     }
 
     const existing = await prisma.workFormEntry.findMany({ where: { workOrderId } });
-    if (existing.length > 0) return existing;
+    const existingComponentIds = new Set(existing.map((e) => e.vesselComponentId));
+    const newComponents = allComponents.filter((c) => !existingComponentIds.has(c.id));
 
-    const entries = await Promise.all(
-      allComponents.map((comp) =>
+    if (existing.length > 0 && newComponents.length === 0) return existing;
+
+    const newEntries = await Promise.all(
+      newComponents.map((comp) =>
         prisma.workFormEntry.create({
           data: {
             workOrderId,
@@ -50,12 +53,19 @@ export const workFormService = {
       )
     );
 
+    const entries = [...existing, ...newEntries];
+
+    const action = existing.length === 0 ? 'CREATE' : 'UPDATE';
+    const description = existing.length === 0
+      ? `Generated work form with ${entries.length} entries for ${workOrder.vessel.name}`
+      : `Synced work form: added ${newEntries.length} new entries for ${workOrder.vessel.name} (total: ${entries.length})`;
+
     await auditService.log({
       actorId: userId,
       entityType: 'WorkOrder',
       entityId: workOrderId,
-      action: 'CREATE',
-      description: `Generated work form with ${entries.length} entries for ${workOrder.vessel.name}`,
+      action,
+      description,
     });
 
     return entries;

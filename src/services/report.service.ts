@@ -6,6 +6,7 @@ import { AppError } from '../middleware/error';
 import { workFormService } from './work-form.service';
 import { registerReportHelpers } from '../helpers/report-helpers';
 import { env } from '../config/env';
+import { type FoulingScale, formatFoulingValue } from '../constants/fouling-scales';
 
 // Legacy helpers (kept for any non-report templates)
 Handlebars.registerHelper('toLowerCase', (str: string) => str?.toLowerCase() || '');
@@ -387,7 +388,14 @@ async function buildInspectionReportContext(
 
   // generalArrangement: one block per entry, with frRatingData for template tables (never empty so TOC safe)
   // Sub-component entries appear as additional rows within the parent's frRatingData table.
-  const hasLoF = workOrder.type?.toLowerCase().includes('biofouling') || workOrder.type === 'NZ CRMS Biofouling Inspection';
+  //
+  // Determine the fouling scale: prefer the explicit foulingScale field on the work order,
+  // fall back to legacy heuristic for older work orders that predate the field.
+  const explicitScale = (workOrder as any).foulingScale as FoulingScale | null | undefined;
+  const legacyIsLoF = workOrder.type?.toLowerCase().includes('biofouling') || workOrder.type === 'NZ CRMS Biofouling Inspection';
+  const useLoF = explicitScale === 'LOF' || (!explicitScale && legacyIsLoF);
+  const useFR = explicitScale === 'FR' || (!explicitScale && !legacyIsLoF);
+  const activeFoulingScale: FoulingScale = useLoF ? 'LOF' : 'FR';
 
   function buildFrRow(desc: string, e: typeof entries[0], isSub = false): FrRatingDataRow | null {
     const cat = e.category ?? '';
@@ -421,11 +429,11 @@ async function buildInspectionReportContext(
       return null;
     }
 
-    if (hasLoF && (e.foulingRating != null || e.notes || e.coatingCondition)) {
+    if (useLoF && (e.foulingRating != null || e.notes || e.coatingCondition)) {
       return {
         description: desc,
         conditionRating: e.condition ?? null,
-        levelOfFoulingLoF: e.foulingRating != null ? `Rank: ${e.foulingRating}` : null,
+        levelOfFoulingLoF: e.foulingRating != null ? formatFoulingValue(e.foulingRating, 'LOF') : null,
         pdrRating: e.coatingCondition ?? null,
         Comments: e.notes ?? null,
         isSubComponent: isSub,
@@ -435,7 +443,9 @@ async function buildInspectionReportContext(
       return {
         description: desc,
         conditionRating: e.condition ?? null,
-        foulingRatingType: e.foulingType ?? null,
+        foulingRatingType: useFR && e.foulingRating != null
+          ? `${formatFoulingValue(e.foulingRating, 'FR')}${e.foulingType ? ` - ${e.foulingType}` : ''}`
+          : (e.foulingType ?? null),
         foulingCoverage: e.coverage != null ? `${e.coverage}%` : null,
         pdrRating: e.coatingCondition ?? null,
         Comments: e.notes ?? null,
@@ -500,6 +510,7 @@ async function buildInspectionReportContext(
 
   const data = {
     jobType: workOrder.type || 'Inspection',
+    foulingScale: activeFoulingScale,
     supportingWork: reportConfig.title ?? workOrder.title ?? '',
     confidential: reportConfig.confidential ?? null,
     workInstruction: reportConfig.workInstruction ?? workOrder.description ?? null,
@@ -1004,6 +1015,7 @@ export const reportService = {
         description: workOrder.description,
         status: workOrder.status,
         type: (workOrder as any).type || null,
+        foulingScale: (workOrder as any).foulingScale || null,
         priority: (workOrder as any).priority || null,
         location: (workOrder as any).location || null,
         scheduledStart: workOrder.scheduledStart,

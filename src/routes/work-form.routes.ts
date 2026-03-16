@@ -6,6 +6,7 @@ import { hasAnyPermission } from '../middleware/permissions';
 import { workOrderService } from '../services/work-order.service';
 import prisma from '../config/database';
 import { CATEGORY_FIELD_CONFIG, getCategoryConfig } from '../config/category-field-config';
+import { type FoulingScale, getScaleLevels, getFoulingScaleRange } from '../constants/fouling-scales';
 
 const router = Router();
 
@@ -105,13 +106,47 @@ router.get('/component-templates/:category', authenticate, async (req: Request, 
 
 // === Category Field Configuration ===
 
-router.get('/category-config', authenticate, (_req: Request, res: Response) => {
-  res.json({ success: true, data: CATEGORY_FIELD_CONFIG });
+router.get('/category-config', authenticate, (req: Request, res: Response) => {
+  const scale = (req.query.foulingScale as string)?.toUpperCase() as FoulingScale | undefined;
+  if (scale && scale !== 'LOF' && scale !== 'FR') {
+    res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'foulingScale must be LOF or FR' } });
+    return;
+  }
+  if (!scale) {
+    res.json({ success: true, data: CATEGORY_FIELD_CONFIG });
+    return;
+  }
+  const scaled: Record<string, any> = {};
+  for (const [cat, cfg] of Object.entries(CATEGORY_FIELD_CONFIG)) {
+    scaled[cat] = getCategoryConfig(cat, scale);
+  }
+  res.json({ success: true, data: scaled, foulingScale: scale });
 });
 
 router.get('/category-config/:category', authenticate, (req: Request, res: Response) => {
-  const config = getCategoryConfig(req.params.category as string);
-  res.json({ success: true, data: config });
+  const scale = (req.query.foulingScale as string)?.toUpperCase() as FoulingScale | undefined;
+  if (scale && scale !== 'LOF' && scale !== 'FR') {
+    res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'foulingScale must be LOF or FR' } });
+    return;
+  }
+  const config = getCategoryConfig(req.params.category as string, scale);
+  res.json({ success: true, data: config, foulingScale: scale || null });
+});
+
+router.get('/fouling-scale/:scale', authenticate, (req: Request, res: Response) => {
+  const scale = (req.params.scale as string).toUpperCase() as FoulingScale;
+  if (scale !== 'LOF' && scale !== 'FR') {
+    res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Scale must be LOF or FR' } });
+    return;
+  }
+  res.json({
+    success: true,
+    data: {
+      scale,
+      levels: getScaleLevels(scale),
+      range: getFoulingScaleRange(scale),
+    },
+  });
 });
 
 // === GA Zone Mapping ===

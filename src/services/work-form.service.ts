@@ -200,6 +200,7 @@ export const workFormService = {
         description: workOrder.description,
         metadata: workOrder.metadata,
         type: workOrder.type,
+        foulingScale: (workOrder as any).foulingScale ?? null,
         status: workOrder.status,
         location: workOrder.location,
         scheduledStart: workOrder.scheduledStart,

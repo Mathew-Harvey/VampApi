@@ -1739,7 +1739,7 @@
             <thead>
                 <tr>
                     <th style="width: 22%;">Component</th>
-                    <th style="width: 14%;">Fouling Rating</th>
+                    <th style="width: 14%;">{{#ifEquals workOrder.foulingScale "LOF"}}LoF Rating{{else}}Fouling Rating{{/ifEquals}}</th>
                     <th style="width: 12%;">Coverage %</th>
                     <th style="width: 18%;">Coating Condition</th>
                     <th style="width: 34%;">Notes</th>

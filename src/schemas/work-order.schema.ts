@@ -1,11 +1,15 @@
 import { z } from 'zod';
 
+export const FOULING_SCALES = ['LOF', 'FR'] as const;
+export type FoulingScale = typeof FOULING_SCALES[number];
+
 export const createWorkOrderSchema = z.object({
   vesselId: z.string().min(1, 'Vessel is required'),
   workflowId: z.string().optional().nullable(),
   title: z.string().min(1, 'Title is required').max(300),
   description: z.string().optional().nullable(),
   type: z.string().min(1, 'Work order type is required'),
+  foulingScale: z.enum(FOULING_SCALES).optional().nullable(),
   priority: z.enum(['LOW', 'NORMAL', 'HIGH', 'URGENT']).default('NORMAL'),
   location: z.string().optional().nullable(),
   latitude: z.number().min(-90).max(90).optional().nullable(),

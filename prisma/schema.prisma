@@ -234,6 +234,7 @@ model WorkOrder {
   title               String
   description         String?
   type                String
+  foulingScale        String?
   priority            String                @default("NORMAL")
   status              String                @default("DRAFT")
   location            String?

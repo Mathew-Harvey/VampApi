@@ -1,3 +1,5 @@
+import { type FoulingScale, getFoulingScaleRange, getScaleLevels } from '../constants/fouling-scales';
+
 export interface InspectionField {
   key: string;
   label: string;
@@ -5,6 +7,7 @@ export interface InspectionField {
   options?: string[];
   min?: number;
   max?: number;
+  step?: number;
   unit?: string;
   defaultValue?: unknown;
 }
@@ -31,11 +34,29 @@ const conditionField = (options: string[]): InspectionField => ({
 
 const STANDARD_CONDITION = ['Good', 'Fair', 'Poor', 'Critical'];
 
-const foulingFields: InspectionField[] = [
-  { key: 'foulingRating', label: 'Fouling Rating', type: 'rating', min: 0, max: 5 },
-  { key: 'foulingType', label: 'Fouling Type', type: 'select', options: ['None', 'Slime', 'Algae', 'Soft (Weed)', 'Hard (Barnacles)', 'Calcareous', 'Mixed'] },
-  { key: 'coverage', label: 'Coverage %', type: 'number', min: 0, max: 100, unit: '%' },
-];
+function buildFoulingFields(scale?: FoulingScale | null): InspectionField[] {
+  if (scale === 'LOF') {
+    const range = getFoulingScaleRange('LOF');
+    return [
+      { key: 'foulingRating', label: 'Level of Fouling (LoF)', type: 'rating', min: range.min, max: range.max, step: range.step },
+    ];
+  }
+  if (scale === 'FR') {
+    const range = getFoulingScaleRange('FR');
+    return [
+      { key: 'foulingRating', label: 'Fouling Rating (FR)', type: 'rating', min: range.min, max: range.max, step: range.step },
+      { key: 'foulingType', label: 'Fouling Type', type: 'select', options: ['None', 'Slime', 'Algae', 'Soft (Weed)', 'Hard (Barnacles)', 'Calcareous', 'Mixed'] },
+      { key: 'coverage', label: 'Coverage %', type: 'number', min: 0, max: 100, unit: '%' },
+    ];
+  }
+  return [
+    { key: 'foulingRating', label: 'Fouling Rating', type: 'rating', min: 0, max: 5 },
+    { key: 'foulingType', label: 'Fouling Type', type: 'select', options: ['None', 'Slime', 'Algae', 'Soft (Weed)', 'Hard (Barnacles)', 'Calcareous', 'Mixed'] },
+    { key: 'coverage', label: 'Coverage %', type: 'number', min: 0, max: 100, unit: '%' },
+  ];
+}
+
+const foulingFields: InspectionField[] = buildFoulingFields();
 
 const coatingField: InspectionField = {
   key: 'coatingCondition', label: 'Coating Condition', type: 'select',
@@ -207,6 +228,27 @@ const DEFAULT_CONFIG: CategoryFieldConfig = {
   ],
 };
 
-export function getCategoryConfig(category: string): CategoryFieldConfig {
-  return CATEGORY_FIELD_CONFIG[category] ?? DEFAULT_CONFIG;
+export function getCategoryConfig(category: string, foulingScale?: FoulingScale | null): CategoryFieldConfig {
+  if (!foulingScale) return CATEGORY_FIELD_CONFIG[category] ?? DEFAULT_CONFIG;
+  return getCategoryConfigForScale(category, foulingScale);
+}
+
+/**
+ * Returns category config with fouling fields adapted for the chosen scale.
+ * LoF: single 0-5 rank rating. FR: 0-100 rating + type + coverage.
+ */
+export function getCategoryConfigForScale(category: string, scale: FoulingScale): CategoryFieldConfig {
+  const base = CATEGORY_FIELD_CONFIG[category] ?? DEFAULT_CONFIG;
+  const scaledFoulingFields = buildFoulingFields(scale);
+
+  const replacedFields = base.inspectionFields.map((field) => {
+    if (field.key === 'foulingRating') return scaledFoulingFields.find((f) => f.key === 'foulingRating')!;
+    if (field.key === 'foulingType' && scale === 'LOF') return null;
+    if (field.key === 'coverage' && scale === 'LOF') return null;
+    if (field.key === 'foulingType') return scaledFoulingFields.find((f) => f.key === 'foulingType') ?? field;
+    if (field.key === 'coverage') return scaledFoulingFields.find((f) => f.key === 'coverage') ?? field;
+    return field;
+  }).filter(Boolean) as InspectionField[];
+
+  return { ...base, inspectionFields: replacedFields };
 }

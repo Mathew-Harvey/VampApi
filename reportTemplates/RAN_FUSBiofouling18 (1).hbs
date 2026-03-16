@@ -607,7 +607,7 @@
                                     </td>
                                     <td style="border:none"></td>
                                 </tr>
-                                {{#if data.ranVessel.data.generalArrangement.[0].frRatingData.[0].levelOfFoulingLoF}}
+                                {{#ifEquals data.foulingScale "LOF"}}
                                 <tr>
                                     <td style="width:20px;border:none"></td>
                                     <td style="border:none;font-size:14px;text-transform: uppercase;">
@@ -625,7 +625,7 @@
                                     </td>
                                     <td style="text-align: left;width:30px;border:none;font-size:14px;"></td>
                                 </tr>
-                                {{/if}}
+                                {{/ifEquals}}
                                 <tr>
                                     <td style="width:20px;border:none"></td>
                                     <td style="border:none;font-size:14px;text-transform: uppercase;">
@@ -955,7 +955,7 @@
                                 formally standardise both
                                 biofouling and antifouling condition ratings referred to herein.</p>
                             {{resetLevelTwoCounter}}
-                            {{#if (eq data.inspectionType "NZ CRMS Biofouling Inspection")}}
+                            {{#ifEquals data.foulingScale "LOF"}}
                             <h4>4.{{incrementLevelTwoCounter}} LEVEL OF FOULING (LOF) SCALE</h4>
                             <table style="width:100%">
                                 <th
@@ -1107,7 +1107,7 @@
                                     <td style="border:1px solid; padding:5px 5px;">COMPOSITE - All forms of fouling present, Soft and Hard, particularly soft sedentary animals without calcareous covering (tunicates) growing over various forms of hard growth.</td>
                                 </tr>
                             </table>
-                            {{/if}}
+                            {{/ifEquals}}
                         </div>
                         <div class="page">
                             <h4>4.{{incrementLevelTwoCounter}} PAINT DETERIORATION RATING (PDR)
@@ -1267,7 +1267,7 @@
                                                             frRatingData.[3].Comments
                                                             ))}}
 
-                                {{#if frRatingData.[0].levelOfFoulingLoF}}
+                                {{#ifEquals @root.data.foulingScale "LOF"}}
 
                                 <table id="tableFixed"
                                     style="border:1px solid #000; border-collapse:collapse; width:100%; position:center; margin-top: 0px; margin-bottom: 25px;">
@@ -1398,7 +1398,7 @@
                                     </tbody>
                                 </table>
 
-                                {{/if}}
+                                {{/ifEquals}}
                                 {{/if}}
 
 

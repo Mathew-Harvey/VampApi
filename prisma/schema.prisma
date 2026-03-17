@@ -173,6 +173,7 @@ model VesselComponent {
   lastInspected DateTime?
   condition     String?
   gaZoneId      String?
+  isoZone       String?           // ISO 6319:2026 Annex D zone mapping
   metadata      String?
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
@@ -188,6 +189,7 @@ model WorkFormEntry {
   id                String          @id @default(cuid())
   workOrderId       String
   vesselComponentId String
+  isoZone           String?         // ISO 6319:2026 Annex D zone (inherited from component or overridden)
   condition         String?
   foulingRating     Int?
   foulingType       String?
@@ -292,6 +294,7 @@ model Inspection {
   inspectorCert     String?
   waterTemp         Float?
   waterVisibility   Float?
+  isoVisibility     String?           // ISO 6319:2026 Table B.1 visibility condition
   waterSalinity     Float?
   weatherConditions String?
   seaState          String?
@@ -326,6 +329,7 @@ model InspectionFinding {
   measurementType   String?
   measurementValue  Float?
   measurementUnit   String?
+  isoZone           String?    // ISO 6319:2026 Annex D zone (denormalised from component)
   referenceStandard String?
   coatingCondition  String?
   corrosionType     String?

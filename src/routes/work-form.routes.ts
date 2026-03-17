@@ -7,6 +7,7 @@ import { workOrderService } from '../services/work-order.service';
 import prisma from '../config/database';
 import { CATEGORY_FIELD_CONFIG, getCategoryConfig } from '../config/category-field-config';
 import { type FoulingScale, getScaleLevels, getFoulingScaleRange } from '../constants/fouling-scales';
+import { ISO_ZONES, ISO_HULL_ZONES, ISO_NICHE_ZONES, ISO_VISIBILITY_CONDITIONS, ISO_AFC_CONDITIONS, ISO_MGPS_CONDITIONS, suggestIsoZone } from '../constants/iso-zones';
 
 const router = Router();
 
@@ -217,6 +218,28 @@ router.put('/vessels/:vesselId/components/zone-mappings', authenticate, async (r
   } catch (error: any) {
     res.status(error.statusCode || 500).json({ success: false, error: { code: error.code || 'ERROR', message: error.message } });
   }
+});
+
+// === ISO 6319:2026 Zone Constants ===
+
+router.get('/iso-zones', authenticate, (_req: Request, res: Response) => {
+  res.json({
+    success: true,
+    data: {
+      zones: ISO_ZONES,
+      hullZones: ISO_HULL_ZONES,
+      nicheZones: ISO_NICHE_ZONES,
+      visibilityConditions: ISO_VISIBILITY_CONDITIONS,
+      afcConditions: ISO_AFC_CONDITIONS,
+      mgpsConditions: ISO_MGPS_CONDITIONS,
+    },
+  });
+});
+
+router.post('/iso-zones/suggest', authenticate, (req: Request, res: Response) => {
+  const { name, category } = req.body;
+  const suggestion = suggestIsoZone(name, category);
+  res.json({ success: true, data: { suggestedZone: suggestion } });
 });
 
 // === Digital Twin — Fouling State & Work History ===

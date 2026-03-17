@@ -1449,6 +1449,78 @@
                         {{/each}}
     </div>
     </div>
+
+    {{!-- ═══════════════════════════════════════════════════════════════════
+         ISO 6319:2026 Annex D — Zone Summary (conditionally rendered)
+         ═══════════════════════════════════════════════════════════════════ --}}
+    {{#if data.hasIsoZoneData}}
+    <div class="page">
+        <h3 class="custom-heading" style="color:#365F91;">ISO 6319:2026 — Hull Zone Summary</h3>
+        {{#if data.isoVisibilityLabel}}
+        <p style="margin-bottom:10px;"><strong>Inspection Visibility (ISO Table B.1):</strong> {{data.isoVisibilityLabel}}</p>
+        {{/if}}
+
+        {{#if data.isoZoneSummary.length}}
+        <table id="tableFixed" style="width:100%; border-collapse:collapse; margin-bottom:20px;">
+            <thead>
+                <tr style="background-color:#365F91; color:#fff;">
+                    <th style="border:1px solid #000; padding:6px; text-align:left; width:25%;">Hull Zone</th>
+                    <th style="border:1px solid #000; padding:6px; text-align:center;">Highest Rating</th>
+                    <th style="border:1px solid #000; padding:6px; text-align:center;">Most Common</th>
+                    <th style="border:1px solid #000; padding:6px; text-align:center;">Macrofouling %</th>
+                    <th style="border:1px solid #000; padding:6px; text-align:center;">Coating (PDR)</th>
+                    <th style="border:1px solid #000; padding:6px; text-align:center;">Cleaning Compliant</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each data.isoZoneSummary}}
+                <tr style="{{#if (isEven @index)}}background-color:#f0f4f8;{{/if}}">
+                    <td style="border:1px solid; padding:5px; font-weight:bold;">{{zoneLabel}}</td>
+                    <td style="border:1px solid; padding:5px; text-align:center;">{{#if highestRatingFormatted}}{{highestRatingFormatted}}{{else}}—{{/if}}</td>
+                    <td style="border:1px solid; padding:5px; text-align:center;">{{#if mostCommonRatingFormatted}}{{mostCommonRatingFormatted}}{{else}}—{{/if}}</td>
+                    <td style="border:1px solid; padding:5px; text-align:center;">{{#if macrofoulingPercent}}{{macrofoulingPercent}}%{{else}}—{{/if}}</td>
+                    <td style="border:1px solid; padding:5px; text-align:center;">{{#if worstCoatingCondition}}{{worstCoatingCondition}}{{else}}—{{/if}}</td>
+                    <td style="border:1px solid; padding:5px; text-align:center;">{{#if cleaningCompliant}}Yes{{else}}No{{/if}}</td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+        {{/if}}
+
+        {{#if data.isoNicheZoneSummary.length}}
+        <h4 class="custom-heading" style="color:#365F91; margin-top:15px;">Niche Area Zones</h4>
+        <table id="tableFixed" style="width:100%; border-collapse:collapse; margin-bottom:20px;">
+            <thead>
+                <tr style="background-color:#365F91; color:#fff;">
+                    <th style="border:1px solid #000; padding:6px; text-align:left; width:25%;">Niche Area</th>
+                    <th style="border:1px solid #000; padding:6px; text-align:center;">Highest Rating</th>
+                    <th style="border:1px solid #000; padding:6px; text-align:center;">Most Common</th>
+                    <th style="border:1px solid #000; padding:6px; text-align:center;">Macrofouling %</th>
+                    <th style="border:1px solid #000; padding:6px; text-align:center;">Coating (PDR)</th>
+                    <th style="border:1px solid #000; padding:6px; text-align:center;">Cleaning Compliant</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each data.isoNicheZoneSummary}}
+                <tr style="{{#if (isEven @index)}}background-color:#f0f4f8;{{/if}}">
+                    <td style="border:1px solid; padding:5px; font-weight:bold;">{{zoneLabel}}</td>
+                    <td style="border:1px solid; padding:5px; text-align:center;">{{#if highestRatingFormatted}}{{highestRatingFormatted}}{{else}}—{{/if}}</td>
+                    <td style="border:1px solid; padding:5px; text-align:center;">{{#if mostCommonRatingFormatted}}{{mostCommonRatingFormatted}}{{else}}—{{/if}}</td>
+                    <td style="border:1px solid; padding:5px; text-align:center;">{{#if macrofoulingPercent}}{{macrofoulingPercent}}%{{else}}—{{/if}}</td>
+                    <td style="border:1px solid; padding:5px; text-align:center;">{{#if worstCoatingCondition}}{{worstCoatingCondition}}{{else}}—{{/if}}</td>
+                    <td style="border:1px solid; padding:5px; text-align:center;">{{#if cleaningCompliant}}Yes{{else}}No{{/if}}</td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+        {{/if}}
+
+        <p style="font-size:9pt; color:#666; margin-top:10px;">
+            <em>Zone summary generated per ISO 6319:2026 Annex D. "Cleaning Compliant" indicates areas where fouling rating permits non-capture cleaning (FR ≤ 10 / LoF ≤ 1).</em>
+        </p>
+    </div>
+    {{/if}}
+
     <div class="pageLast">
 
         <h4 id="h4MarginTop">6. Recommendations </h4>

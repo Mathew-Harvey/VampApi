@@ -4,6 +4,7 @@ import { auditService } from './audit.service';
 import { env } from '../config/env';
 
 const ENTRY_UPDATE_FIELDS = [
+  'isoZone',
   'condition', 'foulingRating', 'foulingType', 'coverage',
   'measurementType', 'measurementValue', 'measurementUnit',
   'coatingCondition', 'corrosionType', 'corrosionSeverity',
@@ -47,6 +48,7 @@ export const workFormService = {
           data: {
             workOrderId,
             vesselComponentId: comp.id,
+            isoZone: (comp as any).isoZone ?? null,
             status: 'PENDING',
           },
         })
@@ -174,6 +176,7 @@ export const workFormService = {
         category: e.vesselComponent.category,
         location: e.vesselComponent.location,
         gaZoneId: e.vesselComponent.gaZoneId ?? null,
+        isoZone: (e as any).isoZone ?? (e.vesselComponent as any).isoZone ?? null,
         material: e.vesselComponent.material,
         condition: e.condition,
         foulingRating: e.foulingRating,
@@ -241,6 +244,7 @@ export const workFormService = {
     if (!existing) throw new AppError(404, 'NOT_FOUND', 'Form entry not found');
 
     const allowedFields = [
+      'isoZone',
       'condition', 'foulingRating', 'foulingType', 'coverage',
       'coatingCondition', 'corrosionType', 'corrosionSeverity',
       'notes', 'recommendation', 'actionRequired', 'status',

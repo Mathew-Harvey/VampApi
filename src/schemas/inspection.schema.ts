@@ -9,6 +9,7 @@ export const createInspectionSchema = z.object({
   inspectorCert: z.string().optional().nullable(),
   waterTemp: z.number().optional().nullable(),
   waterVisibility: z.number().optional().nullable(),
+  isoVisibility: z.enum(['EXCELLENT', 'GOOD', 'FAIR', 'POOR']).optional().nullable(),
   waterSalinity: z.number().optional().nullable(),
   weatherConditions: z.string().optional().nullable(),
   seaState: z.string().optional().nullable(),
@@ -22,6 +23,7 @@ export const updateInspectionSchema = createInspectionSchema.partial();
 
 export const createFindingSchema = z.object({
   nicheAreaId: z.string().optional().nullable(),
+  isoZone: z.string().optional().nullable(),
   area: z.string().min(1, 'Area is required'),
   foulingRating: z.number().int().min(0).max(5).optional().nullable(),
   foulingType: z.string().optional().nullable(),

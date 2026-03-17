@@ -7,6 +7,7 @@ import { workFormService } from './work-form.service';
 import { registerReportHelpers } from '../helpers/report-helpers';
 import { env } from '../config/env';
 import { type FoulingScale, formatFoulingValue } from '../constants/fouling-scales';
+import { getIsoZone, ISO_HULL_ZONES, ISO_NICHE_ZONES, ISO_VISIBILITY_CONDITIONS, ISO_AFC_CONDITIONS, ISO_MGPS_CONDITIONS } from '../constants/iso-zones';
 
 // Legacy helpers (kept for any non-report templates)
 Handlebars.registerHelper('toLowerCase', (str: string) => str?.toLowerCase() || '');
@@ -601,6 +602,18 @@ async function buildInspectionReportContext(
     reviewDate: { date: dateObj },
   };
 
+  // ── ISO 6319:2026 Annex D: zone-level summary aggregation ──────────
+  const isoZoneSummary = buildIsoZoneSummary(entries, activeFoulingScale);
+  (data as any).isoZoneSummary = isoZoneSummary.hullZones;
+  (data as any).isoNicheZoneSummary = isoZoneSummary.nicheZones;
+  (data as any).hasIsoZoneData = isoZoneSummary.hasData;
+  (data as any).isoVisibility = reportConfig.visibility ?? null;
+  (data as any).isoVisibilityLabel = ISO_VISIBILITY_CONDITIONS.find(
+    (v) => v.value === reportConfig.visibility
+  )?.label ?? reportConfig.visibility ?? null;
+  (data as any).afcConditions = ISO_AFC_CONDITIONS;
+  (data as any).mgpsConditions = ISO_MGPS_CONDITIONS;
+
   const pinnedCandidates: Array<{ path: string; keys: string[]; title: string }> = [
     { path: 'ReportCover', keys: ['coverImage', 'coverPhoto', 'reportCover', 'reportCoverImage', 'coverImageMediaId'], title: 'Report Cover' },
     { path: 'ClientLogo', keys: ['clientLogo', 'logo', 'clientLogoImage', 'clientLogoMediaId'], title: 'Client Logo' },
@@ -632,6 +645,129 @@ async function buildInspectionReportContext(
     attachments,
     inspectorComments: '',
     _counters: { level1: 0, level2: 0, level3: 0 },
+  };
+}
+
+/**
+ * Build ISO 6319:2026 Annex D zone summary from work form entries.
+ * Aggregates findings by ISO zone: highest FR/LoF, most common rating,
+ * macrofouling %, worst PDR (coating condition), and cleaning compliance.
+ */
+function buildIsoZoneSummary(
+  entries: Array<any>,
+  foulingScale: FoulingScale
+) {
+  type ZoneAgg = {
+    zoneId: string;
+    zoneLabel: string;
+    zoneType: 'hull' | 'niche';
+    highestRating: number | null;
+    highestRatingFormatted: string | null;
+    ratings: number[];
+    mostCommonRating: number | null;
+    mostCommonRatingFormatted: string | null;
+    macrofoulingPercent: number | null;
+    worstCoatingCondition: string | null;
+    entryCount: number;
+    cleaningCompliant: boolean; // FR≤1 areas: no capture needed per ISO
+  };
+
+  const zoneMap = new Map<string, ZoneAgg>();
+
+  function ensureZone(zoneId: string): ZoneAgg {
+    if (zoneMap.has(zoneId)) return zoneMap.get(zoneId)!;
+    const isoZ = getIsoZone(zoneId);
+    const agg: ZoneAgg = {
+      zoneId,
+      zoneLabel: isoZ?.label ?? zoneId,
+      zoneType: isoZ?.type ?? 'hull',
+      highestRating: null,
+      highestRatingFormatted: null,
+      ratings: [],
+      mostCommonRating: null,
+      mostCommonRatingFormatted: null,
+      macrofoulingPercent: null,
+      worstCoatingCondition: null,
+      entryCount: 0,
+      cleaningCompliant: true,
+    };
+    zoneMap.set(zoneId, agg);
+    return agg;
+  }
+
+  // Process all entries (including sub-entries)
+  const allEntries: any[] = [];
+  for (const entry of entries) {
+    allEntries.push(entry);
+    if (entry.subEntries) {
+      for (const sub of entry.subEntries) allEntries.push(sub);
+    }
+  }
+
+  for (const e of allEntries) {
+    const zoneId = e.isoZone;
+    if (!zoneId) continue;
+
+    const agg = ensureZone(zoneId);
+    agg.entryCount++;
+
+    if (e.foulingRating != null) {
+      agg.ratings.push(e.foulingRating);
+      if (agg.highestRating === null || e.foulingRating > agg.highestRating) {
+        agg.highestRating = e.foulingRating;
+        agg.highestRatingFormatted = formatFoulingValue(e.foulingRating, foulingScale);
+      }
+    }
+
+    if (e.coverage != null && e.coverage > (agg.macrofoulingPercent ?? 0)) {
+      agg.macrofoulingPercent = e.coverage;
+    }
+
+    if (e.coatingCondition) {
+      // Track worst coating condition (simple: later/longer string wins, or specific ordering)
+      if (!agg.worstCoatingCondition || e.coatingCondition > agg.worstCoatingCondition) {
+        agg.worstCoatingCondition = e.coatingCondition;
+      }
+    }
+
+    // Non-capture cleaning compliance: if any entry in a zone has FR>1 (or LoF>1), zone is not compliant
+    if (foulingScale === 'LOF' && e.foulingRating != null && e.foulingRating > 1) {
+      agg.cleaningCompliant = false;
+    }
+    if (foulingScale === 'FR' && e.foulingRating != null && e.foulingRating > 10) {
+      agg.cleaningCompliant = false;
+    }
+  }
+
+  // Compute most common rating per zone
+  for (const agg of zoneMap.values()) {
+    if (agg.ratings.length > 0) {
+      const freq = new Map<number, number>();
+      for (const r of agg.ratings) freq.set(r, (freq.get(r) ?? 0) + 1);
+      let maxCount = 0;
+      let mostCommon = agg.ratings[0];
+      for (const [val, count] of freq) {
+        if (count > maxCount) { maxCount = count; mostCommon = val; }
+      }
+      agg.mostCommonRating = mostCommon;
+      agg.mostCommonRatingFormatted = formatFoulingValue(mostCommon, foulingScale);
+    }
+  }
+
+  // Split into hull zones and niche zones, maintaining ISO order
+  const hullZones: ZoneAgg[] = [];
+  for (const hz of ISO_HULL_ZONES) {
+    if (zoneMap.has(hz.id)) hullZones.push(zoneMap.get(hz.id)!);
+  }
+  const nicheZones: ZoneAgg[] = [];
+  for (const nz of ISO_NICHE_ZONES) {
+    if (zoneMap.has(nz.id)) nicheZones.push(zoneMap.get(nz.id)!);
+  }
+
+  return {
+    hullZones,
+    nicheZones,
+    hasData: hullZones.length > 0 || nicheZones.length > 0,
   };
 }
 

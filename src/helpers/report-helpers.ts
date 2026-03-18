@@ -186,7 +186,13 @@ function getImages(this: unknown, path: string, attachments: unknown[] | null, o
     (x: any) => (x?.path ?? '').replaceAll(' ', '').toLowerCase() === attachmentPath
   );
   if (!options.fn) return '';
-  return matching.map((attachment: any) => options.fn!(attachment, { data: options.data })).join('');
+  return matching.map((attachment: any, index: number) => {
+    const data = Handlebars.createFrame(options.data);
+    data.index = index;
+    data.first = index === 0;
+    data.last = index === matching.length - 1;
+    return options.fn!(attachment, { data });
+  }).join('');
 }
 
 function getImagesConditional(
@@ -214,9 +220,13 @@ function getImagesConditional(
   const finalList = localImages.length > 0 ? localImages : matching;
   if (finalList.length === 0) return '';
   return finalList
-    .map((attachment: any) => {
+    .map((attachment: any, index: number) => {
       if (!attachment.fullApiUrl && attachment.fullUri) attachment.fullApiUrl = attachment.fullUri;
-      return options.fn!(attachment, { data: options.data });
+      const data = Handlebars.createFrame(options.data);
+      data.index = index;
+      data.first = index === 0;
+      data.last = index === finalList.length - 1;
+      return options.fn!(attachment, { data });
     })
     .join('');
 }

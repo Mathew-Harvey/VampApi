@@ -60,16 +60,33 @@ function mapStatus(status: string): string {
   return 'IN_PROGRESS';
 }
 
-/** Strip everything except letters/digits and lowercase — used to fuzzy-match
- *  GA component names (e.g. "Box Cooler - Aft") to attachment path strings
- *  (e.g. "BoxCooler-Aft"). */
 function normalizeForMatch(name: string): string {
   return name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
 }
 
-function stripHtml(html: string | null | undefined): string | null {
-  if (!html) return null;
-  return html.replace(/<[^>]*>/g, '').trim() || null;
+/** Extract report config fields from Rise-X work detail data for the VAMP
+ *  report service (WorkOrder.metadata.reportConfig). */
+function buildReportConfig(workDetail: any): Record<string, unknown> {
+  const data = workDetail.data || {};
+  const report = data.report || {};
+  const vessel = data.ranVessel || data.vessel;
+  const vesselName = vessel?.displayName || vessel?.name || '';
+
+  return {
+    title: `${vesselName} – ${workDetail.displayName || 'Biofouling Inspection'}`,
+    summary: report.summary || null,
+    overview: report.overview || null,
+    methodology: report.methodology || null,
+    recommendations: report.recommendations || null,
+    workInstruction: data.workInstruction || null,
+    clientDetails: data.clientDetails || null,
+    berthAnchorageLocation:
+      data.location?.displayName || data.berthAnchorageLocation || null,
+    supervisorName: data.supervisor?.name || null,
+    inspectorName: 'Mat Harvey',
+    repairAgentName: 'Franmarine Underwater Services',
+    togglePhotoName: true,
+  };
 }
 
 // ── Bootstrap owner user + organisation ─────────────────────────────
@@ -97,11 +114,19 @@ async function ensureOwnerAndOrg() {
     },
   });
 
+  // FIX: Ensure org-franmarine is the ONLY default org for this user.
+  // Without this, the user may log in under a different org and not see
+  // imported vessels (vessel list is filtered by the JWT's organisationId).
+  await prisma.organisationUser.updateMany({
+    where: { userId: user.id, organisationId: { not: org.id } },
+    data: { isDefault: false },
+  });
+
   await prisma.organisationUser.upsert({
     where: {
       userId_organisationId: { userId: user.id, organisationId: org.id },
     },
-    update: {},
+    update: { isDefault: true, role: 'ECOSYSTEM_ADMIN', permissions: JSON.stringify(['ADMIN_FULL_ACCESS']) },
     create: {
       userId: user.id,
       organisationId: org.id,
@@ -196,6 +221,19 @@ async function importWorkItem(workDetail: any, ctx: ImportContext) {
     `  Importing ${workCode}: vessel=${vesselName}, components=${gaComponents.length}, attachments=${attachments.length}`,
   );
 
+  // Build report config from Rise-X data
+  const reportConfig = buildReportConfig(workDetail);
+
+  // Full metadata including reportConfig
+  const metadata = JSON.stringify({
+    workCode,
+    riseXId: workDetail.id,
+    flowType,
+    flowDisplayName: workDetail.flowDisplayName,
+    fmJobNumber: workDetail.data?.fmJobNumber || null,
+    reportConfig,
+  });
+
   // ── Core data inside a transaction ──────────────────────────────
   const txResult = await prisma.$transaction(
     async (tx) => {
@@ -236,10 +274,10 @@ async function importWorkItem(workDetail: any, ctx: ImportContext) {
         componentMap.set(normalized, dbComp);
       }
 
-      // 3. Work order
+      // 3. Work order — always update metadata so reportConfig is populated
       const dbWorkOrder = await tx.workOrder.upsert({
         where: { referenceNumber: workCode },
-        update: { status: woStatus },
+        update: { status: woStatus, metadata },
         create: {
           referenceNumber: workCode,
           vesselId: dbVessel.id,
@@ -258,12 +296,7 @@ async function importWorkItem(workDetail: any, ctx: ImportContext) {
             woStatus === 'COMPLETED' && workDetail.lastModified
               ? new Date(workDetail.lastModified)
               : null,
-          metadata: JSON.stringify({
-            workCode,
-            riseXId: workDetail.id,
-            flowType,
-            flowDisplayName: workDetail.flowDisplayName,
-          }),
+          metadata,
         },
       });
 
@@ -416,7 +449,12 @@ async function importWorkItem(workDetail: any, ctx: ImportContext) {
   );
 
   // ── Photos (outside transaction to avoid timeout) ───────────────
+
+  // Collect photo URLs grouped by GA component (normalized attachment path)
+  // so we can batch-update WorkFormEntry.attachments afterwards.
+  const photosByComponent = new Map<string, string[]>();
   let photosCreated = 0;
+
   const imageWorkDir = path.join(IMAGES_DIR, workCode);
   if (fs.existsSync(imageWorkDir) && attachments.length > 0) {
     for (const att of attachments) {
@@ -429,6 +467,7 @@ async function importWorkItem(workDetail: any, ctx: ImportContext) {
       const originalName = att.unsafeOriginalFileName || `${att.title || attId}.jpg`;
       const ext = path.extname(originalName).toLowerCase() || '.jpg';
       const filename = `risex_${attId}${ext}`;
+      const mediaUrl = `/uploads/${filename}`;
       const destPath = path.join(UPLOADS_DIR, filename);
 
       // Locate source file on disk
@@ -440,61 +479,104 @@ async function importWorkItem(workDetail: any, ctx: ImportContext) {
       if (fs.existsSync(exactPath)) {
         srcFile = exactPath;
       } else {
-        // Case-insensitive fallback
         try {
           const dirFiles = fs.readdirSync(srcDir);
           const match = dirFiles.find(
             (f) => f.toLowerCase() === originalName.toLowerCase(),
           );
           if (match) srcFile = path.join(srcDir, match);
-        } catch {
-          /* empty dir or permission error */
-        }
+        } catch { /* skip */ }
       }
       if (!srcFile) continue;
 
-      // Copy to uploads/ (skip if already exists)
+      // Copy to uploads/ (skip if already exists on disk)
       if (!fs.existsSync(destPath)) {
         fs.copyFileSync(srcFile, destPath);
       }
       const fileSize = fs.statSync(destPath).size;
 
-      // Resolve related finding
       const normalizedPath = normalizeForMatch(attPath);
       const matchingFinding = txResult.findingMap.get(normalizedPath);
 
-      // Idempotent: skip if media already exists
+      // Create Media record (idempotent)
       const existing = await prisma.media.findFirst({
         where: { storageKey: filename },
       });
-      if (existing) continue;
+      if (!existing) {
+        await prisma.media.create({
+          data: {
+            uploaderId: ctx.userId,
+            vesselId: txResult.vesselId,
+            workOrderId: txResult.workOrderId,
+            inspectionId: txResult.inspectionId,
+            findingId: matchingFinding?.id ?? null,
+            filename,
+            originalName,
+            mimeType: att.attachmentType || 'image/jpeg',
+            size: fileSize,
+            storageKey: filename,
+            url: mediaUrl,
+            capturedAt: att.createdDateTime || att.createdDate
+              ? new Date((att.createdDateTime || att.createdDate)!)
+              : null,
+            tags: JSON.stringify({
+              source: 'rise-x',
+              workCode,
+              gaComponent: attPath,
+              riseXAttachmentId: attId,
+            }),
+          },
+        });
+        photosCreated++;
+      }
 
-      await prisma.media.create({
-        data: {
-          uploaderId: ctx.userId,
-          vesselId: txResult.vesselId,
-          workOrderId: txResult.workOrderId,
-          inspectionId: txResult.inspectionId,
-          findingId: matchingFinding?.id ?? null,
-          filename,
-          originalName,
-          mimeType: att.attachmentType || 'image/jpeg',
-          size: fileSize,
-          storageKey: filename,
-          url: `/uploads/${filename}`,
-          capturedAt: att.createdDateTime || att.createdDate
-            ? new Date((att.createdDateTime || att.createdDate)!)
-            : null,
-          tags: JSON.stringify({
-            source: 'rise-x',
-            workCode,
-            gaComponent: attPath,
-            riseXAttachmentId: attId,
-          }),
-        },
-      });
-      photosCreated++;
+      // Track this photo URL for the matching GA component's WorkFormEntry
+      if (!photosByComponent.has(normalizedPath)) {
+        photosByComponent.set(normalizedPath, []);
+      }
+      photosByComponent.get(normalizedPath)!.push(mediaUrl);
     }
+  }
+
+  // ── Backfill WorkFormEntry.attachments with photo URLs ──────────
+  // The work form view reads photos from this JSON array, not from Media.
+  let attachmentsLinked = 0;
+  for (const [normalizedPath, photoUrls] of photosByComponent) {
+    const dbComp = txResult.componentMap.get(normalizedPath);
+    if (!dbComp) continue;
+
+    const entry = await prisma.workFormEntry.findUnique({
+      where: {
+        workOrderId_vesselComponentId: {
+          workOrderId: txResult.workOrderId,
+          vesselComponentId: dbComp.id,
+        },
+      },
+    });
+    if (!entry) continue;
+
+    // Merge with any existing attachments (idempotent: deduplicate)
+    const existing: string[] = safeParseJsonArray(entry.attachments);
+    const existingSet = new Set(existing);
+    const merged = [...existing];
+    for (const url of photoUrls) {
+      if (!existingSet.has(url)) {
+        merged.push(url);
+        existingSet.add(url);
+      }
+    }
+
+    if (merged.length !== existing.length) {
+      await prisma.workFormEntry.update({
+        where: { id: entry.id },
+        data: { attachments: JSON.stringify(merged) },
+      });
+      attachmentsLinked += merged.length - existing.length;
+    }
+  }
+
+  if (attachmentsLinked > 0) {
+    console.log(`    → Linked ${attachmentsLinked} photos to form entries`);
   }
 
   return {
@@ -502,7 +584,18 @@ async function importWorkItem(workDetail: any, ctx: ImportContext) {
     formEntries: txResult.formEntriesCreated,
     components: txResult.componentCount,
     photos: photosCreated,
+    attachmentsLinked,
   };
+}
+
+function safeParseJsonArray(value: unknown): string[] {
+  if (typeof value !== 'string') return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
 }
 
 // ── Main ────────────────────────────────────────────────────────────
@@ -516,7 +609,6 @@ async function main() {
     process.exit(1);
   }
 
-  // Ensure uploads dir exists
   if (!fs.existsSync(UPLOADS_DIR)) {
     fs.mkdirSync(UPLOADS_DIR, { recursive: true });
   }
@@ -540,6 +632,7 @@ async function main() {
     findings: 0,
     formEntries: 0,
     photos: 0,
+    attachmentsLinked: 0,
   };
 
   for (const file of files) {
@@ -554,6 +647,7 @@ async function main() {
         totals.findings += result.findings;
         totals.formEntries += result.formEntries;
         totals.photos += result.photos;
+        totals.attachmentsLinked += result.attachmentsLinked;
       } else {
         totals.skipped++;
       }
@@ -562,24 +656,24 @@ async function main() {
     }
   }
 
-  // Final vessel / work order counts from DB
   totals.vessels = await prisma.vessel.count({ where: { source: 'rise-x' } });
   totals.workOrders = await prisma.workOrder.count({
     where: { referenceNumber: { startsWith: 'FUS-' } },
   });
 
-  console.log('\n════════════════════════════');
-  console.log('   Import Summary');
-  console.log('════════════════════════════');
-  console.log(`  Files processed : ${totals.processed}`);
-  console.log(`  Files skipped   : ${totals.skipped}`);
-  console.log(`  Vessels         : ${totals.vessels}`);
-  console.log(`  Work Orders     : ${totals.workOrders}`);
-  console.log(`  Components      : ${totals.components}`);
-  console.log(`  Findings        : ${totals.findings}`);
-  console.log(`  Form Entries    : ${totals.formEntries}`);
-  console.log(`  Photos copied   : ${totals.photos}`);
-  console.log('════════════════════════════\n');
+  console.log('\n════════════════════════════════════');
+  console.log('        Import Summary');
+  console.log('════════════════════════════════════');
+  console.log(`  Files processed    : ${totals.processed}`);
+  console.log(`  Files skipped      : ${totals.skipped}`);
+  console.log(`  Vessels            : ${totals.vessels}`);
+  console.log(`  Work Orders        : ${totals.workOrders}`);
+  console.log(`  Components         : ${totals.components}`);
+  console.log(`  Findings           : ${totals.findings}`);
+  console.log(`  Form Entries       : ${totals.formEntries}`);
+  console.log(`  Photos copied      : ${totals.photos}`);
+  console.log(`  Attachments linked : ${totals.attachmentsLinked}`);
+  console.log('════════════════════════════════════\n');
 }
 
 main()

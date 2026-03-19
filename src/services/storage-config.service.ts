@@ -197,6 +197,104 @@ export const storageConfigService = {
     return this.get().localMediaPath;
   },
 
+  getLocalPathGuide(): LocalPathGuide {
+    const cfg = this.get();
+    const localPath = cfg.localMediaPath;
+    const exists = fs.existsSync(localPath);
+
+    let fileCount = 0;
+    let totalBytes = 0;
+    if (exists) {
+      try {
+        const entries = fs.readdirSync(localPath);
+        for (const entry of entries) {
+          if (entry.startsWith('.') || entry.startsWith('_')) continue;
+          try {
+            const stat = fs.statSync(path.join(localPath, entry));
+            if (stat.isFile()) { fileCount++; totalBytes += stat.size; }
+          } catch { /* skip */ }
+        }
+      } catch { /* unreadable */ }
+    }
+
+    const isWindows = process.platform === 'win32';
+    const cwd = process.cwd();
+    const defaultPath = path.join(cwd, 'uploads');
+
+    const suggestedPaths: SuggestedPath[] = [
+      {
+        path: defaultPath,
+        label: 'Default (project uploads folder)',
+        description: `Stores photos alongside the API server at ${defaultPath}`,
+        isDefault: true,
+        isCurrent: path.resolve(localPath) === path.resolve(defaultPath),
+      },
+    ];
+
+    if (isWindows) {
+      suggestedPaths.push(
+        {
+          path: 'C:\\VampMedia',
+          label: 'Dedicated drive folder',
+          description: 'A standalone folder on C: drive, outside the project. Easy to find and back up.',
+          isDefault: false,
+          isCurrent: path.resolve(localPath) === path.resolve('C:\\VampMedia'),
+        },
+        {
+          path: path.join(process.env.USERPROFILE || 'C:\\Users\\Default', 'Documents', 'VampMedia'),
+          label: 'User Documents folder',
+          description: 'Inside your Documents folder. May sync with OneDrive — not recommended for large media sets.',
+          isDefault: false,
+          isCurrent: false,
+        },
+      );
+    } else {
+      suggestedPaths.push(
+        {
+          path: '/var/lib/vamp/media',
+          label: 'Linux server standard',
+          description: 'Standard location for application data on Linux servers.',
+          isDefault: false,
+          isCurrent: path.resolve(localPath) === path.resolve('/var/lib/vamp/media'),
+        },
+        {
+          path: path.join(process.env.HOME || '/root', 'vamp-media'),
+          label: 'Home directory',
+          description: 'A folder in the current user\'s home directory.',
+          isDefault: false,
+          isCurrent: false,
+        },
+      );
+    }
+
+    return {
+      currentPath: localPath,
+      resolvedPath: path.resolve(localPath),
+      exists,
+      fileCount,
+      totalSizeMB: Math.round((totalBytes / (1024 * 1024)) * 100) / 100,
+      suggestedPaths,
+      instructions: {
+        title: 'Local Photo Storage',
+        description:
+          'VAMP stores inspection photos and media locally on this machine. ' +
+          'Choose a folder with enough disk space for your inspection images. ' +
+          'Once set, all new uploads and imported photos will be saved here and served directly by the API.',
+        steps: [
+          'Choose a folder path below, or enter a custom path.',
+          'Click "Test Path" to verify the folder is writable.',
+          'Click "Save" to apply. The folder will be created automatically if it doesn\'t exist.',
+          'Existing photos in the old location are NOT moved automatically — only new uploads go to the new path.',
+        ],
+        warnings: [
+          'Avoid folders that sync to cloud services (OneDrive, Dropbox) — large media sets can cause sync issues.',
+          'Ensure the disk has enough free space. Inspection photo sets can be several GB each.',
+          'If you change the path after importing data, existing photo URLs will break unless you move the files.',
+        ],
+      },
+    };
+  },
+
   isS3Usable(): boolean {
     const cfg = this.get();
     return Boolean(cfg.s3.accessKey && cfg.s3.secretKey && cfg.s3.bucket);
@@ -232,4 +330,27 @@ export interface StorageConfigStatus {
   localPathExists: boolean;
   localMediaPath: string;
   fields: ConfigField[];
+}
+
+export interface SuggestedPath {
+  path: string;
+  label: string;
+  description: string;
+  isDefault: boolean;
+  isCurrent: boolean;
+}
+
+export interface LocalPathGuide {
+  currentPath: string;
+  resolvedPath: string;
+  exists: boolean;
+  fileCount: number;
+  totalSizeMB: number;
+  suggestedPaths: SuggestedPath[];
+  instructions: {
+    title: string;
+    description: string;
+    steps: string[];
+    warnings: string[];
+  };
 }

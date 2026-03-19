@@ -26,6 +26,18 @@ router.get('/config', authenticate, async (_req: Request, res: Response) => {
 });
 
 // ---------------------------------------------------------------------------
+// GET /config/local-path-guide — guidance for choosing the local media folder
+// ---------------------------------------------------------------------------
+router.get('/config/local-path-guide', authenticate, async (_req: Request, res: Response) => {
+  try {
+    const guide = storageConfigService.getLocalPathGuide();
+    res.json({ success: true, data: guide });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: { code: 'GUIDE_ERROR', message: error.message } });
+  }
+});
+
+// ---------------------------------------------------------------------------
 // PUT /config — update storage configuration
 // ---------------------------------------------------------------------------
 router.put('/config', authenticate, adminOnly, async (req: Request, res: Response) => {

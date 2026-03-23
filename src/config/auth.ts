@@ -10,11 +10,11 @@ export interface TokenPayload {
 }
 
 export function generateAccessToken(payload: TokenPayload): string {
-  return jwt.sign(payload, env.JWT_SECRET, { expiresIn: env.JWT_EXPIRY as any });
+  return jwt.sign(payload, env.JWT_SECRET, { expiresIn: env.JWT_EXPIRY });
 }
 
 export function generateRefreshToken(userId: string): string {
-  return jwt.sign({ userId, type: 'refresh' }, env.JWT_SECRET, { expiresIn: env.REFRESH_TOKEN_EXPIRY as any });
+  return jwt.sign({ userId, type: 'refresh' }, env.JWT_SECRET, { expiresIn: env.REFRESH_TOKEN_EXPIRY });
 }
 
 export function verifyToken(token: string): TokenPayload {

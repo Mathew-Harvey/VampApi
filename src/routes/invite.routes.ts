@@ -1,14 +1,13 @@
 import { Router } from 'express';
 import { inviteService } from '../services/invite.service';
 import { authenticate } from '../middleware/auth';
-import { hasAnyPermission } from '../middleware/permissions';
-import { workOrderService } from '../services/work-order.service';
+import { requireWorkOrderAdmin } from '../middleware/work-order-access';
 import { asyncHandler } from '../utils/async-handler';
 
 const router = Router();
 
 // Invite user to a work order by email
-router.post('/work-orders/:workOrderId/invite', authenticate, asyncHandler(async (req, res) => {
+router.post('/work-orders/:workOrderId/invite', authenticate, requireWorkOrderAdmin(), asyncHandler(async (req, res) => {
   const { email, permission } = req.body;
   if (!email || !permission) {
     res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Email and permission are required' } });
@@ -16,22 +15,6 @@ router.post('/work-orders/:workOrderId/invite', authenticate, asyncHandler(async
   }
   if (!['READ', 'WRITE', 'ADMIN'].includes(permission)) {
     res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Permission must be READ, WRITE, or ADMIN' } });
-    return;
-  }
-  const hasOrgPermission = hasAnyPermission(req.user, 'WORK_ORDER_ASSIGN');
-  const hasAccess = await workOrderService.canViewWorkOrder(
-    req.params.workOrderId as string,
-    req.user!.userId,
-    req.user!.organisationId,
-    hasOrgPermission,
-  );
-  if (!hasAccess) {
-    res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Work order not found' } });
-    return;
-  }
-  const canAdminAsCollaborator = await workOrderService.canAdminAsCollaborator(req.params.workOrderId as string, req.user!.userId);
-  if (!hasOrgPermission && !canAdminAsCollaborator) {
-    res.status(403).json({ success: false, error: { code: 'FORBIDDEN', message: 'Insufficient permissions' } });
     return;
   }
 
@@ -73,26 +56,10 @@ router.post('/invites/work-orders/redeem', authenticate, asyncHandler(async (req
 }));
 
 // Change collaborator permission
-router.patch('/work-orders/:workOrderId/collaborators/:userId/permission', authenticate, asyncHandler(async (req, res) => {
+router.patch('/work-orders/:workOrderId/collaborators/:userId/permission', authenticate, requireWorkOrderAdmin(), asyncHandler(async (req, res) => {
   const { permission } = req.body;
   if (!['READ', 'WRITE', 'ADMIN'].includes(permission)) {
     res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Permission must be READ, WRITE, or ADMIN' } });
-    return;
-  }
-  const hasOrgPermission = hasAnyPermission(req.user, 'WORK_ORDER_ASSIGN');
-  const hasAccess = await workOrderService.canViewWorkOrder(
-    req.params.workOrderId as string,
-    req.user!.userId,
-    req.user!.organisationId,
-    hasOrgPermission,
-  );
-  if (!hasAccess) {
-    res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Work order not found' } });
-    return;
-  }
-  const canAdminAsCollaborator = await workOrderService.canAdminAsCollaborator(req.params.workOrderId as string, req.user!.userId);
-  if (!hasOrgPermission && !canAdminAsCollaborator) {
-    res.status(403).json({ success: false, error: { code: 'FORBIDDEN', message: 'Insufficient permissions' } });
     return;
   }
 
@@ -106,24 +73,7 @@ router.patch('/work-orders/:workOrderId/collaborators/:userId/permission', authe
 }));
 
 // Remove collaborator
-router.delete('/work-orders/:workOrderId/collaborators/:userId', authenticate, asyncHandler(async (req, res) => {
-  const hasOrgPermission = hasAnyPermission(req.user, 'WORK_ORDER_ASSIGN');
-  const hasAccess = await workOrderService.canViewWorkOrder(
-    req.params.workOrderId as string,
-    req.user!.userId,
-    req.user!.organisationId,
-    hasOrgPermission,
-  );
-  if (!hasAccess) {
-    res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Work order not found' } });
-    return;
-  }
-  const canAdminAsCollaborator = await workOrderService.canAdminAsCollaborator(req.params.workOrderId as string, req.user!.userId);
-  if (!hasOrgPermission && !canAdminAsCollaborator) {
-    res.status(403).json({ success: false, error: { code: 'FORBIDDEN', message: 'Insufficient permissions' } });
-    return;
-  }
-
+router.delete('/work-orders/:workOrderId/collaborators/:userId', authenticate, requireWorkOrderAdmin(), asyncHandler(async (req, res) => {
   await inviteService.removeFromWorkOrder(
     req.params.workOrderId as string,
     req.params.userId as string,

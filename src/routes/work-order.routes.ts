@@ -3,6 +3,7 @@ import { workOrderService } from '../services/work-order.service';
 import { workflowService } from '../services/workflow.service';
 import { authenticate } from '../middleware/auth';
 import { hasAnyPermission, requirePermission } from '../middleware/permissions';
+import { requireWorkOrderView, requireWorkOrderWrite } from '../middleware/work-order-access';
 import { validate } from '../middleware/validate';
 import { createWorkOrderSchema, updateWorkOrderSchema, changeStatusSchema, assignWorkOrderSchema } from '../schemas/work-order.schema';
 import { getPaginationParams } from '../utils/pagination';
@@ -79,19 +80,7 @@ router.post('/:id/tasks/:taskId/reject', authenticate, requirePermission('WORK_O
   res.json({ success: true, data: result });
 }));
 
-router.get('/:id/comments', authenticate, asyncHandler(async (req, res) => {
-  const includeOrganisationScope = hasAnyPermission(req.user, 'WORK_ORDER_VIEW');
-  const canView = await workOrderService.canViewWorkOrder(
-    req.params.id as string,
-    req.user!.userId,
-    req.user!.organisationId,
-    includeOrganisationScope,
-  );
-  if (!canView) {
-    res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Work order not found' } });
-    return;
-  }
-
+router.get('/:id/comments', authenticate, requireWorkOrderView('id'), asyncHandler(async (req, res) => {
   const comments = await prisma.comment.findMany({
     where: { workOrderId: (req.params.id as string) },
     include: { author: { select: { id: true, firstName: true, lastName: true } } },
@@ -100,25 +89,7 @@ router.get('/:id/comments', authenticate, asyncHandler(async (req, res) => {
   res.json({ success: true, data: comments });
 }));
 
-router.post('/:id/comments', authenticate, asyncHandler(async (req, res) => {
-  const canEditByOrg = hasAnyPermission(req.user, 'WORK_ORDER_EDIT');
-  const canWriteAsCollaborator = await workOrderService.canWriteAsCollaborator(req.params.id as string, req.user!.userId);
-  const canWrite = canEditByOrg || canWriteAsCollaborator;
-  const canView = await workOrderService.canViewWorkOrder(
-    req.params.id as string,
-    req.user!.userId,
-    req.user!.organisationId,
-    canEditByOrg || hasAnyPermission(req.user, 'WORK_ORDER_VIEW'),
-  );
-  if (!canView) {
-    res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Work order not found' } });
-    return;
-  }
-  if (!canWrite) {
-    res.status(403).json({ success: false, error: { code: 'FORBIDDEN', message: 'Insufficient permissions' } });
-    return;
-  }
-
+router.post('/:id/comments', authenticate, requireWorkOrderWrite('id'), asyncHandler(async (req, res) => {
   const comment = await prisma.comment.create({
     data: { workOrderId: (req.params.id as string), authorId: req.user!.userId, content: req.body.content, parentId: req.body.parentId },
   });

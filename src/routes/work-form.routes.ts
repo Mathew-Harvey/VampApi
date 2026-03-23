@@ -3,6 +3,7 @@ import { workFormService } from '../services/work-form.service';
 import { vesselComponentService } from '../services/vessel-component.service';
 import { authenticate } from '../middleware/auth';
 import { hasAnyPermission } from '../middleware/permissions';
+import { requireWorkOrderView, requireWorkOrderWrite } from '../middleware/work-order-access';
 import { workOrderService } from '../services/work-order.service';
 import prisma from '../config/database';
 import { CATEGORY_FIELD_CONFIG, getCategoryConfig } from '../config/category-field-config';
@@ -200,42 +201,12 @@ router.get('/vessels/:vesselId/components/:componentId/work-history', authentica
 
 // === Work Form Entries ===
 
-router.post('/work-orders/:workOrderId/form/generate', authenticate, asyncHandler(async (req, res) => {
-  const canEditByOrg = hasAnyPermission(req.user, 'WORK_ORDER_EDIT');
-  const canWriteAsCollaborator = await workOrderService.canWriteAsCollaborator(req.params.workOrderId as string, req.user!.userId);
-  const canWrite = canEditByOrg || canWriteAsCollaborator;
-  const canView = await workOrderService.canViewWorkOrder(
-    req.params.workOrderId as string,
-    req.user!.userId,
-    req.user!.organisationId,
-    canEditByOrg || hasAnyPermission(req.user, 'WORK_ORDER_VIEW'),
-  );
-  if (!canView) {
-    res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Work order not found' } });
-    return;
-  }
-  if (!canWrite) {
-    res.status(403).json({ success: false, error: { code: 'FORBIDDEN', message: 'Insufficient permissions' } });
-    return;
-  }
-
+router.post('/work-orders/:workOrderId/form/generate', authenticate, requireWorkOrderWrite(), asyncHandler(async (req, res) => {
   const entries = await workFormService.generateForm(req.params.workOrderId as string, req.user!.userId);
   res.status(201).json({ success: true, data: entries });
 }));
 
-router.get('/work-orders/:workOrderId/form', authenticate, asyncHandler(async (req, res) => {
-  const includeOrganisationScope = hasAnyPermission(req.user, 'WORK_ORDER_VIEW');
-  const canView = await workOrderService.canViewWorkOrder(
-    req.params.workOrderId as string,
-    req.user!.userId,
-    req.user!.organisationId,
-    includeOrganisationScope,
-  );
-  if (!canView) {
-    res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Work order not found' } });
-    return;
-  }
-
+router.get('/work-orders/:workOrderId/form', authenticate, requireWorkOrderView(), asyncHandler(async (req, res) => {
   const entries = await workFormService.getFormEntries(req.params.workOrderId as string);
   res.json({ success: true, data: entries });
 }));
@@ -341,19 +312,7 @@ router.post('/form-entries/:entryId/attachments', authenticate, asyncHandler(asy
   res.json({ success: true, data: entry });
 }));
 
-router.get('/work-orders/:workOrderId/form/json', authenticate, asyncHandler(async (req, res) => {
-  const includeOrganisationScope = hasAnyPermission(req.user, 'WORK_ORDER_VIEW');
-  const canView = await workOrderService.canViewWorkOrder(
-    req.params.workOrderId as string,
-    req.user!.userId,
-    req.user!.organisationId,
-    includeOrganisationScope,
-  );
-  if (!canView) {
-    res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Work order not found' } });
-    return;
-  }
-
+router.get('/work-orders/:workOrderId/form/json', authenticate, requireWorkOrderView(), asyncHandler(async (req, res) => {
   const data = await workFormService.getFormDataJson(req.params.workOrderId as string);
   res.json({ success: true, data });
 }));

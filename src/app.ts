@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
+import fs from 'fs';
 import path from 'path';
 import { notFound, errorHandler } from './middleware/error';
 
@@ -73,7 +74,6 @@ app.use('/email-previews', express.static(path.join(process.cwd(), 'email-previe
 app.get('/api/v1/email-previews', (_req, res) => {
   const dir = path.join(process.cwd(), 'email-previews');
   try {
-    const fs = require('fs');
     if (!fs.existsSync(dir)) { res.json({ success: true, data: [] }); return; }
     const files = fs.readdirSync(dir)
       .filter((f: string) => f.endsWith('.html'))

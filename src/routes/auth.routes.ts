@@ -3,6 +3,7 @@ import { authService } from '../services/auth.service';
 import { authenticate, optionalAuth } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { loginSchema, registerSchema, forgotPasswordSchema, resetPasswordSchema, changePasswordSchema } from '../schemas/user.schema';
+import { asyncHandler } from '../utils/async-handler';
 
 const router = Router();
 

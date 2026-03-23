@@ -33,20 +33,12 @@ app.use(helmet({
   contentSecurityPolicy: false,
   crossOriginResourcePolicy: { policy: 'cross-origin' },
 }));
-// Support comma-separated origins, e.g. APP_URL=https://vamp-web.onrender.com,https://other.example.com
-const allowedOrigins = (process.env.APP_URL || 'http://localhost:5173')
-  .split(',')
-  .map((o) => o.trim())
-  .filter(Boolean);
+
+import { getAllowedOrigins, isOriginAllowed } from './config/cors';
 app.use(cors({
   origin: (origin, cb) => {
-    // No origin (e.g. same-origin, Postman) — allow
-    if (!origin) return cb(null, true);
-    // Allow configured frontend URL(s)
-    if (allowedOrigins.includes(origin)) return cb(null, true);
-    // In development, allow any localhost port (Vite may use 5174, 5175, etc.)
-    if (process.env.NODE_ENV !== 'production' && /^https?:\/\/localhost(:\d+)?$/.test(origin)) return cb(null, true);
-    console.warn(`CORS rejected origin: ${origin}. Allowed: ${allowedOrigins.join(', ')}`);
+    if (isOriginAllowed(origin)) return cb(null, true);
+    console.warn(`CORS rejected origin: ${origin}. Allowed: ${getAllowedOrigins().join(', ')}`);
     cb(null, false);
   },
   credentials: true,

@@ -1738,20 +1738,20 @@
         <table>
             <thead>
                 <tr>
-                    <th style="width: 22%;">Component</th>
-                    <th style="width: 14%;">{{#ifEquals workOrder.foulingScale "LOF"}}LoF Rating{{else}}Fouling Rating{{/ifEquals}}</th>
-                    <th style="width: 12%;">Coverage %</th>
-                    <th style="width: 18%;">Coating Condition</th>
-                    <th style="width: 34%;">Notes</th>
+                    <th style="width: 20%;">Component</th>
+                    <th style="width: 22%;">{{#ifEquals workOrder.foulingScale "LOF"}}LoF Rating{{else}}Fouling Rating (FR){{/ifEquals}}</th>
+                    <th style="width: 14%;">Coverage</th>
+                    <th style="width: 20%;">PDR Rating</th>
+                    <th style="width: 24%;">Notes</th>
                 </tr>
             </thead>
             <tbody>
                 {{#each formEntries}}
-                <tr>
-                    <td><strong>{{#if vesselComponent}}{{vesselComponent.name}}{{else}}{{component}}{{/if}}</strong></td>
-                    <td style="text-align: center;">{{foulingRating}}</td>
-                    <td style="text-align: center;">{{#if coverage}}{{coverage}}%{{else}}&mdash;{{/if}}</td>
-                    <td>{{#if coatingCondition}}{{coatingCondition}}{{else}}&mdash;{{/if}}</td>
+                <tr{{#if isSubComponent}} style="background-color: #f8fafc;"{{/if}}>
+                    <td>{{#if isSubComponent}}<span style="padding-left: 16px; color: #475569;">&#8627; </span>{{/if}}<strong>{{#if vesselComponent}}{{vesselComponent.name}}{{else}}{{component}}{{/if}}</strong></td>
+                    <td style="font-size: 11px;">{{#if foulingRatingFormatted}}{{foulingRatingFormatted}}{{else}}&mdash;{{/if}}</td>
+                    <td style="font-size: 11px;">{{#if coverageFormatted}}{{coverageFormatted}}{{else}}&mdash;{{/if}}</td>
+                    <td style="font-size: 11px;">{{#if pdrFormatted}}{{pdrFormatted}}{{else}}&mdash;{{/if}}</td>
                     <td>{{#if notes}}{{notes}}{{else}}<span style="color:#94a3b8;">&mdash;</span>{{/if}}</td>
                 </tr>
                 {{/each}}
@@ -1769,6 +1769,34 @@
         <div class="content-footer">
             <span>{{#if organisation.name}}{{organisation.name}}{{/if}}</span>
             <span>{{workOrder.referenceNumber}} &mdash; Section 7: Form Entries</span>
+            <span>{{generatedAt}}</span>
+        </div>
+    </div>
+    {{/if}}
+
+
+    <!-- ================================================================
+         PAGE 10B: SECTION 7B — PHOTO EVIDENCE (Conditional)
+         ================================================================ -->
+    {{#if hasPhotos}}
+    <div class="page">
+        <h3>7B. Photo Evidence</h3>
+        <p class="section-intro">Photographs captured during inspection activities, grouped by vessel component.</p>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 12px; justify-content: flex-start;">
+            {{#each photoEvidence}}
+            <div style="width: 48%; margin-bottom: 12px; border: 1px solid #e2e8f0; border-radius: 4px; overflow: hidden;">
+                <img src="{{src}}" alt="{{caption}}" style="width: 100%; height: 200px; object-fit: cover; display: block;" />
+                <div style="padding: 6px 10px; font-size: 11px; color: #475569; background: #f8fafc;">
+                    {{caption}}
+                </div>
+            </div>
+            {{/each}}
+        </div>
+
+        <div class="content-footer">
+            <span>{{#if organisation.name}}{{organisation.name}}{{/if}}</span>
+            <span>{{workOrder.referenceNumber}} &mdash; Section 7B: Photo Evidence</span>
             <span>{{generatedAt}}</span>
         </div>
     </div>

@@ -128,13 +128,23 @@ export async function buildInspectionReportContext(
   const useFR = explicitScale === 'FR' || (!explicitScale && !legacyIsLoF);
   const activeFoulingScale: FoulingScale = useLoF ? 'LOF' : 'FR';
 
+  const LEGACY_PDR_MAP: Record<string, number> = {
+    'intact': 10,
+    'minor damage': 20,
+    'moderate damage': 40,
+    'severe damage': 70,
+    'failed': 90,
+  };
+
   function formatPdr(value: unknown): string | null {
     if (value == null) return null;
     if (typeof value === 'number') return formatPdrValue(value);
-    // Support legacy text values by passing through
     if (typeof value === 'string' && value.length > 0) {
       const num = parseInt(value, 10);
-      if (!isNaN(num) && num >= 10 && num <= 90) return formatPdrValue(num);
+      if (!isNaN(num) && num >= 0 && num <= 100) return formatPdrValue(num);
+      // Map legacy text values to numeric PDR
+      const mapped = LEGACY_PDR_MAP[value.toLowerCase().trim()];
+      if (mapped != null) return formatPdrValue(mapped);
       return value;
     }
     return null;

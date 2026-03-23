@@ -886,9 +886,15 @@
       <p class="cover-imo">IMO {{vessel.imoNumber}}</p>
     {{/if}}
 
+    {{#if coverImageUrl}}
+    <div style="text-align: center; margin: 20px 0;">
+      <img src="{{coverImageUrl}}" alt="Vessel Photograph" style="max-width: 80%; max-height: 280px; border: 1px solid #e2e8f0; border-radius: 4px;" />
+    </div>
+    {{else}}
     <div class="cover-image-placeholder">
       Vessel Photograph / Company Logo
     </div>
+    {{/if}}
 
     <div class="cover-meta">
       <table>
@@ -1140,10 +1146,16 @@
 
     <h4>General Arrangement</h4>
 
+    {{#if gaImageUrl}}
+    <div style="text-align: center; margin: 12px 0;">
+      <img src="{{gaImageUrl}}" alt="General Arrangement Drawing" style="max-width: 100%; max-height: 400px; border: 1px solid #e2e8f0;" />
+    </div>
+    {{else}}
     <div class="image-placeholder">
       General Arrangement Drawing / Profile View<br />
-      <span style="font-size: 8pt;">(Insert vessel general arrangement diagram)</span>
+      <span style="font-size: 8pt;">(No general arrangement image uploaded &mdash; configure via Report Settings or vessel GA images)</span>
     </div>
+    {{/if}}
 
     <div class="footer-line">
       {{#if organisation.name}}{{organisation.name}} &mdash; {{/if}}Biofouling Management Plan &mdash; Rev. {{planInformation.revision}} &mdash; {{planInformation.date}}

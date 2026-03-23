@@ -178,15 +178,39 @@ export const reportService = {
       };
     }
 
+    /** Returns true if a form entry has any user-entered data */
+    function feHasData(fe: any): boolean {
+      return !!(
+        fe.condition ||
+        fe.foulingRating != null ||
+        fe.foulingType ||
+        fe.coverage != null ||
+        fe.measurementType ||
+        fe.measurementValue != null ||
+        fe.coatingCondition ||
+        fe.corrosionType ||
+        fe.corrosionSeverity ||
+        fe.notes ||
+        fe.recommendation ||
+        fe.actionRequired ||
+        (Array.isArray(fe.attachments) && fe.attachments.length > 0)
+      );
+    }
+
     const formEntries: any[] = [];
     const allPhotos: Array<{ src: string; caption: string }> = [];
 
     for (const parent of parentEntries) {
-      const formatted = formatEntry(parent, false);
-      formEntries.push(formatted);
+      const children = childEntriesByParent.get((parent as any).id) || [];
+      const parentHasData = feHasData(parent);
+      const anyChildHasData = children.some(feHasData);
+
+      // Skip this GA component entirely if neither parent nor children have data
+      if (!parentHasData && !anyChildHasData) continue;
+
+      formEntries.push(formatEntry(parent, false));
       collectPhotos(parent, allPhotos);
 
-      const children = childEntriesByParent.get((parent as any).id) || [];
       for (const child of children) {
         formEntries.push(formatEntry(child, true));
         collectPhotos(child, allPhotos);

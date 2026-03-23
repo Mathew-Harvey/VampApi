@@ -47,6 +47,45 @@ export function formatFoulingValue(value: number, scale: FoulingScale): string {
   return `FR: ${value}`;
 }
 
+/**
+ * Format fouling value with full description for report output.
+ * e.g. "FR 70 | - HARD - Combination of tubeworms and barnacles, greater than 1/4 inch in diameter or hei..."
+ * e.g. "Rank: 3 | 6-15% of visible surfaces - Considerable macrofouling on surfaces."
+ */
+export function formatFoulingValueRich(value: number, scale: FoulingScale): string {
+  const levels = getScaleLevels(scale);
+  const level = levels.find((l) => l.value === value);
+  if (!level) return formatFoulingValue(value, scale);
+
+  if (scale === 'FR') {
+    const cat = level.category ? ` - ${level.category} - ` : ' | ';
+    return `${level.label}${cat}${level.description}`;
+  }
+  return `${level.label} | ${level.description}`;
+}
+
+/**
+ * Coverage range descriptions matching the LoF-style coverage bands.
+ * Maps a coverage percentage to a descriptive label for reports.
+ */
+export const COVERAGE_RANGES = [
+  { min: 0, max: 0, label: 'None', description: '0% of the visible submerged surface.' },
+  { min: 1, max: 5, label: 'Light', description: '1% to 5% of the visible submerged surface.' },
+  { min: 6, max: 15, label: 'Moderate', description: '6% to 15% of the visible submerged surface.' },
+  { min: 16, max: 40, label: 'Heavy', description: '16% to 40% of the visible submerged surface.' },
+  { min: 41, max: 100, label: 'Very heavy', description: '41% to 100% of the visible submerged surface.' },
+] as const;
+
+/**
+ * Format coverage percentage with descriptive range for report output.
+ * e.g. "Very heavy | 41% to 100% of the visible submerged surface."
+ */
+export function formatCoverageRich(coverage: number): string {
+  const range = COVERAGE_RANGES.find((r) => coverage >= r.min && coverage <= r.max);
+  if (range) return `${range.label} | ${range.description}`;
+  return `${coverage}%`;
+}
+
 export function getFoulingScaleRange(scale: FoulingScale): { min: number; max: number; step: number } {
   if (scale === 'LOF') return { min: 0, max: 5, step: 1 };
   return { min: 0, max: 100, step: 10 };

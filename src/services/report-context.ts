@@ -119,6 +119,7 @@ export async function buildInspectionReportContext(
 
   // generalArrangement: one block per entry, with frRatingData for template tables (never empty so TOC safe)
   // Sub-component entries appear as additional rows within the parent's frRatingData table.
+  // Only include entries where the user has entered some inspection data (parent or sub-components).
   //
   // Determine the fouling scale: prefer the explicit foulingScale field on the work order,
   // fall back to legacy heuristic for older work orders that predate the field.
@@ -148,6 +149,35 @@ export async function buildInspectionReportContext(
       return value;
     }
     return null;
+  }
+
+  /** Returns true if a single form entry has any user-entered inspection data. */
+  function entryHasData(e: typeof entries[0]): boolean {
+    return !!(
+      e.condition ||
+      e.foulingRating != null ||
+      e.foulingType ||
+      e.coverage != null ||
+      e.measurementType ||
+      e.measurementValue != null ||
+      e.coatingCondition ||
+      e.corrosionType ||
+      e.corrosionSeverity ||
+      e.notes ||
+      e.recommendation ||
+      e.actionRequired ||
+      (Array.isArray(e.attachments) && e.attachments.length > 0)
+    );
+  }
+
+  /** Returns true if a parent entry or any of its sub-entries have user data. */
+  function entryOrSubsHaveData(entry: typeof entries[0]): boolean {
+    if (entryHasData(entry)) return true;
+    const subs = (entry as any).subEntries as typeof entries | undefined;
+    if (subs && subs.length > 0) {
+      return subs.some((sub) => entryHasData(sub));
+    }
+    return false;
   }
 
   function buildFrRow(desc: string, e: typeof entries[0], isSub = false): FrRatingDataRow | null {
@@ -214,9 +244,12 @@ export async function buildInspectionReportContext(
     return null;
   }
 
-  const generalArrangement = entries.length === 0
+  // Filter to only include GA sections where the user entered some data
+  const entriesWithData = entries.filter(entryOrSubsHaveData);
+
+  const generalArrangement = entriesWithData.length === 0
     ? [{ id: '', name: '—', diverSupervisorComments: '', expertInspectorComments: '', frRatingData: [{}], comments: '' }]
-    : entries.map((entry) => {
+    : entriesWithData.map((entry) => {
     const frRatingData: FrRatingDataRow[] = [];
     const desc = entry.component || 'No description';
 

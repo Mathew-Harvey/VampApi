@@ -1282,6 +1282,9 @@
                                                 Level of fouling (LOF)</th>
                                             <th
                                                 style="background-color: #365F91; height:30px; border:1px solid #000; padding:5px 5px;color: rgb(255, 255, 255);">
+                                                Fouling Coverage (%)</th>
+                                            <th
+                                                style="background-color: #365F91; height:30px; border:1px solid #000; padding:5px 5px;color: rgb(255, 255, 255);">
                                                 PDR Rating</th>
                                             <th
                                                 style="background-color: #365F91; height:30px; border:1px solid #000; padding:5px 5px;color: rgb(255, 255, 255);">
@@ -1304,6 +1307,13 @@
                                             {{else}}
                                             <td style="border:1px solid; padding:5px 5px; word-wrap:break-word;{{#if isSubComponent}}color:#999;font-style:italic;{{/if}}">{{#if isSubComponent}}—{{else}}No
                                                 level of fouling data available{{/if}}</td>
+                                            {{/if}}
+                                            {{#if foulingCoverage}}
+                                            <td style="border:1px solid; padding:5px 5px; word-wrap:break-word;">
+                                                {{foulingCoverage}}</td>
+                                            {{else}}
+                                            <td style="border:1px solid; padding:5px 5px; word-wrap:break-word;{{#if isSubComponent}}color:#999;font-style:italic;{{/if}}">{{#if isSubComponent}}—{{else}}No
+                                                fouling coverage allocated{{/if}}</td>
                                             {{/if}}
                                             {{#if pdrRating}}
                                             <td style="border:1px solid; padding:5px 5px; word-wrap:break-word;">

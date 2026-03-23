@@ -8,6 +8,7 @@ import { workOrderService } from '../services/work-order.service';
 import prisma from '../config/database';
 import { CATEGORY_FIELD_CONFIG, getCategoryConfig } from '../config/category-field-config';
 import { type FoulingScale, getScaleLevels, getFoulingScaleRange } from '../constants/fouling-scales';
+import { PDR_SCALE, getPdrScaleRange } from '../constants/pdr-scale';
 import { ISO_ZONES, ISO_HULL_ZONES, ISO_NICHE_ZONES, ISO_VISIBILITY_CONDITIONS, ISO_AFC_CONDITIONS, ISO_MGPS_CONDITIONS, suggestIsoZone } from '../constants/iso-zones';
 import { asyncHandler } from '../utils/async-handler';
 
@@ -108,6 +109,17 @@ router.get('/fouling-scale/:scale', authenticate, (req: Request, res: Response) 
       scale,
       levels: getScaleLevels(scale),
       range: getFoulingScaleRange(scale),
+    },
+  });
+});
+
+router.get('/pdr-scale', authenticate, (_req: Request, res: Response) => {
+  res.json({
+    success: true,
+    data: {
+      scale: 'PDR',
+      levels: PDR_SCALE,
+      range: getPdrScaleRange(),
     },
   });
 });

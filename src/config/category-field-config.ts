@@ -1,4 +1,5 @@
 import { type FoulingScale, getFoulingScaleRange, getScaleLevels } from '../constants/fouling-scales';
+import { getPdrScaleRange } from '../constants/pdr-scale';
 
 export interface InspectionField {
   key: string;
@@ -39,6 +40,8 @@ function buildFoulingFields(scale?: FoulingScale | null): InspectionField[] {
     const range = getFoulingScaleRange('LOF');
     return [
       { key: 'foulingRating', label: 'Level of Fouling (LoF)', type: 'rating', min: range.min, max: range.max, step: range.step },
+      { key: 'foulingType', label: 'Fouling Type', type: 'select', options: ['None', 'Slime', 'Algae', 'Soft (Weed)', 'Hard (Barnacles)', 'Calcareous', 'Mixed'] },
+      { key: 'coverage', label: 'Coverage %', type: 'number', min: 0, max: 100, unit: '%' },
     ];
   }
   if (scale === 'FR') {
@@ -58,10 +61,15 @@ function buildFoulingFields(scale?: FoulingScale | null): InspectionField[] {
 
 const foulingFields: InspectionField[] = buildFoulingFields();
 
-const coatingField: InspectionField = {
-  key: 'coatingCondition', label: 'Coating Condition', type: 'select',
-  options: ['Intact', 'Minor Damage', 'Moderate Damage', 'Severe Damage', 'Failed'],
-};
+function buildPdrField(): InspectionField {
+  const range = getPdrScaleRange();
+  return {
+    key: 'coatingCondition', label: 'Paint Deterioration Rating (PDR)', type: 'rating',
+    min: range.min, max: range.max, step: range.step,
+  };
+}
+
+const coatingField: InspectionField = buildPdrField();
 
 const corrosionFields: InspectionField[] = [
   { key: 'corrosionType', label: 'Corrosion Type', type: 'select', options: ['None', 'Surface', 'Pitting', 'Galvanic', 'Crevice'] },
@@ -97,6 +105,8 @@ export const CATEGORY_FIELD_CONFIG: Record<string, CategoryFieldConfig> = {
     label: 'Anode',
     inspectionFields: [
       conditionField(['Good', 'Fair', 'Poor', 'Depleted', 'Missing']),
+      ...foulingFields,
+      coatingField,
       { key: 'measurementValue', label: 'Wastage %', type: 'number', min: 0, max: 100, unit: '%' },
       { key: 'measurementUnit', label: 'Unit', type: 'text', defaultValue: '%' },
       ...tailFields,
@@ -112,7 +122,8 @@ export const CATEGORY_FIELD_CONFIG: Record<string, CategoryFieldConfig> = {
     label: 'Propeller',
     inspectionFields: [
       conditionField(STANDARD_CONDITION),
-      { key: 'coatingCondition', label: 'Surface Finish', type: 'select', options: ['Polished', 'Light Fouling', 'Roughened', 'Damaged'] },
+      ...foulingFields,
+      coatingField,
       { key: 'corrosionType', label: 'Damage Type', type: 'select', options: ['None', 'Cavitation', 'Erosion', 'Impact', 'Grooving', 'Bent'] },
       { key: 'corrosionSeverity', label: 'Damage Severity', type: 'select', options: ['None', 'Minor', 'Moderate', 'Severe'] },
       ...tailFields,
@@ -243,8 +254,6 @@ export function getCategoryConfigForScale(category: string, scale: FoulingScale)
 
   const replacedFields = base.inspectionFields.map((field) => {
     if (field.key === 'foulingRating') return scaledFoulingFields.find((f) => f.key === 'foulingRating')!;
-    if (field.key === 'foulingType' && scale === 'LOF') return null;
-    if (field.key === 'coverage' && scale === 'LOF') return null;
     if (field.key === 'foulingType') return scaledFoulingFields.find((f) => f.key === 'foulingType') ?? field;
     if (field.key === 'coverage') return scaledFoulingFields.find((f) => f.key === 'coverage') ?? field;
     return field;

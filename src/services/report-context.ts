@@ -1,5 +1,6 @@
 import prisma from '../config/database';
-import { type FoulingScale, formatFoulingValue } from '../constants/fouling-scales';
+import { type FoulingScale, formatFoulingValue, formatFoulingValueRich, formatCoverageRich } from '../constants/fouling-scales';
+import { formatPdrValue } from '../constants/pdr-scale';
 import { getIsoZone, ISO_HULL_ZONES, ISO_NICHE_ZONES, ISO_VISIBILITY_CONDITIONS, ISO_AFC_CONDITIONS, ISO_MGPS_CONDITIONS } from '../constants/iso-zones';
 import { workFormService } from './work-form.service';
 import {
@@ -127,17 +128,31 @@ export async function buildInspectionReportContext(
   const useFR = explicitScale === 'FR' || (!explicitScale && !legacyIsLoF);
   const activeFoulingScale: FoulingScale = useLoF ? 'LOF' : 'FR';
 
+  function formatPdr(value: unknown): string | null {
+    if (value == null) return null;
+    if (typeof value === 'number') return formatPdrValue(value);
+    // Support legacy text values by passing through
+    if (typeof value === 'string' && value.length > 0) {
+      const num = parseInt(value, 10);
+      if (!isNaN(num) && num >= 10 && num <= 90) return formatPdrValue(num);
+      return value;
+    }
+    return null;
+  }
+
   function buildFrRow(desc: string, e: typeof entries[0], isSub = false): FrRatingDataRow | null {
     const cat = e.category ?? '';
 
     if (cat === 'ANODES') {
       const wastage = (e as any).measurementValue;
-      if (e.condition || wastage != null || e.notes) {
+      if (e.condition || wastage != null || e.foulingRating != null || e.coatingCondition || e.notes) {
         return {
           description: desc,
           conditionRating: e.condition ?? null,
-          foulingRatingType: e.condition ?? null,
-          foulingCoverage: wastage != null ? `${wastage}% wastage` : null,
+          levelOfFoulingLoF: useLoF && e.foulingRating != null ? formatFoulingValueRich(e.foulingRating, 'LOF') : null,
+          foulingRatingType: useFR && e.foulingRating != null ? formatFoulingValueRich(e.foulingRating, 'FR') : null,
+          foulingCoverage: e.coverage != null ? formatCoverageRich(e.coverage) : (wastage != null ? `${wastage}% wastage` : null),
+          pdrRating: formatPdr(e.coatingCondition),
           Comments: e.notes ?? null,
           isSubComponent: isSub,
         };
@@ -146,13 +161,16 @@ export async function buildInspectionReportContext(
     }
 
     if (cat === 'PROPELLER') {
-      if (e.condition || e.coatingCondition || e.corrosionType || e.notes) {
+      if (e.condition || e.coatingCondition || e.foulingRating != null || e.corrosionType || e.notes) {
+        const damageNote = e.corrosionType ? `${e.corrosionType}${e.corrosionSeverity ? ` (${e.corrosionSeverity})` : ''}` : null;
         return {
           description: desc,
           conditionRating: e.condition ?? null,
-          foulingRatingType: e.corrosionType ? `${e.corrosionType}${e.corrosionSeverity ? ` (${e.corrosionSeverity})` : ''}` : null,
-          pdrRating: e.coatingCondition ?? null,
-          Comments: e.notes ?? null,
+          levelOfFoulingLoF: useLoF && e.foulingRating != null ? formatFoulingValueRich(e.foulingRating, 'LOF') : null,
+          foulingRatingType: useFR && e.foulingRating != null ? formatFoulingValueRich(e.foulingRating, 'FR') : null,
+          foulingCoverage: e.coverage != null ? formatCoverageRich(e.coverage) : null,
+          pdrRating: formatPdr(e.coatingCondition),
+          Comments: [damageNote, e.notes].filter(Boolean).join('. ') || null,
           isSubComponent: isSub,
         };
       }
@@ -163,8 +181,9 @@ export async function buildInspectionReportContext(
       return {
         description: desc,
         conditionRating: e.condition ?? null,
-        levelOfFoulingLoF: e.foulingRating != null ? formatFoulingValue(e.foulingRating, 'LOF') : null,
-        pdrRating: e.coatingCondition ?? null,
+        levelOfFoulingLoF: e.foulingRating != null ? formatFoulingValueRich(e.foulingRating, 'LOF') : null,
+        foulingCoverage: e.coverage != null ? formatCoverageRich(e.coverage) : null,
+        pdrRating: formatPdr(e.coatingCondition),
         Comments: e.notes ?? null,
         isSubComponent: isSub,
       };
@@ -174,10 +193,10 @@ export async function buildInspectionReportContext(
         description: desc,
         conditionRating: e.condition ?? null,
         foulingRatingType: useFR && e.foulingRating != null
-          ? `${formatFoulingValue(e.foulingRating, 'FR')}${e.foulingType ? ` - ${e.foulingType}` : ''}`
+          ? formatFoulingValueRich(e.foulingRating, 'FR')
           : (e.foulingType ?? null),
-        foulingCoverage: e.coverage != null ? `${e.coverage}%` : null,
-        pdrRating: e.coatingCondition ?? null,
+        foulingCoverage: e.coverage != null ? formatCoverageRich(e.coverage) : null,
+        pdrRating: formatPdr(e.coatingCondition),
         Comments: e.notes ?? null,
         isSubComponent: isSub,
       };

@@ -10,53 +10,96 @@ interface SubComponentTemplate {
   subComponents: SubComponentDef[];
 }
 
+// ---------------------------------------------------------------------------
+// Factory helpers
+// ---------------------------------------------------------------------------
+
+function blades(count: number, material = 'Nickel Aluminium Bronze'): SubComponentDef[] {
+  return Array.from({ length: count }, (_, i) => ({ name: `Blade ${i + 1}`, material }));
+}
+
+function propellerTemplate(
+  name: string,
+  bladeCount: number,
+  extras: SubComponentDef[] = [],
+): SubComponentTemplate {
+  return {
+    templateName: name,
+    subComponents: [...blades(bladeCount), ...extras],
+  };
+}
+
+function anodeSet(material: string, name: string): SubComponentTemplate {
+  const positions = [
+    'Bow Port',
+    'Bow Starboard',
+    'Midship Port',
+    'Midship Starboard',
+    'Stern Port',
+    'Stern Starboard',
+  ];
+  return {
+    templateName: name,
+    subComponents: [
+      ...positions.map((pos, i) => ({ name: `Hull Anode ${i + 1} (${pos})`, material })),
+      { name: 'Rudder Anode', material },
+      { name: 'Propeller Shaft Anode', material },
+    ],
+  };
+}
+
+function tunnelThruster(location: 'Bow' | 'Stern'): SubComponentTemplate {
+  return {
+    templateName: `${location} Thruster (Tunnel)`,
+    subComponents: [
+      { name: 'Tunnel', material: 'Mild Steel', coatingType: 'Anti-fouling' },
+      { name: 'Propeller', material: 'Nickel Aluminium Bronze' },
+      { name: 'Grid / Grating (Port)', material: 'Mild Steel' },
+      { name: 'Grid / Grating (Starboard)', material: 'Mild Steel' },
+      { name: 'Seal Assembly', material: 'Stainless Steel' },
+    ],
+  };
+}
+
+function seaChest(
+  name: string,
+  subComponents: SubComponentDef[],
+): SubComponentTemplate {
+  return { templateName: name, subComponents };
+}
+
+// Shared sub-component lists used by multiple sea-chest templates
+const seaChestCommon: SubComponentDef[] = [
+  { name: 'External Grating', material: 'Mild Steel' },
+  { name: 'Internal Grating', material: 'Mild Steel' },
+  { name: 'Sea Chest Body', material: 'Mild Steel', coatingType: 'Anti-corrosive' },
+  { name: 'MGPS Anode', material: 'Copper' },
+  { name: 'Isolation Valve', material: 'Bronze' },
+];
+
+// ---------------------------------------------------------------------------
+// Template data
+// ---------------------------------------------------------------------------
+
 export const SUB_COMPONENT_TEMPLATES: Record<string, SubComponentTemplate[]> = {
   PROPELLER: [
-    {
-      templateName: 'Fixed Pitch (4 Blade)',
-      subComponents: [
-        { name: 'Blade 1', material: 'Nickel Aluminium Bronze' },
-        { name: 'Blade 2', material: 'Nickel Aluminium Bronze' },
-        { name: 'Blade 3', material: 'Nickel Aluminium Bronze' },
-        { name: 'Blade 4', material: 'Nickel Aluminium Bronze' },
-        { name: 'Hub', material: 'Nickel Aluminium Bronze' },
-        { name: 'Shaft Seal', material: 'Stainless Steel' },
-      ],
-    },
-    {
-      templateName: 'Fixed Pitch (5 Blade)',
-      subComponents: [
-        { name: 'Blade 1', material: 'Nickel Aluminium Bronze' },
-        { name: 'Blade 2', material: 'Nickel Aluminium Bronze' },
-        { name: 'Blade 3', material: 'Nickel Aluminium Bronze' },
-        { name: 'Blade 4', material: 'Nickel Aluminium Bronze' },
-        { name: 'Blade 5', material: 'Nickel Aluminium Bronze' },
-        { name: 'Hub', material: 'Nickel Aluminium Bronze' },
-        { name: 'Shaft Seal', material: 'Stainless Steel' },
-      ],
-    },
-    {
-      templateName: 'Controllable Pitch (4 Blade)',
-      subComponents: [
-        { name: 'Blade 1', material: 'Nickel Aluminium Bronze' },
-        { name: 'Blade 2', material: 'Nickel Aluminium Bronze' },
-        { name: 'Blade 3', material: 'Nickel Aluminium Bronze' },
-        { name: 'Blade 4', material: 'Nickel Aluminium Bronze' },
-        { name: 'Hub Assembly', material: 'Nickel Aluminium Bronze' },
-        { name: 'Pitch Control Mechanism', material: 'Stainless Steel' },
-        { name: 'Shaft Seal', material: 'Stainless Steel' },
-      ],
-    },
-    {
-      templateName: 'Fixed Pitch (3 Blade)',
-      subComponents: [
-        { name: 'Blade 1', material: 'Nickel Aluminium Bronze' },
-        { name: 'Blade 2', material: 'Nickel Aluminium Bronze' },
-        { name: 'Blade 3', material: 'Nickel Aluminium Bronze' },
-        { name: 'Hub', material: 'Nickel Aluminium Bronze' },
-        { name: 'Shaft Seal', material: 'Stainless Steel' },
-      ],
-    },
+    propellerTemplate('Fixed Pitch (4 Blade)', 4, [
+      { name: 'Hub', material: 'Nickel Aluminium Bronze' },
+      { name: 'Shaft Seal', material: 'Stainless Steel' },
+    ]),
+    propellerTemplate('Fixed Pitch (5 Blade)', 5, [
+      { name: 'Hub', material: 'Nickel Aluminium Bronze' },
+      { name: 'Shaft Seal', material: 'Stainless Steel' },
+    ]),
+    propellerTemplate('Controllable Pitch (4 Blade)', 4, [
+      { name: 'Hub Assembly', material: 'Nickel Aluminium Bronze' },
+      { name: 'Pitch Control Mechanism', material: 'Stainless Steel' },
+      { name: 'Shaft Seal', material: 'Stainless Steel' },
+    ]),
+    propellerTemplate('Fixed Pitch (3 Blade)', 3, [
+      { name: 'Hub', material: 'Nickel Aluminium Bronze' },
+      { name: 'Shaft Seal', material: 'Stainless Steel' },
+    ]),
   ],
 
   RUDDER: [
@@ -94,26 +137,8 @@ export const SUB_COMPONENT_TEMPLATES: Record<string, SubComponentTemplate[]> = {
   ],
 
   THRUSTER: [
-    {
-      templateName: 'Bow Thruster (Tunnel)',
-      subComponents: [
-        { name: 'Tunnel', material: 'Mild Steel', coatingType: 'Anti-fouling' },
-        { name: 'Propeller', material: 'Nickel Aluminium Bronze' },
-        { name: 'Grid / Grating (Port)', material: 'Mild Steel' },
-        { name: 'Grid / Grating (Starboard)', material: 'Mild Steel' },
-        { name: 'Seal Assembly', material: 'Stainless Steel' },
-      ],
-    },
-    {
-      templateName: 'Stern Thruster (Tunnel)',
-      subComponents: [
-        { name: 'Tunnel', material: 'Mild Steel', coatingType: 'Anti-fouling' },
-        { name: 'Propeller', material: 'Nickel Aluminium Bronze' },
-        { name: 'Grid / Grating (Port)', material: 'Mild Steel' },
-        { name: 'Grid / Grating (Starboard)', material: 'Mild Steel' },
-        { name: 'Seal Assembly', material: 'Stainless Steel' },
-      ],
-    },
+    tunnelThruster('Bow'),
+    tunnelThruster('Stern'),
     {
       templateName: 'Azimuth Thruster',
       subComponents: [
@@ -127,34 +152,13 @@ export const SUB_COMPONENT_TEMPLATES: Record<string, SubComponentTemplate[]> = {
   ],
 
   SEA_CHEST: [
-    {
-      templateName: 'High Sea Chest',
-      subComponents: [
-        { name: 'External Grating', material: 'Mild Steel' },
-        { name: 'Internal Grating', material: 'Mild Steel' },
-        { name: 'Sea Chest Body', material: 'Mild Steel', coatingType: 'Anti-corrosive' },
-        { name: 'MGPS Anode', material: 'Copper' },
-        { name: 'Isolation Valve', material: 'Bronze' },
-      ],
-    },
-    {
-      templateName: 'Low Sea Chest',
-      subComponents: [
-        { name: 'External Grating', material: 'Mild Steel' },
-        { name: 'Internal Grating', material: 'Mild Steel' },
-        { name: 'Sea Chest Body', material: 'Mild Steel', coatingType: 'Anti-corrosive' },
-        { name: 'MGPS Anode', material: 'Copper' },
-        { name: 'Isolation Valve', material: 'Bronze' },
-      ],
-    },
-    {
-      templateName: 'Emergency Sea Chest',
-      subComponents: [
-        { name: 'External Grating', material: 'Mild Steel' },
-        { name: 'Sea Chest Body', material: 'Mild Steel', coatingType: 'Anti-corrosive' },
-        { name: 'Isolation Valve', material: 'Bronze' },
-      ],
-    },
+    seaChest('High Sea Chest', seaChestCommon),
+    seaChest('Low Sea Chest', seaChestCommon),
+    seaChest('Emergency Sea Chest', [
+      { name: 'External Grating', material: 'Mild Steel' },
+      { name: 'Sea Chest Body', material: 'Mild Steel', coatingType: 'Anti-corrosive' },
+      { name: 'Isolation Valve', material: 'Bronze' },
+    ]),
   ],
 
   HULL: [
@@ -214,32 +218,8 @@ export const SUB_COMPONENT_TEMPLATES: Record<string, SubComponentTemplate[]> = {
   ],
 
   ANODES: [
-    {
-      templateName: 'Standard Anode Set',
-      subComponents: [
-        { name: 'Hull Anode 1 (Bow Port)', material: 'Zinc' },
-        { name: 'Hull Anode 2 (Bow Starboard)', material: 'Zinc' },
-        { name: 'Hull Anode 3 (Midship Port)', material: 'Zinc' },
-        { name: 'Hull Anode 4 (Midship Starboard)', material: 'Zinc' },
-        { name: 'Hull Anode 5 (Stern Port)', material: 'Zinc' },
-        { name: 'Hull Anode 6 (Stern Starboard)', material: 'Zinc' },
-        { name: 'Rudder Anode', material: 'Zinc' },
-        { name: 'Propeller Shaft Anode', material: 'Zinc' },
-      ],
-    },
-    {
-      templateName: 'Aluminium Anode Set',
-      subComponents: [
-        { name: 'Hull Anode 1 (Bow Port)', material: 'Aluminium' },
-        { name: 'Hull Anode 2 (Bow Starboard)', material: 'Aluminium' },
-        { name: 'Hull Anode 3 (Midship Port)', material: 'Aluminium' },
-        { name: 'Hull Anode 4 (Midship Starboard)', material: 'Aluminium' },
-        { name: 'Hull Anode 5 (Stern Port)', material: 'Aluminium' },
-        { name: 'Hull Anode 6 (Stern Starboard)', material: 'Aluminium' },
-        { name: 'Rudder Anode', material: 'Aluminium' },
-        { name: 'Propeller Shaft Anode', material: 'Aluminium' },
-      ],
-    },
+    anodeSet('Zinc', 'Standard Anode Set'),
+    anodeSet('Aluminium', 'Aluminium Anode Set'),
     {
       templateName: 'ICCP System',
       subComponents: [

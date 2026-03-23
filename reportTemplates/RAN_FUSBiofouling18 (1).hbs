@@ -1270,7 +1270,14 @@
                                 {{#ifEquals @root.data.foulingScale "LOF"}}
 
                                 <table id="tableFixed"
-                                    style="border:1px solid #000; border-collapse:collapse; width:100%; position:center; margin-top: 0px; margin-bottom: 25px;">
+                                    style="border:1px solid #000; border-collapse:collapse; width:100%; table-layout:fixed; margin-top: 0px; margin-bottom: 25px;">
+                                    <colgroup>
+                                        <col style="width:15%;" />
+                                        <col style="width:25%;" />
+                                        <col style="width:18%;" />
+                                        <col style="width:22%;" />
+                                        <col style="width:20%;" />
+                                    </colgroup>
                                     <thead
                                         style="background-color: #365F91;height:30px; border:1px solid #000; padding-top: 5px; padding:10px 0px; color: rgb(255, 255, 255);">
                                         <tr>
@@ -1336,7 +1343,14 @@
 
                                 {{else}}
                                 <table id="tableFixed"
-                                    style="border:1px solid #000; border-collapse:collapse; width:100%; position:center; margin-top: 0px; margin-bottom: 25px;">
+                                    style="border:1px solid #000; border-collapse:collapse; width:100%; table-layout:fixed; margin-top: 0px; margin-bottom: 25px;">
+                                    <colgroup>
+                                        <col style="width:15%;" />
+                                        <col style="width:25%;" />
+                                        <col style="width:18%;" />
+                                        <col style="width:22%;" />
+                                        <col style="width:20%;" />
+                                    </colgroup>
                                     <thead
                                         style="background-color: #365F91;height:30px; border:1px solid #000; padding-top: 5px; padding:10px 0px; color: rgb(255, 255, 255);">
                                         <tr>
@@ -1375,21 +1389,21 @@
                                                 description available</td>
                                             {{/if}}
                                             {{#if foulingRatingType}}
-                                            <td style="border:1px solid; padding:5px 5px; word-wrap:break-word;">
+                                            <td style="border:1px solid; padding:5px 5px; word-wrap:break-word; overflow-wrap:break-word; font-size:11px;">
                                                 {{foulingRatingType}}</td>
                                             {{else}}
                                             <td style="border:1px solid; padding:5px 5px; word-wrap:break-word;{{#if isSubComponent}}color:#999;font-style:italic;{{/if}}">{{#if isSubComponent}}—{{else}}No
                                                 fouling rating allocated{{/if}}</td>
                                             {{/if}}
                                             {{#if foulingCoverage}}
-                                            <td style="border:1px solid; padding:5px 5px; word-wrap:break-word;">
+                                            <td style="border:1px solid; padding:5px 5px; word-wrap:break-word; overflow-wrap:break-word; font-size:11px;">
                                                 {{foulingCoverage}}</td>
                                             {{else}}
                                             <td style="border:1px solid; padding:5px 5px; word-wrap:break-word;{{#if isSubComponent}}color:#999;font-style:italic;{{/if}}">{{#if isSubComponent}}—{{else}}No
                                                 fouling coverage allocated{{/if}}</td>
                                             {{/if}}
                                             {{#if pdrRating}}
-                                            <td style="border:1px solid; padding:5px 5px; word-wrap:break-word;">
+                                            <td style="border:1px solid; padding:5px 5px; word-wrap:break-word; overflow-wrap:break-word; font-size:11px;">
                                                 {{pdrRating}}</td>
                                             {{else}}
                                             <td style="border:1px solid; padding:5px 5px; word-wrap:break-word;{{#if isSubComponent}}color:#999;font-style:italic;{{/if}}">{{#if isSubComponent}}—{{else}}No PDR

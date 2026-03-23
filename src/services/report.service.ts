@@ -8,6 +8,8 @@ import {
   type ReportConfig,
   getReportConfig,
   mergeReportConfig,
+  toAbsoluteMediaUrl,
+  normalizeMediaUrl,
 } from './report-helpers';
 import {
   resolveInspectionTemplatePath,
@@ -20,6 +22,22 @@ import {
   WORK_ORDER_TEMPLATE_NAME,
 } from './report-templates';
 import { buildInspectionReportContext } from './report-context';
+import { type FoulingScale, formatFoulingValueRich, formatCoverageRich } from '../constants/fouling-scales';
+import { formatPdrValue } from '../constants/pdr-scale';
+
+function collectPhotos(entry: any, photos: Array<{ src: string; caption: string }>) {
+  let attachments: string[] = [];
+  try {
+    attachments = typeof entry.attachments === 'string'
+      ? JSON.parse(entry.attachments)
+      : Array.isArray(entry.attachments) ? entry.attachments : [];
+  } catch { /* ignore */ }
+  const compName = entry.vesselComponent?.name || entry.component || 'Component';
+  for (let i = 0; i < attachments.length; i++) {
+    const src = toAbsoluteMediaUrl(normalizeMediaUrl(attachments[i]));
+    if (src) photos.push({ src, caption: `${compName} - Photo ${i + 1}` });
+  }
+}
 
 export const reportService = {
   async getInspectionReportViewHtml(workOrderId: string, token?: string) {
@@ -98,7 +116,10 @@ export const reportService = {
         inspections: { include: { findings: true } },
         taskSubmissions: { include: { task: true, user: { select: { firstName: true, lastName: true } } } },
         comments: { include: { author: { select: { firstName: true, lastName: true } } } },
-        formEntries: { include: { vesselComponent: true } },
+        formEntries: {
+          include: { vesselComponent: { include: { children: true } } },
+          orderBy: { createdAt: 'asc' },
+        },
       },
     });
     if (!workOrder) throw new AppError(404, 'NOT_FOUND', 'Work order not found');
@@ -106,6 +127,71 @@ export const reportService = {
     const totalFindings = (workOrder.inspections ?? []).reduce(
       (sum, insp) => sum + (insp.findings?.length ?? 0), 0
     );
+
+    // Determine fouling scale for rich formatting
+    const foulingScale: FoulingScale = ((workOrder as any).foulingScale === 'LOF') ? 'LOF' : 'FR';
+
+    // Legacy PDR text-to-numeric mapping
+    const LEGACY_PDR: Record<string, number> = {
+      'intact': 10, 'minor damage': 20, 'moderate damage': 40,
+      'severe damage': 70, 'failed': 90,
+    };
+    function formatPdr(value: unknown): string | null {
+      if (value == null) return null;
+      if (typeof value === 'number') return formatPdrValue(value);
+      if (typeof value === 'string' && value.length > 0) {
+        const num = parseInt(value, 10);
+        if (!isNaN(num) && num >= 0 && num <= 100) return formatPdrValue(num);
+        const mapped = LEGACY_PDR[value.toLowerCase().trim()];
+        if (mapped != null) return formatPdrValue(mapped);
+        return value;
+      }
+      return null;
+    }
+
+    // Build form entries with sub-components nested under parents
+    const parentEntries = (workOrder.formEntries ?? []).filter((fe: any) => !fe.parentEntryId);
+    const childEntriesByParent = new Map<string, any[]>();
+    for (const fe of (workOrder.formEntries ?? []) as any[]) {
+      if (fe.parentEntryId) {
+        const list = childEntriesByParent.get(fe.parentEntryId) || [];
+        list.push(fe);
+        childEntriesByParent.set(fe.parentEntryId, list);
+      }
+    }
+
+    function formatEntry(fe: any, isSubComponent = false) {
+      const name = fe.vesselComponent?.name || fe.component || '';
+      return {
+        component: name,
+        vesselComponent: fe.vesselComponent ? { name: fe.vesselComponent.name } : null,
+        foulingRating: fe.foulingRating,
+        foulingRatingFormatted: fe.foulingRating != null
+          ? formatFoulingValueRich(fe.foulingRating, foulingScale) : null,
+        coverage: fe.coverage,
+        coverageFormatted: fe.coverage != null ? formatCoverageRich(fe.coverage) : null,
+        coatingCondition: fe.coatingCondition,
+        pdrFormatted: formatPdr(fe.coatingCondition),
+        notes: fe.notes,
+        isSubComponent,
+        attachments: fe.attachments,
+      };
+    }
+
+    const formEntries: any[] = [];
+    const allPhotos: Array<{ src: string; caption: string }> = [];
+
+    for (const parent of parentEntries) {
+      const formatted = formatEntry(parent, false);
+      formEntries.push(formatted);
+      collectPhotos(parent, allPhotos);
+
+      const children = childEntriesByParent.get((parent as any).id) || [];
+      for (const child of children) {
+        formEntries.push(formatEntry(child, true));
+        collectPhotos(child, allPhotos);
+      }
+    }
 
     const context: Record<string, any> = {
       reportType: 'work-order',
@@ -155,14 +241,9 @@ export const reportService = {
           recommendation: f.recommendation || '',
         })),
       })),
-      formEntries: (workOrder.formEntries ?? []).map((fe: any) => ({
-        component: fe.component || '',
-        vesselComponent: fe.vesselComponent ? { name: fe.vesselComponent.name } : null,
-        foulingRating: fe.foulingRating,
-        coverage: fe.coverage,
-        coatingCondition: fe.coatingCondition,
-        notes: fe.notes,
-      })),
+      formEntries,
+      photoEvidence: allPhotos,
+      hasPhotos: allPhotos.length > 0,
       taskSubmissions: (workOrder.taskSubmissions ?? []).map((ts: any) => ({
         task: ts.task ? { title: ts.task.title } : null,
         user: ts.user || null,
@@ -181,6 +262,9 @@ export const reportService = {
     const html = compileAndRender(WORK_ORDER_TEMPLATE_NAME, context);
     return { ...context, html };
   },
+
+  /** Collect photo URLs from a form entry's attachments into the photos array */
+  _collectPhotos: collectPhotos,
 
   async getDocuments(filters: { vesselId?: string; workOrderId?: string } = {}, organisationId?: string) {
     const where: any = {};

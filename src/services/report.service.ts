@@ -830,6 +830,14 @@ export const reportService = {
             recommendation: f.recommendation || '',
           }));
 
+        // Collect photo evidence from form entries
+        const photos: Array<{ src: string; caption: string }> = [];
+        for (const parent of parentEntries) {
+          collectPhotos(parent, photos);
+          const ch = childEntriesByParent.get((parent as any).id) || [];
+          for (const child of ch) collectPhotos(child, photos);
+        }
+
         return {
           referenceNumber: wo.referenceNumber,
           title: wo.title,
@@ -839,8 +847,12 @@ export const reportService = {
           inspectorName,
           formEntries,
           findings,
+          photos,
+          hasPhotos: photos.length > 0,
         };
       });
+
+    const allPhotos = inspectionDetails.flatMap((d) => d.photos);
 
     const context: Record<string, any> = {
       reportType: 'record-book',
@@ -897,6 +909,8 @@ export const reportService = {
       },
       activityLog,
       inspectionDetails,
+      photoEvidence: allPhotos,
+      hasPhotos: allPhotos.length > 0,
       preparedBy: payload.preparedBy || null,
       preparedByTitle: payload.preparedByTitle || null,
       reviewedBy: payload.reviewedBy || null,

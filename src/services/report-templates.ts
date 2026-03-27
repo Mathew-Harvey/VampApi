@@ -16,6 +16,7 @@ export const BFMP_TEMPLATE_NAME = 'bfmp-report.hbs';
 export const COMPLIANCE_TEMPLATE_NAME = 'compliance-report.hbs';
 export const AUDIT_TEMPLATE_NAME = 'audit-report.hbs';
 export const WORK_ORDER_TEMPLATE_NAME = 'work-order-report.hbs';
+export const RECORD_BOOK_TEMPLATE_NAME = 'record-book-report.hbs';
 
 export function resolveInspectionTemplatePath(): string | null {
   const templateCandidates = [

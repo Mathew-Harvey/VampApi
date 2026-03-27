@@ -20,6 +20,7 @@ import {
   COMPLIANCE_TEMPLATE_NAME,
   AUDIT_TEMPLATE_NAME,
   WORK_ORDER_TEMPLATE_NAME,
+  RECORD_BOOK_TEMPLATE_NAME,
 } from './report-templates';
 import { buildInspectionReportContext } from './report-context';
 import { type FoulingScale, formatFoulingValueRich, formatCoverageRich } from '../constants/fouling-scales';
@@ -653,6 +654,271 @@ export const reportService = {
     };
 
     const html = compileAndRender(AUDIT_TEMPLATE_NAME, context);
+    return { ...context, html };
+  },
+
+  /* ---------------------------------------------------------------- */
+  /*  Biofouling Record Book                                           */
+  /* ---------------------------------------------------------------- */
+  async generateRecordBookReport(payload: any, organisationId: string) {
+    const organisation = await prisma.organisation.findFirst({
+      where: { id: organisationId },
+      select: { id: true, name: true },
+    });
+
+    if (!payload.vesselId) {
+      throw new AppError(400, 'VALIDATION_ERROR', 'A vessel must be selected to generate a Record Book');
+    }
+
+    const vessel = await prisma.vessel.findFirst({
+      where: { id: payload.vesselId, organisationId, isDeleted: false },
+      include: {
+        nicheAreas: true,
+      },
+    });
+    if (!vessel) throw new AppError(404, 'NOT_FOUND', 'Vessel not found');
+
+    // Build date filters
+    const dateFilter: any = {};
+    if (payload.startDate) dateFilter.gte = new Date(payload.startDate);
+    if (payload.endDate) dateFilter.lte = new Date(payload.endDate + 'T23:59:59.999Z');
+
+    // Fetch all work orders for this vessel within the period
+    const workOrders = await prisma.workOrder.findMany({
+      where: {
+        vesselId: vessel.id,
+        organisationId,
+        isDeleted: false,
+        ...(Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {}),
+      },
+      include: {
+        inspections: {
+          include: { findings: true },
+        },
+        formEntries: {
+          include: { vesselComponent: true },
+          orderBy: { createdAt: 'asc' },
+        },
+        assignments: {
+          include: { user: { select: { firstName: true, lastName: true } } },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 500,
+    });
+
+    // Determine fouling scale helper
+    const foulingScale: FoulingScale = 'FR';
+
+    const LEGACY_PDR: Record<string, number> = {
+      'intact': 10, 'minor damage': 20, 'moderate damage': 40,
+      'severe damage': 70, 'failed': 90,
+    };
+    function formatPdr(value: unknown): string | null {
+      if (value == null) return null;
+      if (typeof value === 'number') return formatPdrValue(value);
+      if (typeof value === 'string' && value.length > 0) {
+        const num = parseInt(value, 10);
+        if (!isNaN(num) && num >= 0 && num <= 100) return formatPdrValue(num);
+        const mapped = LEGACY_PDR[value.toLowerCase().trim()];
+        if (mapped != null) return formatPdrValue(mapped);
+        return value;
+      }
+      return null;
+    }
+
+    // Build activity log
+    const activityLog = workOrders.map((wo) => ({
+      date: wo.actualStart || wo.scheduledStart || wo.createdAt,
+      referenceNumber: wo.referenceNumber,
+      type: (wo as any).type || 'General',
+      status: wo.status,
+      location: (wo as any).location || null,
+      title: wo.title,
+      description: wo.description || null,
+    }));
+
+    // Build summary statistics
+    const completedCount = workOrders.filter((wo) => wo.status === 'COMPLETED').length;
+    const overdueCount = workOrders.filter((wo) =>
+      wo.status !== 'COMPLETED' && wo.status !== 'CANCELLED' && wo.scheduledEnd && new Date(wo.scheduledEnd) < new Date()
+    ).length;
+
+    const allInspections = workOrders.flatMap((wo) => wo.inspections ?? []);
+    const allFindings = allInspections.flatMap((insp) => insp.findings ?? []);
+
+    // Group by type
+    const typeMap = new Map<string, { count: number; completed: number }>();
+    for (const wo of workOrders) {
+      const t = (wo as any).type || 'General';
+      const entry = typeMap.get(t) || { count: 0, completed: 0 };
+      entry.count++;
+      if (wo.status === 'COMPLETED') entry.completed++;
+      typeMap.set(t, entry);
+    }
+    const workOrdersByType = Array.from(typeMap.entries()).map(([type, data]) => ({
+      type, count: data.count, completed: data.completed,
+    }));
+
+    // Group by status
+    const statusMap = new Map<string, number>();
+    for (const wo of workOrders) {
+      statusMap.set(wo.status, (statusMap.get(wo.status) || 0) + 1);
+    }
+    const workOrdersByStatus = Array.from(statusMap.entries()).map(([status, count]) => ({
+      status, count,
+    }));
+
+    // Build inspection details for work orders that have form entries or inspections
+    const inspectionDetails = workOrders
+      .filter((wo) => (wo.formEntries?.length ?? 0) > 0 || (wo.inspections?.length ?? 0) > 0)
+      .map((wo) => {
+        const parentEntries = (wo.formEntries ?? []).filter((fe: any) => !fe.parentEntryId);
+        const childEntriesByParent = new Map<string, any[]>();
+        for (const fe of (wo.formEntries ?? []) as any[]) {
+          if (fe.parentEntryId) {
+            const list = childEntriesByParent.get(fe.parentEntryId) || [];
+            list.push(fe);
+            childEntriesByParent.set(fe.parentEntryId, list);
+          }
+        }
+
+        const formEntries: any[] = [];
+        for (const parent of parentEntries) {
+          const name = (parent as any).vesselComponent?.name || (parent as any).component || '';
+          formEntries.push({
+            component: name,
+            foulingRating: (parent as any).foulingRating,
+            foulingRatingFormatted: (parent as any).foulingRating != null
+              ? formatFoulingValueRich((parent as any).foulingRating, foulingScale) : null,
+            coverage: (parent as any).coverage,
+            coverageFormatted: (parent as any).coverage != null ? formatCoverageRich((parent as any).coverage) : null,
+            coatingCondition: (parent as any).coatingCondition,
+            pdrFormatted: formatPdr((parent as any).coatingCondition),
+            notes: (parent as any).notes,
+            isSubComponent: false,
+          });
+
+          const children = childEntriesByParent.get((parent as any).id) || [];
+          for (const child of children) {
+            const childName = child.vesselComponent?.name || child.component || '';
+            formEntries.push({
+              component: childName,
+              foulingRating: child.foulingRating,
+              foulingRatingFormatted: child.foulingRating != null
+                ? formatFoulingValueRich(child.foulingRating, foulingScale) : null,
+              coverage: child.coverage,
+              coverageFormatted: child.coverage != null ? formatCoverageRich(child.coverage) : null,
+              coatingCondition: child.coatingCondition,
+              pdrFormatted: formatPdr(child.coatingCondition),
+              notes: child.notes,
+              isSubComponent: true,
+            });
+          }
+        }
+
+        // Get first inspector name from inspections
+        const firstInspection = (wo.inspections ?? [])[0];
+        const inspectorName = firstInspection?.inspectorName || null;
+
+        const findings = allFindings
+          .filter((f: any) => (wo.inspections ?? []).some((insp: any) => insp.id === f.inspectionId))
+          .map((f: any) => ({
+            component: f.area || f.component || 'N/A',
+            severity: f.priority || 'NORMAL',
+            description: f.description || '',
+            recommendation: f.recommendation || '',
+          }));
+
+        // Collect photo evidence from form entries
+        const photos: Array<{ src: string; caption: string }> = [];
+        for (const parent of parentEntries) {
+          collectPhotos(parent, photos);
+          const ch = childEntriesByParent.get((parent as any).id) || [];
+          for (const child of ch) collectPhotos(child, photos);
+        }
+
+        return {
+          referenceNumber: wo.referenceNumber,
+          title: wo.title,
+          date: wo.actualStart || wo.scheduledStart || wo.createdAt,
+          status: wo.status,
+          location: (wo as any).location || null,
+          inspectorName,
+          formEntries,
+          findings,
+          photos,
+          hasPhotos: photos.length > 0,
+        };
+      });
+
+    const allPhotos = inspectionDetails.flatMap((d) => d.photos);
+
+    const context: Record<string, any> = {
+      reportType: 'record-book',
+      generatedAt: new Date().toISOString(),
+      organisation: organisation ? { id: organisation.id, name: organisation.name } : null,
+      vessel: {
+        name: vessel.name,
+        imoNumber: vessel.imoNumber,
+        mmsi: vessel.mmsi,
+        callSign: vessel.callSign,
+        flagState: vessel.flagState,
+        homePort: vessel.homePort,
+        vesselType: vessel.vesselType,
+        classificationSociety: vessel.classificationSociety,
+        grossTonnage: vessel.grossTonnage,
+        yearBuilt: vessel.yearBuilt,
+        lengthOverall: vessel.lengthOverall,
+        beam: vessel.beam,
+        maxDraft: vessel.maxDraft,
+        afsCoatingType: vessel.afsCoatingType,
+        afsManufacturer: vessel.afsManufacturer,
+        afsProductName: vessel.afsProductName,
+        afsApplicationDate: vessel.afsApplicationDate,
+        afsServiceLife: vessel.afsServiceLife,
+        lastDrydockDate: vessel.lastDrydockDate,
+        nextDrydockDate: vessel.nextDrydockDate,
+        typicalSpeed: vessel.typicalSpeed,
+        tradingRoutes: vessel.tradingRoutes,
+        operatingArea: vessel.operatingArea,
+        status: vessel.status,
+        complianceStatus: vessel.complianceStatus,
+        bfmpRevision: vessel.bfmpRevision,
+        bfmpRevisionDate: vessel.bfmpRevisionDate,
+      },
+      hasBfmpDocument: !!(vessel.bfmpDocumentUrl || vessel.bfmpRevision),
+      nicheAreas: (vessel.nicheAreas ?? []).map((na: any) => ({
+        name: na.name,
+        afsCoatingType: na.afsCoatingType,
+        lastInspectedDate: na.lastInspectedDate,
+        condition: na.condition,
+      })),
+      reportPeriod: {
+        start: payload.startDate || null,
+        end: payload.endDate || null,
+      },
+      summary: {
+        totalWorkOrders: workOrders.length,
+        completedWorkOrders: completedCount,
+        overdueWorkOrders: overdueCount,
+        totalInspections: allInspections.length,
+        totalFindings: allFindings.length,
+        workOrdersByType,
+        workOrdersByStatus,
+      },
+      activityLog,
+      inspectionDetails,
+      photoEvidence: allPhotos,
+      hasPhotos: allPhotos.length > 0,
+      preparedBy: payload.preparedBy || null,
+      preparedByTitle: payload.preparedByTitle || null,
+      reviewedBy: payload.reviewedBy || null,
+      reviewedByTitle: payload.reviewedByTitle || null,
+      additionalNotes: payload.additionalNotes || null,
+    };
+
+    const html = compileAndRender(RECORD_BOOK_TEMPLATE_NAME, context);
     return { ...context, html };
   },
 };

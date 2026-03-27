@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Biofouling Record Book — {{vessel.name}}</title>
+  <style>
+    /* =========================================================================
+       BIOFOULING RECORD BOOK — Embedded Stylesheet
+       Professional A4 print-ready document
+       Based on IMO Biofouling Guidelines (MEPC.207(62)) / MEPC.378(80)
+       ========================================================================= */
+
+    /* --- Reset & Base Typography --- */
+    * {
+      font-family: 'Calibri', 'Segoe UI', Arial, Helvetica, sans-serif;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      font-size: 11pt;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    body {
+      color: #1e293b;
+      line-height: 1.55;
+      background: white;
+    }
+
+    /* --- Heading Hierarchy --- */
+    h1 {
+      font-size: 28px;
+      color: #365F91;
+      text-transform: uppercase;
+      text-align: center;
+      margin-bottom: 10px;
+      letter-spacing: 1px;
+      font-weight: 700;
+    }
+
+    h2 {
+      font-size: 22px;
+      color: #365F91;
+      text-transform: uppercase;
+      text-align: center;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    h3 {
+      font-size: 16px;
+      color: #365F91;
+      text-transform: uppercase;
+      margin: 22px 0 10px 0;
+      border-bottom: 2px solid #365F91;
+      padding-bottom: 5px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    h4 {
+      font-size: 13px;
+      color: #365F91;
+      text-transform: uppercase;
+      margin: 16px 0 8px 0;
+      font-weight: 600;
+    }
+
+    h5 {
+      font-size: 12px;
+      color: #475569;
+      text-transform: uppercase;
+      margin: 12px 0 6px 0;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+
+    p {
+      margin: 5px 0;
+      font-size: 11pt;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: #475569;
+      text-align: center;
+      margin-bottom: 4px;
+    }
+
+    .section-intro {
+      color: #475569;
+      font-size: 10pt;
+      margin-bottom: 12px;
+      line-height: 1.6;
+    }
+
+    .section-number {
+      color: #365F91;
+      font-weight: 700;
+      margin-right: 6px;
+    }
+
+    /* --- Page Layout --- */
+    .page {
+      page-break-after: always;
+      width: 100%;
+      padding: 15mm 17mm;
+      min-height: 297mm;
+      position: relative;
+    }
+
+    .page:last-child {
+      page-break-after: auto;
+    }
+
+    .page-header {
+      border-bottom: 2px solid #365F91;
+      padding-bottom: 6px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      font-size: 9px;
+      color: #64748b;
+    }
+
+    .page-header-title {
+      font-weight: 600;
+      color: #365F91;
+      font-size: 10px;
+      text-transform: uppercase;
+    }
+
+    .page-header-org {
+      font-size: 9px;
+      color: #94a3b8;
+    }
+
+    /* --- Cover Page --- */
+    .cover {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .cover-org {
+      margin-top: 50px;
+      margin-bottom: 10px;
+    }
+
+    .cover-org-name {
+      font-size: 18px;
+      color: #64748b;
+      text-transform: none;
+      font-weight: 600;
+      letter-spacing: 2px;
+    }
+
+    .cover-divider {
+      width: 80px;
+      height: 3px;
+      background: #365F91;
+      margin: 20px auto;
+      border-radius: 2px;
+    }
+
+    .cover-title {
+      margin-top: 20px;
+      font-size: 32px;
+      letter-spacing: 2px;
+    }
+
+    .cover-subtitle {
+      font-size: 16px;
+      color: #475569;
+      margin-top: 12px;
+      font-weight: 400;
+    }
+
+    .cover-vessel {
+      font-size: 24px;
+      color: #365F91;
+      margin-top: 24px;
+      font-weight: 700;
+      padding: 10px 32px;
+      border: 2px solid #365F91;
+      border-radius: 4px;
+      display: inline-block;
+    }
+
+    .cover-meta {
+      margin-top: 40px;
+      width: 70%;
+    }
+
+    .cover-meta table {
+      width: 100%;
+      font-size: 11px;
+      border-collapse: collapse;
+    }
+
+    .cover-meta td {
+      padding: 6px 10px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .cover-meta td:first-child {
+      font-weight: 600;
+      color: #365F91;
+      width: 40%;
+      background: #f8fafc;
+      text-transform: uppercase;
+      font-size: 9px;
+      letter-spacing: 0.5px;
+    }
+
+    /* --- Tables --- */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0 16px 0;
+      font-size: 10pt;
+    }
+
+    th, td {
+      border: 1px solid #cbd5e1;
+      padding: 7px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #365F91;
+      color: white;
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+
+    tbody tr:nth-child(even) {
+      background: #f8fafc;
+    }
+
+    tbody tr:hover {
+      background: #f1f5f9;
+    }
+
+    td.label-cell {
+      font-weight: 600;
+      color: #365F91;
+      background: #f8fafc;
+      width: 35%;
+      font-size: 10pt;
+    }
+
+    td.value-cell {
+      font-size: 10pt;
+    }
+
+    /* --- Key-Value Detail Table --- */
+    .detail-table {
+      margin: 8px 0 16px 0;
+    }
+
+    .detail-table td {
+      padding: 6px 10px;
+    }
+
+    .detail-table td:first-child {
+      font-weight: 600;
+      color: #365F91;
+      width: 38%;
+      background: #f8fafc;
+      font-size: 9.5pt;
+    }
+
+    /* --- Activity Log Table --- */
+    .activity-table th {
+      font-size: 8px;
+      padding: 6px 8px;
+    }
+
+    .activity-table td {
+      font-size: 9pt;
+      padding: 6px 8px;
+    }
+
+    .activity-table .col-date { width: 14%; }
+    .activity-table .col-ref { width: 12%; }
+    .activity-table .col-type { width: 12%; }
+    .activity-table .col-status { width: 10%; }
+    .activity-table .col-location { width: 14%; }
+    .activity-table .col-desc { width: 38%; }
+
+    /* --- Component Table --- */
+    .component-table th {
+      font-size: 8px;
+      padding: 5px 6px;
+    }
+
+    .component-table td {
+      font-size: 9pt;
+      padding: 5px 6px;
+    }
+
+    .sub-component td:first-child {
+      padding-left: 24px;
+      font-style: italic;
+      color: #475569;
+    }
+
+    .sub-component td:first-child::before {
+      content: "└ ";
+      color: #94a3b8;
+    }
+
+    /* --- Badges --- */
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-size: 8px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .badge-green { background: #dcfce7; color: #166534; }
+    .badge-blue { background: #dbeafe; color: #1e40af; }
+    .badge-amber { background: #fef3c7; color: #92400e; }
+    .badge-red { background: #fee2e2; color: #991b1b; }
+    .badge-gray { background: #f1f5f9; color: #475569; }
+
+    /* --- Summary Cards --- */
+    .summary-grid {
+      display: flex;
+      gap: 12px;
+      margin: 16px 0;
+      flex-wrap: wrap;
+    }
+
+    .summary-card {
+      flex: 1;
+      min-width: 120px;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 12px 14px;
+      text-align: center;
+    }
+
+    .summary-card-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: #365F91;
+      line-height: 1.2;
+    }
+
+    .summary-card-label {
+      font-size: 9px;
+      text-transform: uppercase;
+      color: #64748b;
+      letter-spacing: 0.5px;
+      margin-top: 4px;
+    }
+
+    /* --- Niche Area Cards --- */
+    .niche-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 12px 0;
+    }
+
+    .niche-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 10px 12px;
+    }
+
+    .niche-card-name {
+      font-weight: 600;
+      color: #365F91;
+      font-size: 10pt;
+      margin-bottom: 4px;
+    }
+
+    .niche-card-detail {
+      font-size: 9pt;
+      color: #475569;
+      margin: 2px 0;
+    }
+
+    .niche-card-detail strong {
+      color: #1e293b;
+    }
+
+    /* --- Findings Summary --- */
+    .finding-row {
+      border-left: 3px solid #cbd5e1;
+      padding: 8px 12px;
+      margin: 8px 0;
+      background: #f8fafc;
+      border-radius: 0 4px 4px 0;
+    }
+
+    .finding-row.severity-high { border-left-color: #ef4444; }
+    .finding-row.severity-medium { border-left-color: #f59e0b; }
+    .finding-row.severity-low { border-left-color: #22c55e; }
+
+    .finding-component {
+      font-weight: 600;
+      font-size: 10pt;
+      color: #1e293b;
+    }
+
+    .finding-detail {
+      font-size: 9pt;
+      color: #475569;
+      margin-top: 2px;
+    }
+
+    /* --- Notes & Remarks --- */
+    .remarks-box {
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 12px 14px;
+      margin: 10px 0;
+      background: #f8fafc;
+      font-size: 10pt;
+      color: #475569;
+      line-height: 1.6;
+    }
+
+    /* --- Regulatory Notice --- */
+    .reg-notice {
+      border: 1px solid #bfdbfe;
+      background: #eff6ff;
+      border-radius: 6px;
+      padding: 12px 14px;
+      margin: 16px 0;
+      font-size: 9pt;
+      color: #1e40af;
+      line-height: 1.6;
+    }
+
+    .reg-notice strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 10pt;
+    }
+
+    /* --- No Data --- */
+    .no-data {
+      text-align: center;
+      color: #94a3b8;
+      font-style: italic;
+      padding: 20px;
+      font-size: 10pt;
+    }
+
+    /* --- Footer Timestamp --- */
+    .generated-footer {
+      margin-top: 30px;
+      text-align: center;
+      font-size: 8pt;
+      color: #94a3b8;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 10px;
+    }
+
+    /* --- Print --- */
+    @page {
+      size: A4;
+      margin: 10mm;
+    }
+
+    @media print {
+      body { background: white; }
+      .page { padding: 10mm 12mm; min-height: auto; }
+      .no-print { display: none !important; }
+    }
+
+    @media screen {
+      body { max-width: 210mm; margin: 0 auto; background: #e8ecf1; }
+      .page {
+        background: white;
+        margin-bottom: 20px;
+        box-shadow: 0 1px 8px rgba(0,0,0,0.1);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ================================================================
+       PAGE 1 — COVER PAGE
+       ================================================================ -->
+  <div class="page cover">
+    {{#if organisation}}
+      <div class="cover-org">
+        <div class="cover-org-name">{{organisation.name}}</div>
+      </div>
+    {{/if}}
+
+    <div class="cover-divider"></div>
+
+    <h1 class="cover-title">BIOFOULING<br/>RECORD BOOK</h1>
+    <p class="cover-subtitle">In accordance with IMO Biofouling Guidelines (MEPC.207(62))</p>
+
+    {{#if vessel}}
+      <div class="cover-vessel">{{vessel.name}}</div>
+    {{/if}}
+
+    <div class="cover-meta">
+      <table>
+        {{#if vessel.imoNumber}}
+          <tr><td>IMO Number</td><td>{{vessel.imoNumber}}</td></tr>
+        {{/if}}
+        {{#if vessel.flagState}}
+          <tr><td>Flag State</td><td>{{vessel.flagState}}</td></tr>
+        {{/if}}
+        {{#if vessel.vesselType}}
+          <tr><td>Vessel Type</td><td>{{vessel.vesselType}}</td></tr>
+        {{/if}}
+        {{#if vessel.callSign}}
+          <tr><td>Call Sign</td><td>{{vessel.callSign}}</td></tr>
+        {{/if}}
+        {{#if vessel.homePort}}
+          <tr><td>Port of Registry</td><td>{{vessel.homePort}}</td></tr>
+        {{/if}}
+        <tr><td>Report Generated</td><td>{{formatDate generatedAt 'DD MMMM YYYY'}}</td></tr>
+        {{#if reportPeriod.start}}
+          <tr><td>Period Covered</td><td>{{formatDate reportPeriod.start 'DD MMM YYYY'}} — {{formatDate reportPeriod.end 'DD MMM YYYY'}}</td></tr>
+        {{/if}}
+      </table>
+    </div>
+  </div>
+
+  <!-- ================================================================
+       PAGE 2 — VESSEL PARTICULARS
+       ================================================================ -->
+  <div class="page">
+    <div class="page-header">
+      <span class="page-header-title">Biofouling Record Book — {{vessel.name}}</span>
+      {{#if organisation}}<span class="page-header-org">{{organisation.name}}</span>{{/if}}
+    </div>
+
+    <h3><span class="section-number">1.</span> Vessel Particulars</h3>
+    <p class="section-intro">Vessel identification and principal dimensions as required for biofouling management records.</p>
+
+    <table class="detail-table">
+      <tr><td>Vessel Name</td><td>{{ifn vessel.name '—'}}</td></tr>
+      <tr><td>IMO Number</td><td>{{ifn vessel.imoNumber '—'}}</td></tr>
+      <tr><td>MMSI</td><td>{{ifn vessel.mmsi '—'}}</td></tr>
+      <tr><td>Call Sign</td><td>{{ifn vessel.callSign '—'}}</td></tr>
+      <tr><td>Flag State</td><td>{{ifn vessel.flagState '—'}}</td></tr>
+      <tr><td>Port of Registry</td><td>{{ifn vessel.homePort '—'}}</td></tr>
+      <tr><td>Vessel Type</td><td>{{ifn vessel.vesselType '—'}}</td></tr>
+      <tr><td>Classification Society</td><td>{{ifn vessel.classificationSociety '—'}}</td></tr>
+      <tr><td>Gross Tonnage</td><td>{{ifn vessel.grossTonnage '—'}}</td></tr>
+      <tr><td>Year Built</td><td>{{ifn vessel.yearBuilt '—'}}</td></tr>
+      <tr><td>Length Overall (m)</td><td>{{ifn vessel.lengthOverall '—'}}</td></tr>
+      <tr><td>Beam (m)</td><td>{{ifn vessel.beam '—'}}</td></tr>
+      <tr><td>Maximum Draft (m)</td><td>{{ifn vessel.maxDraft '—'}}</td></tr>
+    </table>
+
+    <h3><span class="section-number">2.</span> Anti-Fouling System</h3>
+    <p class="section-intro">Details of the anti-fouling system(s) applied to the hull and niche areas.</p>
+
+    <h4>2.1 Hull Coating</h4>
+    <table class="detail-table">
+      <tr><td>Coating Type</td><td>{{ifn vessel.afsCoatingType '—'}}</td></tr>
+      <tr><td>Manufacturer</td><td>{{ifn vessel.afsManufacturer '—'}}</td></tr>
+      <tr><td>Product Name</td><td>{{ifn vessel.afsProductName '—'}}</td></tr>
+      {{#if vessel.afsApplicationDate}}
+        <tr><td>Application Date</td><td>{{formatDate vessel.afsApplicationDate 'DD MMM YYYY'}}</td></tr>
+      {{else}}
+        <tr><td>Application Date</td><td>—</td></tr>
+      {{/if}}
+      {{#if vessel.afsServiceLife}}
+        <tr><td>Expected Service Life</td><td>{{vessel.afsServiceLife}} months</td></tr>
+      {{else}}
+        <tr><td>Expected Service Life</td><td>—</td></tr>
+      {{/if}}
+    </table>
+
+    <h4>2.2 Dry Docking Schedule</h4>
+    <table class="detail-table">
+      {{#if vessel.lastDrydockDate}}
+        <tr><td>Last Dry Dock</td><td>{{formatDate vessel.lastDrydockDate 'DD MMM YYYY'}}</td></tr>
+      {{else}}
+        <tr><td>Last Dry Dock</td><td>—</td></tr>
+      {{/if}}
+      {{#if vessel.nextDrydockDate}}
+        <tr><td>Next Dry Dock Due</td><td>{{formatDate vessel.nextDrydockDate 'DD MMM YYYY'}}</td></tr>
+      {{else}}
+        <tr><td>Next Dry Dock Due</td><td>—</td></tr>
+      {{/if}}
+    </table>
+
+    {{#if nicheAreas.length}}
+      <h4>2.3 Niche Area Protection</h4>
+      <p class="section-intro">Anti-fouling protection details for niche areas susceptible to biofouling accumulation.</p>
+      <div class="niche-grid">
+        {{#each nicheAreas}}
+          <div class="niche-card">
+            <div class="niche-card-name">{{this.name}}</div>
+            {{#if this.afsCoatingType}}
+              <div class="niche-card-detail"><strong>AFS:</strong> {{this.afsCoatingType}}</div>
+            {{/if}}
+            {{#if this.lastInspectedDate}}
+              <div class="niche-card-detail"><strong>Last Inspected:</strong> {{formatDate this.lastInspectedDate 'DD MMM YYYY'}}</div>
+            {{/if}}
+            {{#if this.condition}}
+              <div class="niche-card-detail"><strong>Condition:</strong> {{this.condition}}</div>
+            {{/if}}
+          </div>
+        {{/each}}
+      </div>
+    {{/if}}
+  </div>
+
+  <!-- ================================================================
+       PAGE 3 — OPERATING PROFILE & SUMMARY STATISTICS
+       ================================================================ -->
+  <div class="page">
+    <div class="page-header">
+      <span class="page-header-title">Biofouling Record Book — {{vessel.name}}</span>
+      {{#if organisation}}<span class="page-header-org">{{organisation.name}}</span>{{/if}}
+    </div>
+
+    <h3><span class="section-number">3.</span> Operating Profile</h3>
+    <p class="section-intro">Vessel operating characteristics relevant to biofouling risk assessment.</p>
+
+    <table class="detail-table">
+      <tr><td>Trading Routes / Area</td><td>{{ifn vessel.tradingRoutes (ifn vessel.operatingArea '—')}}</td></tr>
+      <tr><td>Typical Speed (knots)</td><td>{{ifn vessel.typicalSpeed '—'}}</td></tr>
+      <tr><td>Status</td><td>{{ifn vessel.status '—'}}</td></tr>
+      <tr><td>Compliance Status</td><td>{{ifn vessel.complianceStatus '—'}}</td></tr>
+    </table>
+
+    {{#if hasBfmpDocument}}
+      <div class="reg-notice">
+        <strong>Biofouling Management Plan (BFMP)</strong>
+        This vessel has an associated BFMP document.
+        {{#if vessel.bfmpRevision}}Revision: {{vessel.bfmpRevision}}{{/if}}
+        {{#if vessel.bfmpRevisionDate}} ({{formatDate vessel.bfmpRevisionDate 'DD MMM YYYY'}}){{/if}}
+      </div>
+    {{/if}}
+
+    <h3><span class="section-number">4.</span> Record Book Summary</h3>
+    <p class="section-intro">Statistical summary of all biofouling management activities recorded for this vessel during the reporting period.</p>
+
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="summary-card-value">{{summary.totalWorkOrders}}</div>
+        <div class="summary-card-label">Total Work Orders</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-card-value">{{summary.completedWorkOrders}}</div>
+        <div class="summary-card-label">Completed</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-card-value">{{summary.totalInspections}}</div>
+        <div class="summary-card-label">Inspections</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-card-value">{{summary.totalFindings}}</div>
+        <div class="summary-card-label">Findings</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-card-value">{{summary.overdueWorkOrders}}</div>
+        <div class="summary-card-label">Overdue</div>
+      </div>
+    </div>
+
+    {{#if summary.workOrdersByType.length}}
+      <h4>4.1 Activities by Type</h4>
+      <table>
+        <thead>
+          <tr><th>Work Order Type</th><th>Count</th><th>Completed</th></tr>
+        </thead>
+        <tbody>
+          {{#each summary.workOrdersByType}}
+            <tr>
+              <td>{{this.type}}</td>
+              <td>{{this.count}}</td>
+              <td>{{this.completed}}</td>
+            </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    {{/if}}
+
+    {{#if summary.workOrdersByStatus.length}}
+      <h4>4.2 Activities by Status</h4>
+      <table>
+        <thead>
+          <tr><th>Status</th><th>Count</th></tr>
+        </thead>
+        <tbody>
+          {{#each summary.workOrdersByStatus}}
+            <tr>
+              <td><span class="badge {{statusBadge this.status}}">{{this.status}}</span></td>
+              <td>{{this.count}}</td>
+            </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    {{/if}}
+  </div>
+
+  <!-- ================================================================
+       PAGE 4+ — CHRONOLOGICAL ACTIVITY LOG
+       ================================================================ -->
+  <div class="page">
+    <div class="page-header">
+      <span class="page-header-title">Biofouling Record Book — {{vessel.name}}</span>
+      {{#if organisation}}<span class="page-header-org">{{organisation.name}}</span>{{/if}}
+    </div>
+
+    <h3><span class="section-number">5.</span> Chronological Activity Log</h3>
+    <p class="section-intro">
+      Complete record of all biofouling management activities including inspections, cleaning operations,
+      maintenance events, and related work orders. Entries are listed in reverse chronological order.
+    </p>
+
+    <div class="reg-notice">
+      <strong>IMO Biofouling Guidelines — Record Keeping</strong>
+      The Biofouling Record Book should record details of all inspections and biofouling management measures
+      undertaken on the ship, including in-water inspections, in-water cleaning, dry-docking, and any
+      reactive measures. Records should be maintained onboard and made available to port State authorities on request.
+    </div>
+
+    {{#if activityLog.length}}
+      <table class="activity-table">
+        <thead>
+          <tr>
+            <th class="col-date">Date</th>
+            <th class="col-ref">Reference</th>
+            <th class="col-type">Type</th>
+            <th class="col-status">Status</th>
+            <th class="col-location">Location</th>
+            <th class="col-desc">Description / Findings</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each activityLog}}
+            <tr>
+              <td>{{formatDate this.date 'DD MMM YYYY'}}</td>
+              <td style="font-size: 8pt;">{{this.referenceNumber}}</td>
+              <td>{{this.type}}</td>
+              <td><span class="badge {{statusBadge this.status}}">{{this.status}}</span></td>
+              <td>{{ifn this.location '—'}}</td>
+              <td>
+                <strong>{{this.title}}</strong>
+                {{#if this.description}}<br/>{{this.description}}{{/if}}
+              </td>
+            </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    {{else}}
+      <div class="no-data">No activity records found for the selected period.</div>
+    {{/if}}
+  </div>
+
+  <!-- ================================================================
+       INSPECTION DETAILS (one section per work order with inspections)
+       ================================================================ -->
+  {{#if inspectionDetails.length}}
+    <div class="page">
+      <div class="page-header">
+        <span class="page-header-title">Biofouling Record Book — {{vessel.name}}</span>
+        {{#if organisation}}<span class="page-header-org">{{organisation.name}}</span>{{/if}}
+      </div>
+
+      <h3><span class="section-number">6.</span> Inspection &amp; Assessment Details</h3>
+      <p class="section-intro">
+        Detailed findings from biofouling inspections and assessments. Each entry includes component-level
+        fouling ratings, coverage assessments, coating condition, and any recommended actions.
+      </p>
+
+      {{#each inspectionDetails}}
+        <h4>{{this.referenceNumber}} — {{this.title}}</h4>
+        <table class="detail-table" style="margin-bottom: 6px;">
+          <tr><td>Date</td><td>{{formatDate this.date 'DD MMM YYYY'}}</td></tr>
+          <tr><td>Status</td><td><span class="badge {{statusBadge this.status}}">{{this.status}}</span></td></tr>
+          {{#if this.location}}<tr><td>Location</td><td>{{this.location}}</td></tr>{{/if}}
+          {{#if this.inspectorName}}<tr><td>Inspector</td><td>{{this.inspectorName}}</td></tr>{{/if}}
+        </table>
+
+        {{#if this.formEntries.length}}
+          <table class="component-table">
+            <thead>
+              <tr>
+                <th>Component</th>
+                <th>Fouling Rating</th>
+                <th>Coverage</th>
+                <th>Coating Condition</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{#each this.formEntries}}
+                <tr class="{{#if this.isSubComponent}}sub-component{{/if}}">
+                  <td>{{this.component}}</td>
+                  <td>{{ifn this.foulingRatingFormatted '—'}}</td>
+                  <td>{{ifn this.coverageFormatted '—'}}</td>
+                  <td>{{ifn this.pdrFormatted (ifn this.coatingCondition '—')}}</td>
+                  <td>{{ifn this.notes '—'}}</td>
+                </tr>
+              {{/each}}
+            </tbody>
+          </table>
+        {{/if}}
+
+        {{#if this.findings.length}}
+          <h5>Inspection Findings</h5>
+          {{#each this.findings}}
+            <div class="finding-row severity-{{lowercase this.severity}}">
+              <div class="finding-component">{{this.component}} <span class="badge {{severityBadge this.severity}}">{{this.severity}}</span></div>
+              {{#if this.description}}<div class="finding-detail">{{this.description}}</div>{{/if}}
+              {{#if this.recommendation}}<div class="finding-detail"><strong>Action:</strong> {{this.recommendation}}</div>{{/if}}
+            </div>
+          {{/each}}
+        {{/if}}
+
+      {{/each}}
+    </div>
+  {{/if}}
+
+  <!-- ================================================================
+       PHOTO EVIDENCE
+       ================================================================ -->
+  {{#if hasPhotos}}
+    <div class="page">
+      <div class="page-header">
+        <span class="page-header-title">Biofouling Record Book — {{vessel.name}}</span>
+        {{#if organisation}}<span class="page-header-org">{{organisation.name}}</span>{{/if}}
+      </div>
+
+      <h3>Photo Evidence</h3>
+      <p class="section-intro">Photographic evidence from inspections and assessments.</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 50%;">Photo</th>
+            <th style="width: 50%;">Caption</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each photoEvidence}}
+            <tr>
+              <td style="text-align: center; padding: 6px;">
+                <img src="{{this.src}}" alt="{{this.caption}}" style="max-width: 100%; max-height: 180px; object-fit: contain;" />
+              </td>
+              <td style="vertical-align: middle;">{{this.caption}}</td>
+            </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+  {{/if}}
+
+  <!-- ================================================================
+       REMARKS & ADDITIONAL NOTES
+       ================================================================ -->
+  <div class="page">
+    <div class="page-header">
+      <span class="page-header-title">Biofouling Record Book — {{vessel.name}}</span>
+      {{#if organisation}}<span class="page-header-org">{{organisation.name}}</span>{{/if}}
+    </div>
+
+    <h3><span class="section-number">{{#if inspectionDetails.length}}7{{else}}6{{/if}}.</span> Remarks &amp; Endorsements</h3>
+    <p class="section-intro">
+      Space for additional remarks, port State endorsements, and notes relevant to this vessel's biofouling management record.
+    </p>
+
+    {{#if additionalNotes}}
+      <div class="remarks-box">{{additionalNotes}}</div>
+    {{else}}
+      <div class="remarks-box" style="min-height: 100px; color: #94a3b8; font-style: italic;">
+        No additional remarks recorded.
+      </div>
+    {{/if}}
+
+    <h3><span class="section-number">{{#if inspectionDetails.length}}8{{else}}7{{/if}}.</span> Declaration</h3>
+    <p class="section-intro">
+      I declare that the entries in this Biofouling Record Book are accurate and complete to the best of my knowledge and belief,
+      and that biofouling management measures have been carried out in accordance with the vessel's Biofouling Management Plan
+      and applicable regulations.
+    </p>
+
+    <table class="detail-table" style="margin-top: 30px;">
+      <tr><td>Prepared By</td><td>{{ifn preparedBy '________________________'}}</td></tr>
+      <tr><td>Position / Title</td><td>{{ifn preparedByTitle '________________________'}}</td></tr>
+      <tr><td>Date</td><td>{{formatDate generatedAt 'DD MMMM YYYY'}}</td></tr>
+      <tr><td>Signature</td><td style="height: 40px;"></td></tr>
+    </table>
+
+    <table class="detail-table" style="margin-top: 20px;">
+      <tr><td>Reviewed By</td><td>{{ifn reviewedBy '________________________'}}</td></tr>
+      <tr><td>Position / Title</td><td>{{ifn reviewedByTitle '________________________'}}</td></tr>
+      <tr><td>Date</td><td></td></tr>
+      <tr><td>Signature</td><td style="height: 40px;"></td></tr>
+    </table>
+
+    <!-- Generated footer -->
+    <div class="generated-footer">
+      Generated on {{formatDate generatedAt 'DD MMMM YYYY [at] HH:mm'}} UTC &mdash; Biofouling Record Book &mdash; {{vessel.name}}
+    </div>
+  </div>
+
+</body>
+</html>

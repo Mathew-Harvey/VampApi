@@ -68,6 +68,9 @@ router.post('/generate', authenticate, requirePermission('REPORT_GENERATE'), asy
   } else if (type === 'audit') {
     const data = await reportService.generateAuditReport(payload, req.user!.organisationId);
     res.json({ success: true, data });
+  } else if (type === 'record-book') {
+    const data = await reportService.generateRecordBookReport(payload, req.user!.organisationId);
+    res.json({ success: true, data });
   } else {
     res.status(400).json({ success: false, error: { code: 'INVALID_TYPE', message: 'Provide a valid report type' } });
   }

@@ -273,6 +273,69 @@ export const emailService = {
     );
   },
 
+  async sendVesselShareInvite(params: {
+    toEmail: string;
+    sharerName: string;
+    vesselName: string;
+    permission: string;
+    isNewUser: boolean;
+    actionUrl: string;
+  }) {
+    const permLabel = params.permission === 'WRITE' ? 'Read & Write' : 'View Only';
+    const safeName = escapeHtml(params.sharerName);
+    const safeVessel = escapeHtml(params.vesselName);
+
+    const html = wrapEmail(`
+      <h2 style="margin: 0 0 8px; color: #0f172a; font-size: 20px;">A vessel has been shared with you</h2>
+      <p style="color: #64748b; font-size: 14px; margin: 0 0 24px;">
+        <strong style="color: #0f172a;">${safeName}</strong> has shared a vessel with you on MarineStream.
+      </p>
+
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="padding: 6px 0; color: #64748b; font-size: 13px; width: 120px;">Vessel</td>
+            <td style="padding: 6px 0; color: #0f172a; font-size: 13px; font-weight: 600;">${safeVessel}</td>
+          </tr>
+          <tr>
+            <td style="padding: 6px 0; color: #64748b; font-size: 13px;">Your Access</td>
+            <td style="padding: 6px 0; font-size: 13px;">
+              <span style="background: #0ea5e9; color: white; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">
+                ${permLabel}
+              </span>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      ${params.isNewUser ? `
+        <p style="color: #64748b; font-size: 14px; margin-bottom: 20px;">
+          You don't have a MarineStream account yet. Create one with this email address to view the vessel:
+        </p>
+      ` : `
+        <p style="color: #64748b; font-size: 14px; margin-bottom: 20px;">
+          You can now access this vessel and its work history in your MarineStream dashboard.
+        </p>
+      `}
+
+      <div style="text-align: center; margin: 24px 0;">
+        <a href="${params.actionUrl}" style="display: inline-block; background: #0ea5e9; color: white; padding: 12px 32px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 14px;">
+          ${params.isNewUser ? 'Create Your Account' : 'View Vessel'}
+        </a>
+      </div>
+
+      <p style="color: #94a3b8; font-size: 12px; margin-top: 24px; text-align: center;">
+        If you didn't expect this, you can safely ignore this email.
+      </p>
+    `);
+
+    return sendEmail(
+      params.toEmail,
+      `${params.sharerName} shared "${params.vesselName}" with you on MarineStream`,
+      html,
+    );
+  },
+
   async sendPasswordReset(params: { toEmail: string; resetUrl: string }) {
     const html = wrapEmail(`
       <h2 style="margin: 0 0 8px; color: #0f172a; font-size: 20px;">Reset your password</h2>

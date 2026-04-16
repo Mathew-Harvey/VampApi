@@ -12,7 +12,7 @@ const router = Router();
 router.get('/', authenticate, requirePermission('VESSEL_VIEW'), asyncHandler(async (req, res) => {
   const params = getPaginationParams(req);
   const filters = { status: req.query.status as string, vesselType: req.query.vesselType as string, complianceStatus: req.query.complianceStatus as string };
-  const result = await vesselService.list(params, req.user!.organisationId, filters);
+  const result = await vesselService.list(params, req.user!.organisationId, filters, req.user!.userId);
   res.json(result);
 }));
 
@@ -22,7 +22,7 @@ router.post('/', authenticate, requirePermission('VESSEL_CREATE'), validate(crea
 }));
 
 router.get('/:id', authenticate, requirePermission('VESSEL_VIEW'), asyncHandler(async (req, res) => {
-  const vessel = await vesselService.getById((req.params.id as string), req.user!.organisationId);
+  const vessel = await vesselService.getById((req.params.id as string), req.user!.organisationId, req.user!.userId);
   res.json({ success: true, data: vessel });
 }));
 

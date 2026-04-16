@@ -45,6 +45,8 @@ model User {
   organisations        OrganisationUser[]
   passwordResets       PasswordReset[]
   taskSubmissions      TaskSubmission[]
+  vesselShares         VesselShare[]         @relation("VesselShareUser")
+  vesselSharesGiven    VesselShare[]         @relation("VesselShareSharer")
   workOrderAssignments WorkOrderAssignment[]
 
   @@map("users")
@@ -138,9 +140,27 @@ model Vessel {
   nicheAreas            NicheArea[]
   components            VesselComponent[]
   organisation          Organisation      @relation(fields: [organisationId], references: [id])
+  shares                VesselShare[]
   workOrders            WorkOrder[]
 
   @@map("vessels")
+}
+
+model VesselShare {
+  id         String    @id @default(cuid())
+  vesselId   String
+  userId     String
+  permission String    // READ or WRITE
+  sharedBy   String
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  vessel     Vessel    @relation(fields: [vesselId], references: [id], onDelete: Cascade)
+  user       User      @relation("VesselShareUser", fields: [userId], references: [id], onDelete: Cascade)
+  sharer     User      @relation("VesselShareSharer", fields: [sharedBy], references: [id])
+
+  @@unique([vesselId, userId])
+  @@index([userId])
+  @@map("vessel_shares")
 }
 
 model NicheArea {

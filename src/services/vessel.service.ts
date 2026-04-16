@@ -7,16 +7,36 @@ import { Prisma } from '@prisma/client';
 const fleetOrgId = () => process.env.FLEET_ORG_ID || '';
 
 export const vesselService = {
-  async list(params: PaginationParams, organisationId: string, filters?: Record<string, string>) {
+  async list(params: PaginationParams, organisationId: string, filters?: Record<string, string>, userId?: string) {
     const orgIds = [organisationId];
     if (fleetOrgId()) orgIds.push(fleetOrgId());
-    const where: Prisma.VesselWhereInput = { isDeleted: false, organisationId: { in: orgIds } };
+
+    let sharedVesselIds: string[] = [];
+    if (userId) {
+      const shares = await prisma.vesselShare.findMany({
+        where: { userId },
+        select: { vesselId: true },
+      });
+      sharedVesselIds = shares.map((s) => s.vesselId);
+    }
+
+    const where: Prisma.VesselWhereInput = {
+      isDeleted: false,
+      OR: [
+        { organisationId: { in: orgIds } },
+        ...(sharedVesselIds.length > 0 ? [{ id: { in: sharedVesselIds } }] : []),
+      ],
+    };
 
     if (params.search) {
-      where.OR = [
-        { name: { contains: params.search } },
-        { imoNumber: { contains: params.search } },
-        { callSign: { contains: params.search } },
+      where.AND = [
+        {
+          OR: [
+            { name: { contains: params.search } },
+            { imoNumber: { contains: params.search } },
+            { callSign: { contains: params.search } },
+          ],
+        },
       ];
     }
     if (filters?.status) where.status = filters.status as any;
@@ -34,10 +54,16 @@ export const vesselService = {
       prisma.vessel.count({ where }),
     ]);
 
-    return buildPaginatedResponse(data, total, params);
+    const sharedSet = new Set(sharedVesselIds);
+    const annotated = data.map((v) => ({
+      ...v,
+      _shared: sharedSet.has(v.id),
+    }));
+
+    return buildPaginatedResponse(annotated, total, params);
   },
 
-  async getById(id: string, organisationId?: string) {
+  async getById(id: string, organisationId?: string, userId?: string) {
     const vessel = await prisma.vessel.findFirst({
       where: { id, isDeleted: false },
       include: {
@@ -49,8 +75,18 @@ export const vesselService = {
       },
     });
     if (!vessel) throw new AppError(404, 'NOT_FOUND', 'Vessel not found');
-    if (organisationId && vessel.organisationId !== organisationId && vessel.organisationId !== fleetOrgId()) {
-      throw new AppError(404, 'NOT_FOUND', 'Vessel not found');
+
+    const isOrgOwned = vessel.organisationId === organisationId || vessel.organisationId === fleetOrgId();
+
+    if (organisationId && !isOrgOwned) {
+      if (userId) {
+        const share = await prisma.vesselShare.findUnique({
+          where: { vesselId_userId: { vesselId: id, userId } },
+        });
+        if (!share) throw new AppError(404, 'NOT_FOUND', 'Vessel not found');
+      } else {
+        throw new AppError(404, 'NOT_FOUND', 'Vessel not found');
+      }
     }
     return vessel;
   },

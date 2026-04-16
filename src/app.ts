@@ -23,6 +23,7 @@ import workflowRoutes from './routes/workflow.routes';
 import notificationRoutes from './routes/notification.routes';
 import workFormRoutes from './routes/work-form.routes';
 import inviteRoutes from './routes/invite.routes';
+import vesselShareRoutes from './routes/vessel-share.routes';
 import storageRoutes from './routes/storage.routes';
 import prisma from './config/database';
 import { storageConfigService } from './services/storage-config.service';
@@ -106,6 +107,7 @@ app.use('/api/v1/auth', authLimiter, authRoutes);
 app.use('/api/v1', workFormRoutes); // Must be before /vessels so /vessels/:id/components is handled
 app.use('/api/v1', sensitiveLimiter, inviteRoutes);
 app.use('/api/v1/vessels', vesselRoutes);
+app.use('/api/v1/vessels', vesselShareRoutes);
 app.use('/api/v1/work-orders', workOrderRoutes);
 app.use('/api/v1/inspections', inspectionRoutes);
 app.use('/api/v1/media', sensitiveLimiter, mediaRoutes);

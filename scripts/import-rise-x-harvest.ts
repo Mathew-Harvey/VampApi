@@ -450,7 +450,18 @@ async function importWorkItem(workDetail: any, ctx: ImportContext) {
       // 3. Work order — always update metadata so reportConfig is populated
       const dbWorkOrder = await tx.workOrder.upsert({
         where: { referenceNumber: workCode },
-        update: { status: woStatus, metadata },
+        update: {
+          title: `${vesselName} – ${workDetail.displayName || woType}`,
+          status: woStatus,
+          location,
+          description: firstNonEmpty(workDetail.data?.workInstruction, workDetail.data?.jobType, workDetail.displayName),
+          scheduledStart,
+          scheduledEnd,
+          actualStart,
+          actualEnd,
+          completedAt: woStatus === 'COMPLETED' ? dateFromValue(workDetail.lastModified) : null,
+          metadata,
+        },
         create: {
           referenceNumber: workCode,
           vesselId: dbVessel.id,
@@ -493,7 +504,16 @@ async function importWorkItem(workDetail: any, ctx: ImportContext) {
           where: { workOrderId: dbWorkOrder.id },
         });
         if (existing) {
-          dbInspection = existing;
+          dbInspection = await tx.inspection.update({
+            where: { id: existing.id },
+            data: {
+              status: woStatus === 'COMPLETED' ? 'COMPLETED' : 'IN_PROGRESS',
+              inspectorName: 'Mat Harvey',
+              location,
+              startedAt: actualStart || scheduledStart || existing.startedAt,
+              completedAt: woStatus === 'COMPLETED' ? dateFromValue(workDetail.lastModified) : null,
+            },
+          });
         } else {
           dbInspection = await tx.inspection.create({
             data: {
@@ -503,13 +523,9 @@ async function importWorkItem(workDetail: any, ctx: ImportContext) {
               status: woStatus === 'COMPLETED' ? 'COMPLETED' : 'IN_PROGRESS',
               inspectorName: 'Mat Harvey',
               location,
-              startedAt: workDetail.createdDate
-                ? new Date(workDetail.createdDate)
-                : new Date(),
+              startedAt: actualStart || scheduledStart || new Date(),
               completedAt:
-                woStatus === 'COMPLETED' && workDetail.lastModified
-                  ? new Date(workDetail.lastModified)
-                  : null,
+                woStatus === 'COMPLETED' ? dateFromValue(workDetail.lastModified) : null,
             },
           });
         }

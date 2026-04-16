@@ -18,6 +18,14 @@ function safeParsePermissions(raw: unknown): string[] {
   return [];
 }
 
+function resolvePermissions(role: string, storedPermissions: unknown): string[] {
+  const roleDefaults = (ROLE_DEFAULT_PERMISSIONS as Record<string, string[]>)[role];
+  if (!roleDefaults) return safeParsePermissions(storedPermissions);
+  const stored = safeParsePermissions(storedPermissions);
+  const merged = new Set([...roleDefaults, ...stored]);
+  return [...merged];
+}
+
 export const authService = {
   async register(data: { email: string; password: string; firstName: string; lastName: string; phone?: string | null }) {
     // Check if email is already taken
@@ -115,7 +123,7 @@ export const authService = {
       include: { organisation: true },
     });
 
-    const permissions = safeParsePermissions(orgUser.permissions);
+    const permissions = resolvePermissions(orgUser.role, orgUser.permissions);
 
     const tokenPayload: TokenPayload = {
       userId: user.id,
@@ -172,7 +180,7 @@ export const authService = {
       throw new AppError(403, 'NO_ORGANISATION', 'User has no organisation membership');
     }
 
-    const permissions = safeParsePermissions(orgUser.permissions);
+    const permissions = resolvePermissions(orgUser.role, orgUser.permissions);
 
     const tokenPayload: TokenPayload = {
       userId: user.id,
@@ -317,7 +325,7 @@ export const authService = {
       const orgUser = user.organisations.find((ou) => ou.isDefault) || user.organisations[0];
       if (!orgUser) throw new AppError(403, 'NO_ORGANISATION', 'No organisation');
 
-      const perms = safeParsePermissions(orgUser.permissions);
+      const perms = resolvePermissions(orgUser.role, orgUser.permissions);
 
       const tokenPayload: TokenPayload = {
         userId: user.id,

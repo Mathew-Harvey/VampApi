@@ -19,10 +19,11 @@ model Organisation {
   isDeleted    Boolean            @default(false)
   createdAt    DateTime           @default(now())
   updatedAt    DateTime           @updatedAt
-  invitations  Invitation[]
-  users        OrganisationUser[]
-  vessels      Vessel[]
-  workOrders   WorkOrder[]
+  invitations   Invitation[]
+  users         OrganisationUser[]
+  vesselGroups  VesselGroup[]
+  vessels       Vessel[]
+  workOrders    WorkOrder[]
 
   @@map("organisations")
 }
@@ -96,10 +97,41 @@ model PasswordReset {
   @@map("password_resets")
 }
 
+model VesselGroup {
+  id             String                 @id @default(cuid())
+  organisationId String
+  name           String
+  description    String?
+  color          String?
+  sortOrder      Int                    @default(0)
+  isDeleted      Boolean                @default(false)
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  organisation   Organisation           @relation(fields: [organisationId], references: [id])
+  memberships    VesselGroupMembership[]
+
+  @@unique([organisationId, name])
+  @@map("vessel_groups")
+}
+
+model VesselGroupMembership {
+  id            String      @id @default(cuid())
+  vesselGroupId String
+  vesselId      String
+  sortOrder     Int         @default(0)
+  addedAt       DateTime    @default(now())
+  vesselGroup   VesselGroup @relation(fields: [vesselGroupId], references: [id], onDelete: Cascade)
+  vessel        Vessel      @relation(fields: [vesselId], references: [id], onDelete: Cascade)
+
+  @@unique([vesselGroupId, vesselId])
+  @@index([vesselId])
+  @@map("vessel_group_memberships")
+}
+
 model Vessel {
-  id                    String            @id @default(cuid())
+  id                    String                  @id @default(cuid())
   organisationId        String
-  externalId            String?           @unique
+  externalId            String?                 @unique
   source                String?
   name                  String
   imoNumber             String?
@@ -125,22 +157,23 @@ model Vessel {
   typicalSpeed          Float?
   tradingRoutes         String?
   operatingArea         String?
-  climateZones          String            @default("[]")
-  status                String            @default("ACTIVE")
-  complianceStatus      String            @default("COMPLIANT")
+  climateZones          String                  @default("[]")
+  status                String                  @default("ACTIVE")
+  complianceStatus      String                  @default("COMPLIANT")
   bfmpDocumentUrl       String?
   bfmpRevision          String?
   bfmpRevisionDate      DateTime?
   metadata              String?
-  isDeleted             Boolean           @default(false)
-  createdAt             DateTime          @default(now())
-  updatedAt             DateTime          @updatedAt
+  isDeleted             Boolean                 @default(false)
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
   documents             Document[]
+  groupMemberships      VesselGroupMembership[]
   inspections           Inspection[]
   media                 Media[]
   nicheAreas            NicheArea[]
   components            VesselComponent[]
-  organisation          Organisation      @relation(fields: [organisationId], references: [id])
+  organisation          Organisation            @relation(fields: [organisationId], references: [id])
   shares                VesselShare[]
   workOrders            WorkOrder[]
 

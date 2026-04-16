@@ -74,6 +74,14 @@ All endpoints are prefixed with `/api/v1`.
 - `POST /auth/logout` - Logout
 - `GET /auth/me` - Current user profile
 - `GET /vessels` - List vessels
+- `GET /vessel-groups` - List vessel groups
+- `POST /vessel-groups` - Create a vessel group
+- `GET /vessel-groups/:id` - Get vessel group with members
+- `PUT /vessel-groups/:id` - Update a vessel group
+- `DELETE /vessel-groups/:id` - Delete a vessel group
+- `POST /vessel-groups/:id/vessels` - Add vessels to a group
+- `POST /vessel-groups/:id/vessels/remove` - Remove vessels from a group
+- `PUT /vessel-groups/reorder` - Reorder groups
 - `GET /work-orders` - List work orders
 - `GET /inspections` - List inspections
 - `GET /dashboard/overview` - Dashboard stats

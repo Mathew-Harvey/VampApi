@@ -4,9 +4,23 @@ import { requirePermission } from '../middleware/permissions';
 import { validate } from '../middleware/validate';
 import { inviteUserSchema, updateUserSchema, updateRoleSchema } from '../schemas/user.schema';
 import { ROLE_DEFAULT_PERMISSIONS, type UserRole } from '../constants/permissions';
+import { generateAccessToken, generateRefreshToken, TokenPayload } from '../config/auth';
 import prisma from '../config/database';
 import { randomUUID } from 'crypto';
 import { asyncHandler } from '../utils/async-handler';
+
+function resolvePermissions(role: string, storedPermissions: unknown): string[] {
+  const roleDefaults = (ROLE_DEFAULT_PERMISSIONS as Record<string, string[]>)[role];
+  if (!roleDefaults) return [];
+  if (typeof storedPermissions === 'string') {
+    try {
+      const parsed = JSON.parse(storedPermissions);
+      if (Array.isArray(parsed)) return [...new Set([...roleDefaults, ...parsed])];
+    } catch { /* ignore */ }
+  }
+  if (Array.isArray(storedPermissions)) return [...new Set([...roleDefaults, ...storedPermissions])];
+  return roleDefaults;
+}
 
 const router = Router();
 
@@ -73,7 +87,7 @@ router.post('/invitations/:id/accept', authenticate, asyncHandler(async (req, re
   const newRole = invitation.role as UserRole;
   const defaultPerms = ROLE_DEFAULT_PERMISSIONS[newRole] || [];
 
-  await prisma.$transaction([
+  const [orgUser] = await prisma.$transaction([
     prisma.organisationUser.create({
       data: {
         userId: req.user!.userId,
@@ -81,11 +95,33 @@ router.post('/invitations/:id/accept', authenticate, asyncHandler(async (req, re
         role: newRole,
         permissions: JSON.stringify(defaultPerms),
       },
+      include: { organisation: true },
     }),
     prisma.invitation.update({ where: { id: invitation.id }, data: { acceptedAt: new Date() } }),
   ]);
 
-  res.json({ success: true, data: { message: 'Invitation accepted' } });
+  const permissions = resolvePermissions(newRole, defaultPerms);
+  const tokenPayload: TokenPayload = {
+    userId: req.user!.userId,
+    email: req.user!.email,
+    organisationId: orgUser.organisationId,
+    role: newRole,
+    permissions,
+  };
+
+  res.json({
+    success: true,
+    data: {
+      message: 'Invitation accepted',
+      accessToken: generateAccessToken(tokenPayload),
+      refreshToken: generateRefreshToken(req.user!.userId),
+      organisation: {
+        id: orgUser.organisation.id,
+        name: orgUser.organisation.name,
+        type: orgUser.organisation.type,
+      },
+    },
+  });
 }));
 
 router.post('/invitations/:id/decline', authenticate, asyncHandler(async (req, res) => {

@@ -121,6 +121,7 @@ export const workOrderService = {
         orderBy: { [params.sort]: params.order },
         include: {
           vessel: { select: { id: true, name: true } },
+          organisation: { select: { id: true, name: true } },
           assignments: { include: assignmentUserInclude },
         },
       }),

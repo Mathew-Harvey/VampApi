@@ -32,6 +32,80 @@ router.post('/invite', authenticate, requirePermission('USER_INVITE'), validate(
   res.status(201).json({ success: true, data: safeInvitation });
 }));
 
+router.get('/invitations/pending', authenticate, asyncHandler(async (req, res) => {
+  const invitations = await prisma.invitation.findMany({
+    where: {
+      email: req.user!.email,
+      acceptedAt: null,
+      expiresAt: { gt: new Date() },
+      workOrderId: null,
+    },
+    include: { organisation: { select: { id: true, name: true, type: true } } },
+    orderBy: { createdAt: 'desc' },
+  });
+  res.json({ success: true, data: invitations.map(({ token: _t, ...inv }) => inv) });
+}));
+
+router.post('/invitations/:id/accept', authenticate, asyncHandler(async (req, res) => {
+  const invitation = await prisma.invitation.findFirst({
+    where: {
+      id: req.params.id as string,
+      email: req.user!.email,
+      acceptedAt: null,
+      expiresAt: { gt: new Date() },
+      workOrderId: null,
+    },
+  });
+  if (!invitation) {
+    res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Invitation not found or expired' } });
+    return;
+  }
+
+  const existing = await prisma.organisationUser.findUnique({
+    where: { userId_organisationId: { userId: req.user!.userId, organisationId: invitation.organisationId } },
+  });
+  if (existing) {
+    await prisma.invitation.update({ where: { id: invitation.id }, data: { acceptedAt: new Date() } });
+    res.json({ success: true, data: { message: 'You are already a member of this organisation' } });
+    return;
+  }
+
+  const newRole = invitation.role as UserRole;
+  const defaultPerms = ROLE_DEFAULT_PERMISSIONS[newRole] || [];
+
+  await prisma.$transaction([
+    prisma.organisationUser.create({
+      data: {
+        userId: req.user!.userId,
+        organisationId: invitation.organisationId,
+        role: newRole,
+        permissions: JSON.stringify(defaultPerms),
+      },
+    }),
+    prisma.invitation.update({ where: { id: invitation.id }, data: { acceptedAt: new Date() } }),
+  ]);
+
+  res.json({ success: true, data: { message: 'Invitation accepted' } });
+}));
+
+router.post('/invitations/:id/decline', authenticate, asyncHandler(async (req, res) => {
+  const invitation = await prisma.invitation.findFirst({
+    where: {
+      id: req.params.id as string,
+      email: req.user!.email,
+      acceptedAt: null,
+      workOrderId: null,
+    },
+  });
+  if (!invitation) {
+    res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Invitation not found' } });
+    return;
+  }
+
+  await prisma.invitation.update({ where: { id: invitation.id }, data: { acceptedAt: new Date() } });
+  res.json({ success: true, data: { message: 'Invitation declined' } });
+}));
+
 router.put('/:id', authenticate, requirePermission('USER_MANAGE'), validate(updateUserSchema), asyncHandler(async (req, res) => {
   const targetId = req.params.id as string;
   const membership = await prisma.organisationUser.findFirst({

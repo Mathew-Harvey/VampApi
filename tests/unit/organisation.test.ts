@@ -89,6 +89,14 @@ const viewerToken = generateAccessToken({
   permissions: ['VESSEL_VIEW', 'WORK_ORDER_VIEW'],
 });
 
+const ecosystemAdminToken = generateAccessToken({
+  userId: 'u1',
+  email: 'admin@test.com',
+  organisationId: 'org1',
+  role: 'ECOSYSTEM_ADMIN',
+  permissions: ['ADMIN_FULL_ACCESS'],
+});
+
 const otherOrgToken = generateAccessToken({
   userId: 'u3',
   email: 'other@test.com',
@@ -217,6 +225,20 @@ describe('Organisation Routes', () => {
       expect(res.status).toBe(200);
       expect(res.body.data.name).toBe('Updated Alpha');
       expect(res.body.data.type).toBe('SERVICE_PROVIDER');
+    });
+
+    it('allows ECOSYSTEM_ADMIN to update org', async () => {
+      (prisma.organisation.update as any).mockResolvedValue({
+        id: 'org1', name: 'Eco Update', type: 'VESSEL_OPERATOR',
+      });
+
+      const res = await request(app)
+        .put('/api/v1/organisations/org1')
+        .set('Authorization', `Bearer ${ecosystemAdminToken}`)
+        .send({ name: 'Eco Update' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.name).toBe('Eco Update');
     });
 
     it('strips disallowed fields from update payload', async () => {

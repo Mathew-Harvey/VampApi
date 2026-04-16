@@ -35,7 +35,7 @@ router.get('/:id', authenticate, asyncHandler(async (req, res) => {
 
 const ORG_UPDATE_ALLOWLIST = new Set(['name', 'type', 'contactEmail', 'contactPhone', 'address', 'abn', 'logoUrl']);
 
-router.put('/:id', authenticate, requireRole('ORGANISATION_ADMIN'), asyncHandler(async (req, res) => {
+router.put('/:id', authenticate, requireRole('ORGANISATION_ADMIN', 'ECOSYSTEM_ADMIN'), asyncHandler(async (req, res) => {
   const orgId = req.params.id as string;
 
   if (orgId !== req.user!.organisationId) {

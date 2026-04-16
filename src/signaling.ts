@@ -119,6 +119,8 @@ const rooms = new Map<string, Map<string, RoomParticipant>>();
 const formLocks = new Map<string, Map<string, FieldLock>>();
 /** Track which socket is in which form rooms for cleanup on disconnect */
 const socketFormRooms = new Map<string, Set<string>>();
+/** Track which socket is in which video rooms for signal relay validation */
+const socketVideoRooms = new Map<string, Set<string>>();
 
 // ---------------------------------------------------------------------------
 // Access check
@@ -266,6 +268,11 @@ export function initSignaling(httpServer: HTTPServer) {
         joinedAt: new Date(),
       });
 
+      if (!socketVideoRooms.has(socket.id)) {
+        socketVideoRooms.set(socket.id, new Set());
+      }
+      socketVideoRooms.get(socket.id)!.add(roomId);
+
       socket.to(roomId).emit('peer:joined', {
         socketId: socket.id,
         userId: user.userId,
@@ -283,10 +290,25 @@ export function initSignaling(httpServer: HTTPServer) {
     });
 
     socket.on('room:leave', ({ workOrderId }: WorkOrderData) => {
-      leaveVideoRoom(socket, `wo-${workOrderId}`, io);
+      const roomId = `wo-${workOrderId}`;
+      leaveVideoRoom(socket, roomId, io);
+      const tracked = socketVideoRooms.get(socket.id);
+      if (tracked) tracked.delete(roomId);
     });
 
+    function shareVideoRoom(targetSocketId: string): boolean {
+      const myRooms = socketVideoRooms.get(socket.id);
+      if (!myRooms) return false;
+      const theirRooms = socketVideoRooms.get(targetSocketId);
+      if (!theirRooms) return false;
+      for (const r of myRooms) {
+        if (theirRooms.has(r)) return true;
+      }
+      return false;
+    }
+
     socket.on('signal:offer', ({ targetSocketId, offer }: SignalOfferData) => {
+      if (!shareVideoRoom(targetSocketId)) return;
       io.to(targetSocketId).emit('signal:offer', {
         fromSocketId: socket.id,
         userId: user.userId,
@@ -296,14 +318,18 @@ export function initSignaling(httpServer: HTTPServer) {
     });
 
     socket.on('signal:answer', ({ targetSocketId, answer }: SignalAnswerData) => {
+      if (!shareVideoRoom(targetSocketId)) return;
       io.to(targetSocketId).emit('signal:answer', { fromSocketId: socket.id, answer });
     });
 
     socket.on('signal:ice-candidate', ({ targetSocketId, candidate }: SignalIceCandidateData) => {
+      if (!shareVideoRoom(targetSocketId)) return;
       io.to(targetSocketId).emit('signal:ice-candidate', { fromSocketId: socket.id, candidate });
     });
 
     socket.on('room:status', async ({ workOrderId }: WorkOrderData) => {
+      const allowed = await hasWorkOrderAccess(workOrderId, user.organisationId, user.userId);
+      if (!allowed) { socket.emit('room:status', { workOrderId, count: 0, participants: [], isActive: false }); return; }
       const roomId = `wo-${workOrderId}`;
       const room = rooms.get(roomId);
       const count = room?.size || 0;
@@ -350,7 +376,13 @@ export function initSignaling(httpServer: HTTPServer) {
       leaveFormRoom(socket, workOrderId, io);
     });
 
+    function isInFormRoom(workOrderId: string): boolean {
+      const tracked = socketFormRooms.get(socket.id);
+      return !!tracked && tracked.has(workOrderId);
+    }
+
     socket.on('form:lock', ({ workOrderId, entryId, field }: FormFieldData) => {
+      if (!isInFormRoom(workOrderId)) { socket.emit('form:error', { code: 'FORBIDDEN', message: 'Join the form room first' }); return; }
       if (!formLocks.has(workOrderId)) {
         formLocks.set(workOrderId, new Map());
       }
@@ -387,6 +419,7 @@ export function initSignaling(httpServer: HTTPServer) {
     });
 
     socket.on('form:unlock', ({ workOrderId, entryId, field }: FormFieldData) => {
+      if (!isInFormRoom(workOrderId)) return;
       const locks = formLocks.get(workOrderId);
       if (!locks) return;
 
@@ -400,6 +433,7 @@ export function initSignaling(httpServer: HTTPServer) {
     });
 
     socket.on('form:update', async ({ workOrderId, entryId, field, value }: FormUpdateData) => {
+      if (!isInFormRoom(workOrderId)) { socket.emit('form:error', { code: 'FORBIDDEN', message: 'Join the form room first' }); return; }
       try {
         await workFormService.updateField(entryId, field, value, user.userId);
         const formRoomId = `form-${workOrderId}`;
@@ -418,6 +452,7 @@ export function initSignaling(httpServer: HTTPServer) {
     });
 
     socket.on('form:screenshot-media', async ({ workOrderId, entryId, mediaId }: FormScreenshotMediaData) => {
+      if (!isInFormRoom(workOrderId)) { socket.emit('form:error', { code: 'FORBIDDEN', message: 'Join the form room first' }); return; }
       try {
         if (!mediaId || typeof mediaId !== 'string') {
           socket.emit('form:error', { code: 'SCREENSHOT_FAILED', message: 'mediaId is required' });
@@ -441,6 +476,7 @@ export function initSignaling(httpServer: HTTPServer) {
     });
 
     socket.on('form:screenshot-remove', async ({ workOrderId, entryId, index }: FormScreenshotRemoveData) => {
+      if (!isInFormRoom(workOrderId)) { socket.emit('form:error', { code: 'FORBIDDEN', message: 'Join the form room first' }); return; }
       try {
         const result = await workFormService.removeScreenshot(entryId, index);
         const formRoomId = `form-${workOrderId}`;
@@ -457,6 +493,7 @@ export function initSignaling(httpServer: HTTPServer) {
     });
 
     socket.on('form:complete', async ({ workOrderId, entryId }: FormCompleteData) => {
+      if (!isInFormRoom(workOrderId)) { socket.emit('form:error', { code: 'FORBIDDEN', message: 'Join the form room first' }); return; }
       try {
         await workFormService.updateField(entryId, 'status', 'COMPLETED', user.userId);
 
@@ -487,12 +524,14 @@ export function initSignaling(httpServer: HTTPServer) {
     // ================================================================
 
     socket.on('disconnect', () => {
-      // Leave all video rooms
-      for (const [roomId] of rooms) {
-        leaveVideoRoom(socket, roomId, io);
+      const videoRooms = socketVideoRooms.get(socket.id);
+      if (videoRooms) {
+        for (const roomId of videoRooms) {
+          leaveVideoRoom(socket, roomId, io);
+        }
+        socketVideoRooms.delete(socket.id);
       }
 
-      // Leave all form rooms and release locks
       const woIds = socketFormRooms.get(socket.id);
       if (woIds) {
         for (const workOrderId of woIds) {

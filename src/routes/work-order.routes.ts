@@ -65,17 +65,17 @@ router.delete('/:id/assign/:userId', authenticate, requirePermission('WORK_ORDER
   res.json({ success: true, data: { message: 'User unassigned' } });
 }));
 
-router.post('/:id/tasks/:taskId/submit', authenticate, asyncHandler(async (req, res) => {
+router.post('/:id/tasks/:taskId/submit', authenticate, requireWorkOrderWrite('id'), asyncHandler(async (req, res) => {
   const result = await workflowService.submitTask((req.params.id as string), (req.params.taskId as string), req.body, req.user!.userId);
   res.status(201).json({ success: true, data: result });
 }));
 
-router.post('/:id/tasks/:taskId/approve', authenticate, requirePermission('WORK_ORDER_APPROVE'), asyncHandler(async (req, res) => {
+router.post('/:id/tasks/:taskId/approve', authenticate, requirePermission('WORK_ORDER_APPROVE'), requireWorkOrderView('id'), asyncHandler(async (req, res) => {
   const result = await workflowService.approveTask((req.params.id as string), (req.params.taskId as string), req.user!.userId, req.body.notes);
   res.json({ success: true, data: result });
 }));
 
-router.post('/:id/tasks/:taskId/reject', authenticate, requirePermission('WORK_ORDER_APPROVE'), asyncHandler(async (req, res) => {
+router.post('/:id/tasks/:taskId/reject', authenticate, requirePermission('WORK_ORDER_APPROVE'), requireWorkOrderView('id'), asyncHandler(async (req, res) => {
   const result = await workflowService.rejectTask((req.params.id as string), (req.params.taskId as string), req.user!.userId, req.body.notes);
   res.json({ success: true, data: result });
 }));

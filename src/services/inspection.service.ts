@@ -5,8 +5,16 @@ import { auditService } from './audit.service';
 import { Prisma } from '@prisma/client';
 
 export const inspectionService = {
-  async list(params: PaginationParams, filters?: Record<string, string>) {
-    const where: Prisma.InspectionWhereInput = {};
+  async list(params: PaginationParams, organisationId: string, userId: string, filters?: Record<string, string>) {
+    const where: Prisma.InspectionWhereInput = {
+      workOrder: {
+        isDeleted: false,
+        OR: [
+          { organisationId },
+          { assignments: { some: { userId } } },
+        ],
+      },
+    };
     if (filters?.vesselId) where.vesselId = filters.vesselId;
     if (filters?.workOrderId) where.workOrderId = filters.workOrderId;
     if (filters?.status) where.status = filters.status as any;

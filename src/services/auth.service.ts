@@ -9,6 +9,15 @@ import { env } from '../config/env';
 
 const SALT_ROUNDS = 10;
 
+function safeParsePermissions(raw: unknown): string[] {
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw === 'string') {
+    try { const parsed = JSON.parse(raw); return Array.isArray(parsed) ? parsed : []; }
+    catch { return []; }
+  }
+  return [];
+}
+
 export const authService = {
   async register(data: { email: string; password: string; firstName: string; lastName: string; phone?: string | null }) {
     // Check if email is already taken
@@ -106,9 +115,7 @@ export const authService = {
       include: { organisation: true },
     });
 
-    const permissions = typeof orgUser.permissions === 'string'
-      ? JSON.parse(orgUser.permissions)
-      : orgUser.permissions;
+    const permissions = safeParsePermissions(orgUser.permissions);
 
     const tokenPayload: TokenPayload = {
       userId: user.id,
@@ -117,6 +124,10 @@ export const authService = {
       role: orgUser.role,
       permissions,
     };
+
+    if (!orgUserWithOrg) {
+      throw new AppError(500, 'INTERNAL', 'Failed to load organisation for new user');
+    }
 
     return {
       accessToken: generateAccessToken(tokenPayload),
@@ -128,9 +139,9 @@ export const authService = {
         createdAt: user.createdAt, updatedAt: user.updatedAt,
       },
       organisation: {
-        id: orgUserWithOrg!.organisation.id,
-        name: orgUserWithOrg!.organisation.name,
-        type: orgUserWithOrg!.organisation.type,
+        id: orgUserWithOrg.organisation.id,
+        name: orgUserWithOrg.organisation.name,
+        type: orgUserWithOrg.organisation.type,
       },
     };
   },
@@ -150,7 +161,6 @@ export const authService = {
       throw new AppError(401, 'INVALID_CREDENTIALS', 'Invalid email or password');
     }
 
-    // Select organisation
     let orgUser = user.organisations.find((ou) => ou.isDefault);
     if (organisationId) {
       orgUser = user.organisations.find((ou) => ou.organisationId === organisationId);
@@ -162,9 +172,7 @@ export const authService = {
       throw new AppError(403, 'NO_ORGANISATION', 'User has no organisation membership');
     }
 
-    const permissions = typeof orgUser.permissions === 'string'
-      ? JSON.parse(orgUser.permissions)
-      : orgUser.permissions;
+    const permissions = safeParsePermissions(orgUser.permissions);
 
     const tokenPayload: TokenPayload = {
       userId: user.id,
@@ -309,9 +317,7 @@ export const authService = {
       const orgUser = user.organisations.find((ou) => ou.isDefault) || user.organisations[0];
       if (!orgUser) throw new AppError(403, 'NO_ORGANISATION', 'No organisation');
 
-      const perms = typeof orgUser.permissions === 'string'
-        ? JSON.parse(orgUser.permissions)
-        : orgUser.permissions;
+      const perms = safeParsePermissions(orgUser.permissions);
 
       const tokenPayload: TokenPayload = {
         userId: user.id,

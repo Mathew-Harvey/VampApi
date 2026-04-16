@@ -14,29 +14,60 @@ import { asyncHandler } from '../utils/async-handler';
 
 const router = Router();
 
+const fleetOrgId = () => process.env.FLEET_ORG_ID || '';
+
+async function assertVesselAccess(req: Request, res: Response, vesselId: string): Promise<boolean> {
+  const vessel = await prisma.vessel.findFirst({
+    where: { id: vesselId, isDeleted: false },
+    select: { organisationId: true },
+  });
+  if (!vessel) { res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Vessel not found' } }); return false; }
+  if (vessel.organisationId !== req.user!.organisationId && vessel.organisationId !== fleetOrgId()) {
+    res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Vessel not found' } }); return false;
+  }
+  return true;
+}
+
+async function assertComponentAccess(req: Request, res: Response, componentId: string): Promise<boolean> {
+  const comp = await prisma.vesselComponent.findUnique({
+    where: { id: componentId },
+    select: { vessel: { select: { id: true, organisationId: true, isDeleted: true } } },
+  });
+  if (!comp || comp.vessel.isDeleted) { res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Component not found' } }); return false; }
+  if (comp.vessel.organisationId !== req.user!.organisationId && comp.vessel.organisationId !== fleetOrgId()) {
+    res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Component not found' } }); return false;
+  }
+  return true;
+}
+
 // === Vessel Components (General Arrangement) ===
 
 router.get('/vessels/:vesselId/components', authenticate, asyncHandler(async (req, res) => {
+  if (!await assertVesselAccess(req, res, req.params.vesselId as string)) return;
   const components = await vesselComponentService.listByVessel(req.params.vesselId as string);
   res.json({ success: true, data: components });
 }));
 
 router.post('/vessels/:vesselId/components', authenticate, asyncHandler(async (req, res) => {
+  if (!await assertVesselAccess(req, res, req.params.vesselId as string)) return;
   const component = await vesselComponentService.create(req.params.vesselId as string, req.body);
   res.status(201).json({ success: true, data: component });
 }));
 
 router.post('/vessels/:vesselId/components/bulk', authenticate, asyncHandler(async (req, res) => {
+  if (!await assertVesselAccess(req, res, req.params.vesselId as string)) return;
   const components = await vesselComponentService.bulkCreate(req.params.vesselId as string, req.body.components);
   res.status(201).json({ success: true, data: components });
 }));
 
 router.put('/components/:id', authenticate, asyncHandler(async (req, res) => {
+  if (!await assertComponentAccess(req, res, req.params.id as string)) return;
   const component = await vesselComponentService.update(req.params.id as string, req.body);
   res.json({ success: true, data: component });
 }));
 
 router.delete('/components/:id', authenticate, asyncHandler(async (req, res) => {
+  if (!await assertComponentAccess(req, res, req.params.id as string)) return;
   await vesselComponentService.delete(req.params.id as string);
   res.json({ success: true, data: { message: 'Component deleted' } });
 }));

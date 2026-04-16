@@ -27,12 +27,12 @@ router.get('/:id', authenticate, requirePermission('VESSEL_VIEW'), asyncHandler(
 }));
 
 router.put('/:id', authenticate, requirePermission('VESSEL_EDIT'), validate(updateVesselSchema), asyncHandler(async (req, res) => {
-  const vessel = await vesselService.update((req.params.id as string), req.body, req.user!.userId);
+  const vessel = await vesselService.update((req.params.id as string), req.body, req.user!.userId, req.user!.organisationId);
   res.json({ success: true, data: vessel });
 }));
 
 router.delete('/:id', authenticate, requirePermission('VESSEL_DELETE'), asyncHandler(async (req, res) => {
-  await vesselService.softDelete((req.params.id as string), req.user!.userId);
+  await vesselService.softDelete((req.params.id as string), req.user!.userId, req.user!.organisationId);
   res.json({ success: true, data: { message: 'Vessel deleted' } });
 }));
 

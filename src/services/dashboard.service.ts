@@ -37,8 +37,13 @@ export const dashboardService = {
   },
 
   async getRecentActivity(organisationId: string, limit = 20) {
+    const orgUsers = await prisma.organisationUser.findMany({
+      where: { organisationId },
+      select: { userId: true },
+    });
+    const userIds = orgUsers.map((ou) => ou.userId);
     return prisma.auditEntry.findMany({
-      where: { actorOrg: organisationId },
+      where: { actorId: { in: userIds } },
       orderBy: { createdAt: 'desc' },
       take: limit,
       include: { actor: { select: { id: true, firstName: true, lastName: true } } },

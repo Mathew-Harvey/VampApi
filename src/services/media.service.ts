@@ -182,6 +182,9 @@ export const mediaService = {
   async delete(id: string, userId: string) {
     const media = await prisma.media.findUnique({ where: { id } });
     if (!media) throw new AppError(404, 'NOT_FOUND', 'Media not found');
+    if (media.uploaderId !== userId) {
+      throw new AppError(403, 'FORBIDDEN', 'You can only delete your own media');
+    }
 
     await storageService.deleteStoredMedia({ storageKey: media.storageKey, url: media.url });
     await prisma.media.delete({ where: { id } });

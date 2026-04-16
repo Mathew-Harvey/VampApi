@@ -90,12 +90,28 @@ export const vesselService = {
     return vessel;
   },
 
-  async update(id: string, data: any, userId: string) {
+  async update(id: string, data: any, userId: string, organisationId?: string) {
     const existing = await prisma.vessel.findFirst({ where: { id, isDeleted: false } });
     if (!existing) throw new AppError(404, 'NOT_FOUND', 'Vessel not found');
+    if (organisationId && existing.organisationId !== organisationId && existing.organisationId !== fleetOrgId()) {
+      throw new AppError(404, 'NOT_FOUND', 'Vessel not found');
+    }
     if (existing.source === 'RISE_X') throw new AppError(403, 'FORBIDDEN', 'Synced fleet vessels are read-only');
 
-    const vessel = await prisma.vessel.update({ where: { id }, data });
+    const VESSEL_UPDATE_ALLOWLIST = new Set([
+      'name', 'vesselType', 'imoNumber', 'mmsi', 'callSign', 'flagState', 'homePort',
+      'classificationSociety', 'afsCoatingType', 'afsManufacturer', 'afsProductName',
+      'tradingRoutes', 'operatingArea', 'bfmpDocumentUrl', 'bfmpRevision', 'regulatoryRef',
+      'grossTonnage', 'lengthOverall', 'beam', 'maxDraft', 'minDraft', 'yearBuilt',
+      'afsServiceLife', 'typicalSpeed', 'climateZones', 'metadata', 'status', 'complianceStatus',
+      'afsApplicationDate', 'lastDrydockDate', 'nextDrydockDate',
+    ]);
+    const sanitized: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (VESSEL_UPDATE_ALLOWLIST.has(key)) sanitized[key] = value;
+    }
+
+    const vessel = await prisma.vessel.update({ where: { id }, data: sanitized });
 
     await auditService.log({
       actorId: userId,
@@ -111,9 +127,12 @@ export const vesselService = {
     return vessel;
   },
 
-  async softDelete(id: string, userId: string) {
+  async softDelete(id: string, userId: string, organisationId?: string) {
     const existing = await prisma.vessel.findFirst({ where: { id, isDeleted: false } });
     if (!existing) throw new AppError(404, 'NOT_FOUND', 'Vessel not found');
+    if (organisationId && existing.organisationId !== organisationId && existing.organisationId !== fleetOrgId()) {
+      throw new AppError(404, 'NOT_FOUND', 'Vessel not found');
+    }
     if (existing.source === 'RISE_X') throw new AppError(403, 'FORBIDDEN', 'Synced fleet vessels are read-only');
 
     await prisma.vessel.update({ where: { id }, data: { isDeleted: true } });

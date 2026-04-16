@@ -64,8 +64,14 @@ export const auditService = {
     });
   },
 
-  async list(params: PaginationParams, filters?: Record<string, string>) {
-    const where: any = {};
+  async list(params: PaginationParams, organisationId: string, filters?: Record<string, string>) {
+    const orgUsers = await prisma.organisationUser.findMany({
+      where: { organisationId },
+      select: { userId: true },
+    });
+    const orgUserIds = orgUsers.map((ou) => ou.userId);
+
+    const where: any = { actorId: { in: orgUserIds } };
     if (filters?.entityType) where.entityType = filters.entityType;
     if (filters?.entityId) where.entityId = filters.entityId;
     if (filters?.action) where.action = filters.action;

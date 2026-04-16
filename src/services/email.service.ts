@@ -121,6 +121,15 @@ async function sendEmail(to: string, subject: string, html: string): Promise<Ema
   }
 }
 
+function escapeHtml(unsafe: string): string {
+  return unsafe
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 // ── Branded HTML templates ──
 
 const brandHeader = `
@@ -182,25 +191,30 @@ export const emailService = {
       ? 'Create Your Account'
       : 'View Work Order');
 
+    const safeInviter = escapeHtml(params.inviterName);
+    const safeRef = escapeHtml(params.workOrderRef);
+    const safeTitle = escapeHtml(params.workOrderTitle);
+    const safeVessel = escapeHtml(params.vesselName);
+
     const html = wrapEmail(`
       <h2 style="margin: 0 0 8px; color: #0f172a; font-size: 20px;">You've been invited to collaborate</h2>
       <p style="color: #64748b; font-size: 14px; margin: 0 0 24px;">
-        <strong style="color: #0f172a;">${params.inviterName}</strong> has invited you to a work order on MarineStream.
+        <strong style="color: #0f172a;">${safeInviter}</strong> has invited you to a work order on MarineStream.
       </p>
 
       <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
         <table style="width: 100%; border-collapse: collapse;">
           <tr>
             <td style="padding: 6px 0; color: #64748b; font-size: 13px; width: 120px;">Work Order</td>
-            <td style="padding: 6px 0; color: #0f172a; font-size: 13px; font-weight: 600;">${params.workOrderRef}</td>
+            <td style="padding: 6px 0; color: #0f172a; font-size: 13px; font-weight: 600;">${safeRef}</td>
           </tr>
           <tr>
             <td style="padding: 6px 0; color: #64748b; font-size: 13px;">Title</td>
-            <td style="padding: 6px 0; color: #0f172a; font-size: 13px;">${params.workOrderTitle}</td>
+            <td style="padding: 6px 0; color: #0f172a; font-size: 13px;">${safeTitle}</td>
           </tr>
           <tr>
             <td style="padding: 6px 0; color: #64748b; font-size: 13px;">Vessel</td>
-            <td style="padding: 6px 0; color: #0f172a; font-size: 13px;">${params.vesselName}</td>
+            <td style="padding: 6px 0; color: #0f172a; font-size: 13px;">${safeVessel}</td>
           </tr>
           <tr>
             <td style="padding: 6px 0; color: #64748b; font-size: 13px;">Your Access</td>

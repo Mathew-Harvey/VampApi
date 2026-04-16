@@ -17,7 +17,7 @@ router.get('/', authenticate, requirePermission('INSPECTION_VIEW'), asyncHandler
     status: req.query.status as string,
     type: req.query.type as string,
   };
-  const result = await inspectionService.list(params, filters);
+  const result = await inspectionService.list(params, req.user!.organisationId, req.user!.userId, filters);
   res.json(result);
 }));
 

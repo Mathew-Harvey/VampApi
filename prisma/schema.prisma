@@ -76,7 +76,7 @@ model Invitation {
   expiresAt      DateTime
   acceptedAt     DateTime?
   createdAt      DateTime     @default(now())
-  organisation   Organisation @relation(fields: [organisationId], references: [id])
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
 
   @@map("invitations")
 }
@@ -267,6 +267,8 @@ model WorkOrder {
   vessel              Vessel                @relation(fields: [vesselId], references: [id])
   workflow            Workflow?             @relation(fields: [workflowId], references: [id])
 
+  @@index([organisationId, status, isDeleted])
+  @@index([vesselId])
   @@map("work_orders")
 }
 
@@ -314,6 +316,8 @@ model Inspection {
   workOrder         WorkOrder           @relation(fields: [workOrderId], references: [id])
   media             Media[]
 
+  @@index([workOrderId])
+  @@index([vesselId])
   @@map("inspections")
 }
 
@@ -413,10 +417,12 @@ model TaskSubmission {
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   media       Media[]
-  task        WorkflowTask @relation(fields: [taskId], references: [id])
+  task        WorkflowTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
   user        User         @relation(fields: [userId], references: [id])
-  workOrder   WorkOrder    @relation(fields: [workOrderId], references: [id])
+  workOrder   WorkOrder    @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
 
+  @@index([workOrderId])
+  @@index([taskId])
   @@map("task_submissions")
 }
 
@@ -441,13 +447,15 @@ model Media {
   deviceInfo   String?
   tags         String             @default("[]")
   createdAt    DateTime           @default(now())
-  finding      InspectionFinding? @relation(fields: [findingId], references: [id])
-  inspection   Inspection?        @relation(fields: [inspectionId], references: [id])
-  submission   TaskSubmission?    @relation(fields: [submissionId], references: [id])
+  finding      InspectionFinding? @relation(fields: [findingId], references: [id], onDelete: SetNull)
+  inspection   Inspection?        @relation(fields: [inspectionId], references: [id], onDelete: SetNull)
+  submission   TaskSubmission?    @relation(fields: [submissionId], references: [id], onDelete: SetNull)
   uploader     User               @relation(fields: [uploaderId], references: [id])
   vessel       Vessel?            @relation(fields: [vesselId], references: [id])
   workOrder    WorkOrder?         @relation(fields: [workOrderId], references: [id])
 
+  @@index([workOrderId])
+  @@index([uploaderId])
   @@map("media")
 }
 
@@ -509,6 +517,9 @@ model AuditEntry {
   createdAt     DateTime @default(now())
   actor         User?    @relation("AuditActor", fields: [actorId], references: [id])
 
+  @@index([entityType, entityId])
+  @@index([actorId])
+  @@index([createdAt])
   @@map("audit_entries")
 }
 
@@ -525,5 +536,6 @@ model Notification {
   createdAt  DateTime  @default(now())
   user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId, isRead])
   @@map("notifications")
 }

@@ -310,7 +310,7 @@ export const storageConfigService = {
 
 function resolveEffectiveBackend(cfg: StorageConfig, s3Configured: boolean): 'local' | 's3' {
   if (cfg.backend === 'local') return 'local';
-  if (cfg.backend === 's3') return s3Configured ? 's3' : 's3';
+  if (cfg.backend === 's3') return s3Configured ? 's3' : 'local';
   return s3Configured ? 's3' : 'local';
 }
 

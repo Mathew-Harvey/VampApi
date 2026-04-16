@@ -46,16 +46,17 @@ app.use(cors({
   credentials: true,
 }));
 
-// Rate limiting for auth endpoints (disabled in test to avoid 429 during integration tests)
-const authLimiter = process.env.NODE_ENV === 'test'
-  ? (_req: express.Request, _res: express.Response, next: express.NextFunction) => next()
-  : rateLimit({
-      windowMs: 60 * 1000,
-      max: 10,
-      standardHeaders: true,
-      legacyHeaders: false,
-      message: { success: false, error: { code: 'RATE_LIMITED', message: 'Too many requests' } },
-    });
+const noopLimiter = (_req: express.Request, _res: express.Response, next: express.NextFunction) => next();
+const isTest = process.env.NODE_ENV === 'test';
+const rateLimitMessage = { success: false, error: { code: 'RATE_LIMITED', message: 'Too many requests' } };
+
+const authLimiter = isTest
+  ? noopLimiter
+  : rateLimit({ windowMs: 60 * 1000, max: 10, standardHeaders: true, legacyHeaders: false, message: rateLimitMessage });
+
+const sensitiveLimiter = isTest
+  ? noopLimiter
+  : rateLimit({ windowMs: 60 * 1000, max: 20, standardHeaders: true, legacyHeaders: false, message: rateLimitMessage });
 
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
@@ -103,19 +104,19 @@ app.get('/api/v1/health', async (_req, res) => {
 // API Routes
 app.use('/api/v1/auth', authLimiter, authRoutes);
 app.use('/api/v1', workFormRoutes); // Must be before /vessels so /vessels/:id/components is handled
-app.use('/api/v1', inviteRoutes);
+app.use('/api/v1', sensitiveLimiter, inviteRoutes);
 app.use('/api/v1/vessels', vesselRoutes);
 app.use('/api/v1/work-orders', workOrderRoutes);
 app.use('/api/v1/inspections', inspectionRoutes);
-app.use('/api/v1/media', mediaRoutes);
+app.use('/api/v1/media', sensitiveLimiter, mediaRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/audit', auditRoutes);
-app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/users', sensitiveLimiter, userRoutes);
 app.use('/api/v1/organisations', organisationRoutes);
 app.use('/api/v1/reports', reportRoutes);
 app.use('/api/v1/workflows', workflowRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
-app.use('/api/v1/storage', storageRoutes);
+app.use('/api/v1/storage', sensitiveLimiter, storageRoutes);
 
 // Error handling
 app.use(notFound);

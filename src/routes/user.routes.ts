@@ -27,11 +27,21 @@ router.post('/invite', authenticate, requirePermission('USER_INVITE'), validate(
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     },
   });
-  res.status(201).json({ success: true, data: invitation });
+  const { token: _secret, ...safeInvitation } = invitation;
+  res.status(201).json({ success: true, data: safeInvitation });
 }));
 
 router.put('/:id', authenticate, requirePermission('USER_MANAGE'), validate(updateUserSchema), asyncHandler(async (req, res) => {
-  const user = await prisma.user.update({ where: { id: (req.params.id as string) }, data: req.body });
+  const targetId = req.params.id as string;
+  const membership = await prisma.organisationUser.findFirst({
+    where: { userId: targetId, organisationId: req.user!.organisationId },
+  });
+  if (!membership) {
+    res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'User not found in your organisation' } });
+    return;
+  }
+  const { passwordHash: _ph, ...allowedFields } = req.body;
+  const user = await prisma.user.update({ where: { id: targetId }, data: allowedFields });
   const { passwordHash, ...safe } = user;
   res.json({ success: true, data: safe });
 }));

@@ -6,8 +6,16 @@ import { asyncHandler } from '../utils/async-handler';
 
 const router = Router();
 
-router.get('/', authenticate, asyncHandler(async (_req, res) => {
-  const orgs = await prisma.organisation.findMany({ orderBy: { name: 'asc' } });
+router.get('/', authenticate, asyncHandler(async (req, res) => {
+  const memberships = await prisma.organisationUser.findMany({
+    where: { userId: req.user!.userId },
+    select: { organisationId: true },
+  });
+  const orgIds = memberships.map((m) => m.organisationId);
+  const orgs = await prisma.organisation.findMany({
+    where: { id: { in: orgIds } },
+    orderBy: { name: 'asc' },
+  });
   res.json({ success: true, data: orgs });
 }));
 

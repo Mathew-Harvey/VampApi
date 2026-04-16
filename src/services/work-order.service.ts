@@ -99,10 +99,14 @@ export const workOrderService = {
     };
 
     if (params.search) {
-      where.OR = [
-        { title: { contains: params.search } },
-        { referenceNumber: { contains: params.search } },
+      where.AND = [
+        { OR: accessFilters },
+        { OR: [
+          { title: { contains: params.search } },
+          { referenceNumber: { contains: params.search } },
+        ] },
       ];
+      delete where.OR;
     }
     if (filters?.status) where.status = filters.status as any;
     if (filters?.type) where.type = filters.type as any;

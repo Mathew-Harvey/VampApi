@@ -17,7 +17,7 @@ router.get('/', authenticate, requirePermission('AUDIT_VIEW'), asyncHandler(asyn
     from: req.query.from as string,
     to: req.query.to as string,
   };
-  const result = await auditService.list(params, filters);
+  const result = await auditService.list(params, req.user!.organisationId, filters);
   res.json(result);
 }));
 

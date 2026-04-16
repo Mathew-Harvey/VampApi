@@ -80,7 +80,7 @@ router.put('/config', authenticate, adminOnly, asyncHandler(async (req, res) => 
 // ---------------------------------------------------------------------------
 // POST /config/test-s3 — test S3 connectivity with current or supplied creds
 // ---------------------------------------------------------------------------
-router.post('/config/test-s3', authenticate, asyncHandler(async (req, res) => {
+router.post('/config/test-s3', authenticate, adminOnly, asyncHandler(async (req, res) => {
   const cfg = storageConfigService.get();
   const s3 = { ...cfg.s3, ...(req.body.s3 ?? {}) };
 
@@ -172,7 +172,7 @@ router.post('/config/test-s3', authenticate, asyncHandler(async (req, res) => {
 // ---------------------------------------------------------------------------
 // POST /config/test-local — validate a local path is writable
 // ---------------------------------------------------------------------------
-router.post('/config/test-local', authenticate, asyncHandler(async (req, res) => {
+router.post('/config/test-local', authenticate, adminOnly, asyncHandler(async (req, res) => {
   const requestedPath = req.body.localMediaPath || storageConfigService.get().localMediaPath;
   const resolved = path.resolve(requestedPath);
 

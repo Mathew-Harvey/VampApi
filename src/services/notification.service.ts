@@ -26,6 +26,8 @@ export const notificationService = {
   },
 
   async markRead(id: string, userId: string) {
+    const notification = await prisma.notification.findFirst({ where: { id, userId } });
+    if (!notification) throw new Error('Notification not found');
     return prisma.notification.update({
       where: { id },
       data: { isRead: true, readAt: new Date() },

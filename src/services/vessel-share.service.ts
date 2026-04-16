@@ -31,7 +31,14 @@ export const vesselShareService = {
     const vessel = await assertVesselOwnership(vesselId, organisationId);
     const emailLower = email.trim().toLowerCase();
 
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailLower)) {
+      throw new AppError(400, 'VALIDATION_ERROR', 'Please enter a valid email address');
+    }
+
     const sharer = await prisma.user.findUnique({ where: { id: sharedByUserId } });
+    if (sharer && sharer.email.toLowerCase() === emailLower) {
+      throw new AppError(400, 'VALIDATION_ERROR', 'You cannot share a vessel with yourself');
+    }
     const sharerName = sharer ? `${sharer.firstName} ${sharer.lastName}` : 'A team member';
 
     const user = await prisma.user.findUnique({ where: { email: emailLower } });

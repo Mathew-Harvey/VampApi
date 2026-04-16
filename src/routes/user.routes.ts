@@ -2,7 +2,8 @@ import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
 import { requirePermission } from '../middleware/permissions';
 import { validate } from '../middleware/validate';
-import { inviteUserSchema, updateUserSchema } from '../schemas/user.schema';
+import { inviteUserSchema, updateUserSchema, updateRoleSchema } from '../schemas/user.schema';
+import { ROLE_DEFAULT_PERMISSIONS, type UserRole } from '../constants/permissions';
 import prisma from '../config/database';
 import { randomUUID } from 'crypto';
 import { asyncHandler } from '../utils/async-handler';
@@ -46,12 +47,44 @@ router.put('/:id', authenticate, requirePermission('USER_MANAGE'), validate(upda
   res.json({ success: true, data: safe });
 }));
 
-router.patch('/:id/role', authenticate, requirePermission('USER_MANAGE'), asyncHandler(async (req, res) => {
+router.patch('/:id/role', authenticate, requirePermission('USER_MANAGE'), validate(updateRoleSchema), asyncHandler(async (req, res) => {
+  const targetId = req.params.id as string;
+
+  if (targetId === req.user!.userId) {
+    res.status(400).json({ success: false, error: { code: 'SELF_ROLE_CHANGE', message: 'You cannot change your own role' } });
+    return;
+  }
+
+  const newRole = req.body.role as UserRole;
+  const defaultPerms = ROLE_DEFAULT_PERMISSIONS[newRole] || [];
+
   const updated = await prisma.organisationUser.update({
-    where: { userId_organisationId: { userId: (req.params.id as string), organisationId: req.user!.organisationId } },
-    data: { role: req.body.role, permissions: req.body.permissions },
+    where: { userId_organisationId: { userId: targetId, organisationId: req.user!.organisationId } },
+    data: { role: newRole, permissions: JSON.stringify(defaultPerms) },
   });
   res.json({ success: true, data: updated });
+}));
+
+router.delete('/:id/membership', authenticate, requirePermission('USER_MANAGE'), asyncHandler(async (req, res) => {
+  const targetId = req.params.id as string;
+
+  if (targetId === req.user!.userId) {
+    res.status(400).json({ success: false, error: { code: 'SELF_REMOVE', message: 'You cannot remove yourself from the organisation' } });
+    return;
+  }
+
+  const membership = await prisma.organisationUser.findUnique({
+    where: { userId_organisationId: { userId: targetId, organisationId: req.user!.organisationId } },
+  });
+  if (!membership) {
+    res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'User not found in your organisation' } });
+    return;
+  }
+
+  await prisma.organisationUser.delete({
+    where: { userId_organisationId: { userId: targetId, organisationId: req.user!.organisationId } },
+  });
+  res.json({ success: true, data: { message: 'User removed from organisation' } });
 }));
 
 export default router;

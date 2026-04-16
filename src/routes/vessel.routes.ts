@@ -26,7 +26,15 @@ router.get('/:id', authenticate, requirePermission('VESSEL_VIEW'), asyncHandler(
   res.json({ success: true, data: vessel });
 }));
 
-router.put('/:id', authenticate, requirePermission('VESSEL_EDIT'), validate(updateVesselSchema), asyncHandler(async (req, res) => {
+router.put('/:id', authenticate, asyncHandler(async (req, res, next) => {
+  const { hasAnyPermission } = await import('../middleware/permissions');
+  const hasOrgPerm = hasAnyPermission(req.user, 'VESSEL_EDIT');
+  if (hasOrgPerm) return next();
+  const { vesselShareService } = await import('../services/vessel-share.service');
+  const sharePerm = await vesselShareService.getSharePermission(req.params.id as string, req.user!.userId);
+  if (sharePerm === 'WRITE') return next();
+  res.status(403).json({ success: false, error: { code: 'FORBIDDEN', message: 'Insufficient permissions' } });
+}), validate(updateVesselSchema), asyncHandler(async (req, res) => {
   const vessel = await vesselService.update((req.params.id as string), req.body, req.user!.userId, req.user!.organisationId);
   res.json({ success: true, data: vessel });
 }));

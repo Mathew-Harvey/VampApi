@@ -167,7 +167,7 @@ describe('Vessel Share Routes', () => {
     it('shares vessel with existing user', async () => {
       (prisma.vessel.findFirst as any).mockResolvedValue(mockVessel);
       (prisma.user.findUnique as any)
-        .mockResolvedValueOnce({ id: 'u1', firstName: 'Admin', lastName: 'User' })
+        .mockResolvedValueOnce({ id: 'u1', firstName: 'Admin', lastName: 'User', email: 'admin@test.com' })
         .mockResolvedValueOnce(mockUser);
       (prisma.vesselShare.findUnique as any).mockResolvedValue(null);
       (prisma.vesselShare.create as any).mockResolvedValue(mockShare);
@@ -186,7 +186,7 @@ describe('Vessel Share Routes', () => {
     it('returns invited status for non-existent user', async () => {
       (prisma.vessel.findFirst as any).mockResolvedValue(mockVessel);
       (prisma.user.findUnique as any)
-        .mockResolvedValueOnce({ id: 'u1', firstName: 'Admin', lastName: 'User' })
+        .mockResolvedValueOnce({ id: 'u1', firstName: 'Admin', lastName: 'User', email: 'admin@test.com' })
         .mockResolvedValueOnce(null);
 
       const res = await request(app)
@@ -197,6 +197,65 @@ describe('Vessel Share Routes', () => {
       expect(res.status).toBe(201);
       expect(res.body.data.status).toBe('invited');
       expect(res.body.data.email).toBe('newuser@test.com');
+    });
+
+    it('prevents sharing a vessel with yourself', async () => {
+      (prisma.vessel.findFirst as any).mockResolvedValue(mockVessel);
+      (prisma.user.findUnique as any).mockResolvedValueOnce({ id: 'u1', firstName: 'Admin', lastName: 'User', email: 'admin@test.com' });
+
+      const res = await request(app)
+        .post('/api/v1/vessels/v1/shares')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ email: 'admin@test.com', permission: 'READ' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.message).toContain('yourself');
+    });
+
+    it('rejects invalid email format', async () => {
+      (prisma.vessel.findFirst as any).mockResolvedValue(mockVessel);
+
+      const res = await request(app)
+        .post('/api/v1/vessels/v1/shares')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ email: 'not-an-email', permission: 'READ' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.message).toContain('valid email');
+    });
+
+    it('returns already_shared when duplicate share with same permission', async () => {
+      (prisma.vessel.findFirst as any).mockResolvedValue(mockVessel);
+      (prisma.user.findUnique as any)
+        .mockResolvedValueOnce({ id: 'u1', firstName: 'Admin', lastName: 'User', email: 'admin@test.com' })
+        .mockResolvedValueOnce(mockUser);
+      (prisma.vesselShare.findUnique as any).mockResolvedValue(mockShare);
+
+      const res = await request(app)
+        .post('/api/v1/vessels/v1/shares')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ email: 'shared@test.com', permission: 'READ' });
+
+      expect(res.status).toBe(201);
+      expect(res.body.data.status).toBe('already_shared');
+    });
+
+    it('returns updated when changing existing share permission', async () => {
+      (prisma.vessel.findFirst as any).mockResolvedValue(mockVessel);
+      (prisma.user.findUnique as any)
+        .mockResolvedValueOnce({ id: 'u1', firstName: 'Admin', lastName: 'User', email: 'admin@test.com' })
+        .mockResolvedValueOnce(mockUser);
+      (prisma.vesselShare.findUnique as any).mockResolvedValue(mockShare);
+      (prisma.vesselShare.update as any).mockResolvedValue({ ...mockShare, permission: 'WRITE' });
+
+      const res = await request(app)
+        .post('/api/v1/vessels/v1/shares')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ email: 'shared@test.com', permission: 'WRITE' });
+
+      expect(res.status).toBe(201);
+      expect(res.body.data.status).toBe('updated');
+      expect(res.body.data.permission).toBe('WRITE');
     });
   });
 
@@ -249,6 +308,19 @@ describe('Vessel Share Routes', () => {
 
       expect(res.status).toBe(400);
     });
+
+    it('returns 404 for non-existent share', async () => {
+      (prisma.vessel.findFirst as any).mockResolvedValue(mockVessel);
+      (prisma.vesselShare.findUnique as any).mockResolvedValue(null);
+
+      const res = await request(app)
+        .patch('/api/v1/vessels/v1/shares/u-nobody/permission')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ permission: 'WRITE' });
+
+      expect(res.status).toBe(404);
+      expect(res.body.error.code).toBe('NOT_FOUND');
+    });
   });
 
   describe('DELETE /api/v1/vessels/:vesselId/shares/:userId', () => {
@@ -271,6 +343,17 @@ describe('Vessel Share Routes', () => {
         .set('Authorization', `Bearer ${viewerToken}`);
 
       expect(res.status).toBe(403);
+    });
+
+    it('returns 404 for non-existent share', async () => {
+      (prisma.vessel.findFirst as any).mockResolvedValue(mockVessel);
+      (prisma.vesselShare.findUnique as any).mockResolvedValue(null);
+
+      const res = await request(app)
+        .delete('/api/v1/vessels/v1/shares/u-nobody')
+        .set('Authorization', `Bearer ${authToken}`);
+
+      expect(res.status).toBe(404);
     });
   });
 });

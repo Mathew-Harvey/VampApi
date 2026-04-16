@@ -19,6 +19,9 @@ vi.mock('../../src/config/database', () => {
       findFirst: vi.fn(),
       update: vi.fn(),
     },
+    vesselShare: {
+      findUnique: vi.fn().mockResolvedValue(null),
+    },
     workOrder: {
       findMany: vi.fn().mockResolvedValue([]),
       count: vi.fn().mockResolvedValue(0),

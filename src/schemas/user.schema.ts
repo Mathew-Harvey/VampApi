@@ -26,6 +26,10 @@ export const updateUserSchema = z.object({
   isActive: z.boolean().optional(),
 });
 
+export const updateRoleSchema = z.object({
+  role: z.enum(['ORGANISATION_ADMIN', 'MANAGER', 'OPERATOR', 'VIEWER']),
+});
+
 export const changePasswordSchema = z.object({
   currentPassword: z.string().min(1),
   newPassword: z.string().min(8, 'Password must be at least 8 characters'),

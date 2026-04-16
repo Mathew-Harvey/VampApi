@@ -129,8 +129,15 @@ export const vesselService = {
   async update(id: string, data: any, userId: string, organisationId?: string) {
     const existing = await prisma.vessel.findFirst({ where: { id, isDeleted: false } });
     if (!existing) throw new AppError(404, 'NOT_FOUND', 'Vessel not found');
-    if (organisationId && existing.organisationId !== organisationId && existing.organisationId !== fleetOrgId()) {
-      throw new AppError(404, 'NOT_FOUND', 'Vessel not found');
+
+    const isOrgOwned = !organisationId || existing.organisationId === organisationId || existing.organisationId === fleetOrgId();
+    if (!isOrgOwned) {
+      const share = userId ? await prisma.vesselShare.findUnique({
+        where: { vesselId_userId: { vesselId: id, userId } },
+      }) : null;
+      if (!share || share.permission !== 'WRITE') {
+        throw new AppError(404, 'NOT_FOUND', 'Vessel not found');
+      }
     }
     if (existing.source === 'RISE_X') throw new AppError(403, 'FORBIDDEN', 'Synced fleet vessels are read-only');
 

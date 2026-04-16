@@ -8,6 +8,9 @@ import { hasAnyPermission } from './middleware/permissions';
 import { workOrderService } from './services/work-order.service';
 
 const PORT = env.PORT;
+let server: http.Server | null = null;
+let signalingIo: { close: () => void } | null = null;
+let isShuttingDown = false;
 
 async function connectWithRetry(maxRetries = 5, delayMs = 3000) {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -33,6 +36,8 @@ async function main() {
   // Create HTTP server and attach Socket.IO for WebRTC signaling
   const httpServer = http.createServer(app);
   const { io } = initSignaling(httpServer);
+  server = httpServer;
+  signalingIo = io;
 
   // Add room status REST endpoint
   app.get('/api/v1/video/room-status/:workOrderId', authenticate, async (req, res) => {
@@ -55,7 +60,7 @@ async function main() {
     res.json({ success: true, data: { workOrderId, count, isActive: count > 0 } });
   });
 
-  httpServer.listen(PORT, () => {
+  server.listen(PORT, () => {
     console.log(`MarineStream API running on port ${PORT}`);
     console.log(`WebSocket signaling server active`);
     console.log(`Environment: ${env.NODE_ENV}`);
@@ -68,15 +73,38 @@ main().catch((error) => {
   process.exit(1);
 });
 
-// Graceful shutdown
-process.on('SIGTERM', async () => {
-  console.log('SIGTERM received, shutting down...');
-  await prisma.$disconnect();
-  process.exit(0);
+async function shutdown(signal: string) {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+
+  console.log(`${signal} received, shutting down...`);
+  try {
+    if (signalingIo) {
+      signalingIo.close();
+    }
+    if (server) {
+      await new Promise<void>((resolve, reject) => {
+        server!.close((error) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+          resolve();
+        });
+      });
+    }
+    await prisma.$disconnect();
+    process.exit(0);
+  } catch (error) {
+    console.error('Shutdown failed:', error);
+    process.exit(1);
+  }
+}
+
+process.on('SIGTERM', () => {
+  void shutdown('SIGTERM');
 });
 
-process.on('SIGINT', async () => {
-  console.log('SIGINT received, shutting down...');
-  await prisma.$disconnect();
-  process.exit(0);
+process.on('SIGINT', () => {
+  void shutdown('SIGINT');
 });

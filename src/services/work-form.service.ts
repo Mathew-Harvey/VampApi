@@ -48,7 +48,6 @@ export const workFormService = {
           data: {
             workOrderId,
             vesselComponentId: comp.id,
-            isoZone: (comp as any).isoZone ?? null,
             status: 'PENDING',
           },
         })

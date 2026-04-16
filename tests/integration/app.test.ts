@@ -116,6 +116,26 @@ describe('App integration', () => {
       const res = await request(app).post('/api/v1/auth/logout');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
+      const setCookie = res.headers['set-cookie'] || [];
+      expect(setCookie.some((cookie: string) => cookie.includes('accessToken=;'))).toBe(true);
+      expect(setCookie.some((cookie: string) => cookie.includes('refreshToken=;'))).toBe(true);
+      expect(setCookie.every((cookie: string) => cookie.includes('Path=/'))).toBe(true);
+    });
+
+    it('POST /api/v1/auth/refresh fails without refresh token', async () => {
+      const res = await request(app).post('/api/v1/auth/refresh');
+      expect(res.status).toBe(401);
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.code).toBe('NO_TOKEN');
+    });
+
+    it('POST /api/v1/auth/refresh rejects invalid refresh token', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/refresh')
+        .send({ refreshToken: 'not-a-valid-token' });
+      expect(res.status).toBe(401);
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.code).toBe('INVALID_TOKEN');
     });
 
     it('GET /api/v1/auth/me requires auth', async () => {

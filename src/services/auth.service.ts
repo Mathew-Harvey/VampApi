@@ -231,8 +231,6 @@ export const authService = {
     const resetUrl = `${env.APP_URL}/reset-password?token=${token}`;
     const { emailService } = await import('./email.service');
     await emailService.sendPasswordReset({ toEmail: email, resetUrl });
-    console.log(`[PASSWORD RESET] Token for ${email}: ${token}`);
-    console.log(`[PASSWORD RESET] Reset URL: ${resetUrl}`);
 
     await auditService.log({
       actorId: user.id,
@@ -327,7 +325,10 @@ export const authService = {
         accessToken: generateAccessToken(tokenPayload),
         refreshToken: generateRefreshToken(user.id),
       };
-    } catch {
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error;
+      }
       throw new AppError(401, 'INVALID_TOKEN', 'Invalid or expired refresh token');
     }
   },

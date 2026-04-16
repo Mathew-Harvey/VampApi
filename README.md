@@ -32,6 +32,7 @@ The API runs on `http://localhost:3001` by default.
 | `npm run build` | Build for production |
 | `npm start` | Run production build |
 | `npm test` | Run tests |
+| `npm run test:coverage` | Run tests with coverage thresholds |
 | `npm run db:migrate` | Run Prisma migrations |
 | `npm run db:seed` | Seed the database |
 | `npm run db:studio` | Open Prisma Studio (DB browser) |
@@ -76,7 +77,7 @@ All endpoints are prefixed with `/api/v1`.
 - `GET /work-orders` - List work orders
 - `GET /inspections` - List inspections
 - `GET /dashboard/overview` - Dashboard stats
-- `GET /health` - Health check
+- `GET /api/v1/health` - Health check
 
 ## Environment Variables
 
@@ -85,3 +86,13 @@ See `.env.example` for the full list. Required:
 - `DATABASE_URL` - PostgreSQL connection string
 - `JWT_SECRET` - Minimum 32 characters
 - `APP_URL` - Frontend URL (for CORS)
+
+## Render Post-Deploy Smoke Checklist
+
+Run this quick checklist after each Render deploy:
+
+1. `GET /api/v1/health` returns `200` with `status: "healthy"`.
+2. Register a new user, then log out and log back in.
+3. Confirm token refresh works by reloading a protected page after login.
+4. Validate one critical API path (e.g. `GET /api/v1/dashboard/overview`) with auth.
+5. Verify no secrets are committed in `render.yaml` (Render env vars only).

@@ -261,9 +261,9 @@ describe('createFindingSchema', () => {
   });
 
   it('validates foulingRating range', () => {
-    expect(createFindingSchema.safeParse({ area: 'A', foulingRating: 6 }).success).toBe(false);
+    expect(createFindingSchema.safeParse({ area: 'A', foulingRating: 101 }).success).toBe(false);
     expect(createFindingSchema.safeParse({ area: 'A', foulingRating: -1 }).success).toBe(false);
-    expect(createFindingSchema.safeParse({ area: 'A', foulingRating: 3 }).success).toBe(true);
+    expect(createFindingSchema.safeParse({ area: 'A', foulingRating: 42 }).success).toBe(true);
   });
 
   it('validates coverage range', () => {

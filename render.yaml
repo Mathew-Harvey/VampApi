@@ -11,7 +11,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        value: postgresql://marinestream_user:XPLEWX6Lofnt5CpFx7IaZ4UTRUL7kNsp@dpg-d2vu158dl3ps739j09t0-a/marinestream
+        sync: false
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_EXPIRY

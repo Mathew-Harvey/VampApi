@@ -8,21 +8,27 @@ import { AppError } from '../middleware/error';
 
 const router = Router();
 
-function setAuthCookies(res: Response, accessToken: string, refreshToken: string) {
+function getCookieOptions() {
   const isProd = process.env.NODE_ENV === 'production';
   // Cross-origin requests (e.g. vamp-web.onrender.com → vamp-api.onrender.com)
   // require sameSite:'none' + secure:true so the browser sends cookies on fetch.
   const sameSite: 'lax' | 'none' = isProd ? 'none' : 'lax';
-  res.cookie('accessToken', accessToken, {
+  return {
     httpOnly: true,
     secure: isProd,
     sameSite,
+    path: '/',
+  } as const;
+}
+
+function setAuthCookies(res: Response, accessToken: string, refreshToken: string) {
+  const baseCookieOptions = getCookieOptions();
+  res.cookie('accessToken', accessToken, {
+    ...baseCookieOptions,
     maxAge: 24 * 60 * 60 * 1000,
   });
   res.cookie('refreshToken', refreshToken, {
-    httpOnly: true,
-    secure: isProd,
-    sameSite,
+    ...baseCookieOptions,
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 }
@@ -73,8 +79,9 @@ router.post('/refresh', asyncHandler(async (req: Request, res: Response) => {
 }));
 
 router.post('/logout', optionalAuth, (_req: Request, res: Response) => {
-  res.clearCookie('accessToken');
-  res.clearCookie('refreshToken');
+  const cookieOptions = getCookieOptions();
+  res.clearCookie('accessToken', cookieOptions);
+  res.clearCookie('refreshToken', cookieOptions);
   res.json({ success: true, data: { message: 'Logged out' } });
 });
 

@@ -8,7 +8,7 @@ import { workOrderService } from '../services/work-order.service';
  */
 export function requireWorkOrderView(paramName: string = 'workOrderId') {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const workOrderId = req.params[paramName];
+    const workOrderId = String(req.params[paramName] ?? '');
     const includeOrganisationScope = hasAnyPermission(req.user, 'WORK_ORDER_VIEW');
     const canView = await workOrderService.canViewWorkOrder(
       workOrderId, req.user!.userId, req.user!.organisationId, includeOrganisationScope,
@@ -27,7 +27,7 @@ export function requireWorkOrderView(paramName: string = 'workOrderId') {
  */
 export function requireWorkOrderWrite(paramName: string = 'workOrderId') {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const workOrderId = req.params[paramName];
+    const workOrderId = String(req.params[paramName] ?? '');
     const canEditByOrg = hasAnyPermission(req.user, 'WORK_ORDER_EDIT');
     const includeOrganisationScope = canEditByOrg || hasAnyPermission(req.user, 'WORK_ORDER_VIEW');
     const canView = await workOrderService.canViewWorkOrder(
@@ -51,7 +51,7 @@ export function requireWorkOrderWrite(paramName: string = 'workOrderId') {
  */
 export function requireWorkOrderAdmin(paramName: string = 'workOrderId') {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const workOrderId = req.params[paramName];
+    const workOrderId = String(req.params[paramName] ?? '');
     const hasOrgPermission = hasAnyPermission(req.user, 'WORK_ORDER_ASSIGN');
     const hasAccess = await workOrderService.canViewWorkOrder(
       workOrderId, req.user!.userId, req.user!.organisationId, hasOrgPermission,

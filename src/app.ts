@@ -28,6 +28,7 @@ import prisma from './config/database';
 import { storageConfigService } from './services/storage-config.service';
 
 const app = express();
+app.set('trust proxy', 1);
 
 // Security
 app.use(helmet({
@@ -51,6 +52,8 @@ const authLimiter = process.env.NODE_ENV === 'test'
   : rateLimit({
       windowMs: 60 * 1000,
       max: 10,
+      standardHeaders: true,
+      legacyHeaders: false,
       message: { success: false, error: { code: 'RATE_LIMITED', message: 'Too many requests' } },
     });
 
@@ -70,19 +73,22 @@ app.use('/uploads', (req, res, next) => {
 });
 
 // Email previews (dev only)
-app.use('/email-previews', express.static(path.join(process.cwd(), 'email-previews')));
-app.get('/api/v1/email-previews', (_req, res) => {
-  const dir = path.join(process.cwd(), 'email-previews');
-  try {
-    if (!fs.existsSync(dir)) { res.json({ success: true, data: [] }); return; }
-    const files = fs.readdirSync(dir)
-      .filter((f: string) => f.endsWith('.html'))
-      .sort((a: string, b: string) => b.localeCompare(a))
-      .slice(0, 20)
-      .map((f: string) => ({ filename: f, url: `/email-previews/${f}` }));
-    res.json({ success: true, data: files });
-  } catch { res.json({ success: true, data: [] }); }
-});
+const isDevEnvironment = process.env.NODE_ENV === 'development';
+if (isDevEnvironment) {
+  app.use('/email-previews', express.static(path.join(process.cwd(), 'email-previews')));
+  app.get('/api/v1/email-previews', (_req, res) => {
+    const dir = path.join(process.cwd(), 'email-previews');
+    try {
+      if (!fs.existsSync(dir)) { res.json({ success: true, data: [] }); return; }
+      const files = fs.readdirSync(dir)
+        .filter((f: string) => f.endsWith('.html'))
+        .sort((a: string, b: string) => b.localeCompare(a))
+        .slice(0, 20)
+        .map((f: string) => ({ filename: f, url: `/email-previews/${f}` }));
+      res.json({ success: true, data: files });
+    } catch { res.json({ success: true, data: [] }); }
+  });
+}
 
 // Health check
 app.get('/api/v1/health', async (_req, res) => {

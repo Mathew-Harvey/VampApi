@@ -62,6 +62,13 @@ interface SignalIceCandidateData {
   candidate: RTCCandidate;
 }
 
+/** Payload for net:ping / net:pong relay events */
+interface NetProbeData {
+  targetSocketId: string;
+  probeId: string;
+  clientSentAt: number;
+}
+
 /** Payload for form:update from the client */
 interface FormUpdateData {
   workOrderId: string;
@@ -325,6 +332,26 @@ export function initSignaling(httpServer: HTTPServer) {
     socket.on('signal:ice-candidate', ({ targetSocketId, candidate }: SignalIceCandidateData) => {
       if (!shareVideoRoom(targetSocketId)) return;
       io.to(targetSocketId).emit('signal:ice-candidate', { fromSocketId: socket.id, candidate });
+    });
+
+    socket.on('net:ping', ({ targetSocketId, probeId, clientSentAt }: NetProbeData) => {
+      if (!shareVideoRoom(targetSocketId)) return;
+      io.to(targetSocketId).emit('net:ping', {
+        fromSocketId: socket.id,
+        probeId,
+        clientSentAt,
+        serverReceivedAt: Date.now(),
+      });
+    });
+
+    socket.on('net:pong', ({ targetSocketId, probeId, clientSentAt }: NetProbeData) => {
+      if (!shareVideoRoom(targetSocketId)) return;
+      io.to(targetSocketId).emit('net:pong', {
+        fromSocketId: socket.id,
+        probeId,
+        clientSentAt,
+        serverReturnedAt: Date.now(),
+      });
     });
 
     socket.on('room:status', async ({ workOrderId }: WorkOrderData) => {

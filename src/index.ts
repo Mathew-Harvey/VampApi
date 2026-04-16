@@ -60,6 +60,20 @@ async function main() {
     res.json({ success: true, data: { workOrderId, count, isActive: count > 0 } });
   });
 
+  app.get('/api/v1/video/ice-config', authenticate, (_req, res) => {
+    const iceServers: Array<{ urls: string | string[]; username?: string; credential?: string }> = [
+      { urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] },
+    ];
+    if (env.TURN_URL && env.TURN_USERNAME && env.TURN_CREDENTIAL) {
+      iceServers.push({
+        urls: env.TURN_URL,
+        username: env.TURN_USERNAME,
+        credential: env.TURN_CREDENTIAL,
+      });
+    }
+    res.json({ success: true, data: { iceServers } });
+  });
+
   server.listen(PORT, () => {
     console.log(`MarineStream API running on port ${PORT}`);
     console.log(`WebSocket signaling server active`);

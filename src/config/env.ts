@@ -30,6 +30,9 @@ const envSchema = z.object({
   SENDGRID_API_KEY: z.string().default(''),
   APP_URL: z.string().default('http://localhost:5173'),
   API_URL: z.string().default('http://localhost:3001'),
+  TURN_URL: z.string().default(''),
+  TURN_USERNAME: z.string().default(''),
+  TURN_CREDENTIAL: z.string().default(''),
   // Optional: Rise-X third-party API sync (script only)
   RISE_X_API_URL: z.string().default(''),
   RISE_X_API_KEY: z.string().optional().default(''),

@@ -50,6 +50,47 @@ function parseCoverage(coverage: string | null | undefined): number | null {
   return null;
 }
 
+function stripHtml(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const text = value
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&#39;/gi, "'")
+    .replace(/&quot;/gi, '"')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return text || null;
+}
+
+function parsePdrRating(value: string | null | undefined): number | null {
+  if (!value) return null;
+  const match = value.match(/PDR\s*:\s*(\d+)/i);
+  return match ? parseInt(match[1], 10) : null;
+}
+
+function mapFoulingType(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const t = raw.toLowerCase();
+  if (t.includes('foul-free') || t.includes('clean')) return 'None';
+  if (t.includes('slime')) return 'Slime';
+  if (t.includes('algae')) return 'Algae';
+  if (t.includes('soft') || t.includes('weed')) return 'Soft (Weed)';
+  if (t.includes('hard') || t.includes('barnacle')) return 'Hard (Barnacles)';
+  if (t.includes('calcareous')) return 'Calcareous';
+  return 'Mixed';
+}
+
+function mapConditionFromPdr(pdr: number | null): string | null {
+  if (pdr == null) return null;
+  if (pdr <= 20) return 'Good';
+  if (pdr <= 40) return 'Fair';
+  if (pdr <= 60) return 'Poor';
+  return 'Critical';
+}
+
 function mapStatus(status: string): string {
   const s = (status || '').toLowerCase();
   if (s.includes('complete')) return 'COMPLETED';
@@ -140,21 +181,38 @@ function buildReportConfig(workDetail: any): Record<string, unknown> {
   const report = data.report || {};
   const vessel = data.ranVessel || data.vessel;
   const vesselName = vessel?.displayName || vessel?.name || '';
+  const reportSummary = stripHtml(report.summary);
+  const reportOverview = stripHtml(report.overview);
+  const reportMethodology = stripHtml(report.methodology);
+  const reportRecommendations = stripHtml(report.recommendations);
+  const visibility = firstNonEmpty(
+    data.visibility?.value,
+    data.visibility?.label,
+    data.visibility?.displayName,
+    data.visibility,
+  );
+  const togglePhotoName = Boolean(data.togglePhotoName?.checked ?? data.togglePhotoName);
+  const toggleRovUse = String(data.resourcing?.toggleRovUse || '').toLowerCase() === 'true';
+  const rovDetails = stripHtml(data.resourcing?.rovDetails || data.resourcing?.details || null);
 
   return {
     title: `${vesselName} – ${workDetail.displayName || 'Biofouling Inspection'}`,
-    summary: report.summary || null,
-    overview: report.overview || null,
-    methodology: report.methodology || null,
-    recommendations: report.recommendations || null,
-    workInstruction: data.workInstruction || null,
-    clientDetails: data.clientDetails || null,
+    summary: reportSummary,
+    overview: reportOverview,
+    methodology: reportMethodology,
+    recommendations: reportRecommendations,
+    workInstruction: stripHtml(data.workInstruction) || null,
+    clientDetails: stripHtml(data.clientDetails) || null,
     berthAnchorageLocation:
       data.location?.displayName || data.berthAnchorageLocation || null,
     supervisorName: data.supervisor?.name || null,
-    inspectorName: 'Mat Harvey',
+    inspectorName: data.inspector?.name || 'Mat Harvey',
     repairAgentName: 'Franmarine Underwater Services',
-    togglePhotoName: true,
+    visibility,
+    confidential: firstNonEmpty(data.confidential),
+    toggleRovUse,
+    rovDetails,
+    togglePhotoName,
   };
 }
 
@@ -549,6 +607,7 @@ async function importWorkItem(workDetail: any, ctx: ImportContext) {
             : [];
         let maxRating: number | null = null;
         let maxFrType: string | null = null;
+        let maxPdr: number | null = null;
         const coverages: number[] = [];
 
         for (const fr of frData) {
@@ -556,6 +615,10 @@ async function importWorkItem(workDetail: any, ctx: ImportContext) {
           if (rating !== null && (maxRating === null || rating > maxRating)) {
             maxRating = rating;
             maxFrType = fr.foulingRatingType || null;
+          }
+          const pdr = parsePdrRating(fr.pdrRating);
+          if (pdr !== null && (maxPdr === null || pdr > maxPdr)) {
+            maxPdr = pdr;
           }
           const cov = parseCoverage(fr.foulingCoverage);
           if (cov !== null) coverages.push(cov);
@@ -576,10 +639,10 @@ async function importWorkItem(workDetail: any, ctx: ImportContext) {
             inspectionId: dbInspection.id,
             area: compName,
             foulingRating: maxRating,
-            foulingType: maxFrType,
+            foulingType: mapFoulingType(maxFrType),
             coverage: avgCoverage,
-            description: ga.diverSupervisorComments || null,
-            recommendation: ga.expertInspectorComments || null,
+            description: stripHtml(ga.diverSupervisorComments),
+            recommendation: stripHtml(ga.expertInspectorComments),
             metadata: JSON.stringify({
               source: 'rise-x',
               frRatingData: frData,
@@ -608,20 +671,24 @@ async function importWorkItem(workDetail: any, ctx: ImportContext) {
           },
           update: {
             foulingRating: maxRating,
-            foulingType: maxFrType,
+            foulingType: mapFoulingType(maxFrType),
             coverage: avgCoverage,
-            notes: ga.diverSupervisorComments || null,
-            recommendation: ga.expertInspectorComments || null,
+            condition: mapConditionFromPdr(maxPdr),
+            coatingCondition: maxPdr != null ? String(maxPdr) : null,
+            notes: stripHtml(ga.diverSupervisorComments),
+            recommendation: stripHtml(ga.expertInspectorComments),
             status: 'COMPLETED',
           },
           create: {
             workOrderId: dbWorkOrder.id,
             vesselComponentId: dbComp.id,
             foulingRating: maxRating,
-            foulingType: maxFrType,
+            foulingType: mapFoulingType(maxFrType),
             coverage: avgCoverage,
-            notes: ga.diverSupervisorComments || null,
-            recommendation: ga.expertInspectorComments || null,
+            condition: mapConditionFromPdr(maxPdr),
+            coatingCondition: maxPdr != null ? String(maxPdr) : null,
+            notes: stripHtml(ga.diverSupervisorComments),
+            recommendation: stripHtml(ga.expertInspectorComments),
             status: 'COMPLETED',
           },
         });
@@ -647,6 +714,7 @@ async function importWorkItem(workDetail: any, ctx: ImportContext) {
   // Collect photo URLs grouped by GA component (normalized attachment path)
   // so we can batch-update WorkFormEntry.attachments afterwards.
   const photosByComponent = new Map<string, string[]>();
+  const reportImageConfig: Record<string, { mediaId: string } | undefined> = {};
   let photosCreated = 0;
 
   const imageWorkDir = path.join(IMAGES_DIR, workCode);
@@ -694,11 +762,11 @@ async function importWorkItem(workDetail: any, ctx: ImportContext) {
       const matchingFinding = txResult.findingMap.get(matchedKey);
 
       // Create Media record (idempotent)
-      const existing = await prisma.media.findFirst({
+      let dbMedia = await prisma.media.findFirst({
         where: { storageKey: filename },
       });
-      if (!existing) {
-        await prisma.media.create({
+      if (!dbMedia) {
+        dbMedia = await prisma.media.create({
           data: {
             uploaderId: ctx.userId,
             vesselId: txResult.vesselId,
@@ -723,6 +791,18 @@ async function importWorkItem(workDetail: any, ctx: ImportContext) {
           },
         });
         photosCreated++;
+      }
+
+      // Populate report image slots from imported Rise-X attachments.
+      const lowerPath = attPath.toLowerCase();
+      if (!reportImageConfig.coverImage && dbMedia) {
+        reportImageConfig.coverImage = { mediaId: dbMedia.id };
+      }
+      if (!reportImageConfig.generalArrangementImage && dbMedia && lowerPath.includes('generalarrangement')) {
+        reportImageConfig.generalArrangementImage = { mediaId: dbMedia.id };
+      }
+      if (!reportImageConfig.clientLogo && dbMedia && (lowerPath.includes('clientlogo') || lowerPath.includes('logo'))) {
+        reportImageConfig.clientLogo = { mediaId: dbMedia.id };
       }
 
       // Track this photo URL for the matching GA component's WorkFormEntry
@@ -772,6 +852,42 @@ async function importWorkItem(workDetail: any, ctx: ImportContext) {
 
   if (attachmentsLinked > 0) {
     console.log(`    → Linked ${attachmentsLinked} photos to form entries`);
+  }
+
+  // Backfill report image slots (cover/logo/GA) in WorkOrder metadata reportConfig.
+  if (Object.keys(reportImageConfig).length > 0) {
+    const workOrder = await prisma.workOrder.findUnique({
+      where: { id: txResult.workOrderId },
+      select: { id: true, metadata: true },
+    });
+
+    if (workOrder) {
+      let parsed: Record<string, any> = {};
+      try {
+        parsed = workOrder.metadata ? JSON.parse(workOrder.metadata) : {};
+      } catch {
+        parsed = {};
+      }
+      const existingConfig =
+        parsed.reportConfig && typeof parsed.reportConfig === 'object'
+          ? parsed.reportConfig
+          : {};
+
+      const mergedConfig = {
+        ...existingConfig,
+        ...reportImageConfig,
+      };
+
+      await prisma.workOrder.update({
+        where: { id: txResult.workOrderId },
+        data: {
+          metadata: JSON.stringify({
+            ...parsed,
+            reportConfig: mergedConfig,
+          }),
+        },
+      });
+    }
   }
 
   return {

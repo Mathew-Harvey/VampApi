@@ -437,8 +437,12 @@ export const workFormService = {
 /** Resolve a relative path like /uploads/x.jpg to a full URL using the current API_URL. */
 function toPublicMediaUrl(url: string): string {
   if (/^https?:\/\//i.test(url)) return url;
-  const apiBase = env.API_URL.replace(/\/+$/, '');
   const normalizedPath = url.startsWith('/') ? url : `/${url}`;
+  // Keep uploads paths relative so they resolve against the same host/origin
+  // the frontend is currently using. This avoids stale localhost origins
+  // leaking into deployed environments.
+  if (normalizedPath.startsWith('/uploads/')) return normalizedPath;
+  const apiBase = env.API_URL.replace(/\/+$/, '');
   return `${apiBase}${normalizedPath}`;
 }
 

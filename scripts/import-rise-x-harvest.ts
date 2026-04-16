@@ -542,7 +542,11 @@ async function importWorkItem(workDetail: any, ctx: ImportContext) {
         const dbComp = componentMap.get(normalized);
         if (!dbComp) continue;
 
-        const frData: FrRating[] = ga.frRatingData || ga.items || [];
+        const frData: FrRating[] = Array.isArray(ga.frRatingData)
+          ? ga.frRatingData
+          : Array.isArray(ga.items)
+            ? ga.items
+            : [];
         let maxRating: number | null = null;
         let maxFrType: string | null = null;
         const coverages: number[] = [];
@@ -814,6 +818,24 @@ async function main() {
     .filter((f) => f.endsWith('.json'))
     .sort();
 
+  const filterRaw = process.env.RISE_X_IMPORT_FILTER;
+  const requestedCodes = filterRaw
+    ? new Set(
+        filterRaw
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean),
+      )
+    : null;
+  const filteredFiles = requestedCodes
+    ? files.filter((f) => requestedCodes.has(path.basename(f, '.json')))
+    : files;
+
+  if (requestedCodes) {
+    console.log(`Filter enabled: ${[...requestedCodes].join(', ')}`);
+    console.log(`Matched files: ${filteredFiles.length}\n`);
+  }
+
   const totals = {
     processed: 0,
     skipped: 0,
@@ -826,7 +848,7 @@ async function main() {
     attachmentsLinked: 0,
   };
 
-  for (const file of files) {
+  for (const file of filteredFiles) {
     const filePath = path.join(WORK_DETAILS_DIR, file);
     const workDetail = JSON.parse(fs.readFileSync(filePath, 'utf8'));
 

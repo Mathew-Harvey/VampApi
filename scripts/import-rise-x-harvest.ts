@@ -876,6 +876,12 @@ async function importWorkItem(workDetail: any, ctx: ImportContext) {
       const mergedConfig = {
         ...existingConfig,
         ...reportImageConfig,
+        generalArrangementImage:
+          reportImageConfig.generalArrangementImage ||
+          existingConfig.generalArrangementImage ||
+          reportImageConfig.coverImage ||
+          existingConfig.coverImage ||
+          undefined,
       };
 
       await prisma.workOrder.update({

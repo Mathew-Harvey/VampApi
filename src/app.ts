@@ -57,7 +57,7 @@ const authLimiter = isTest
 
 const sensitiveLimiter = isTest
   ? noopLimiter
-  : rateLimit({ windowMs: 60 * 1000, max: 20, standardHeaders: true, legacyHeaders: false, message: rateLimitMessage });
+  : rateLimit({ windowMs: 60 * 1000, max: 60, standardHeaders: true, legacyHeaders: false, message: rateLimitMessage });
 
 // Body parsing
 app.use(express.json({ limit: '10mb' }));

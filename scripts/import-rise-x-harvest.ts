@@ -64,6 +64,75 @@ function normalizeForMatch(name: string): string {
   return name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
 }
 
+function firstNonEmpty(...values: Array<unknown>): string | null {
+  for (const value of values) {
+    if (value == null) continue;
+    const s = String(value).trim();
+    if (s) return s;
+  }
+  return null;
+}
+
+function toNumber(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const normalized = value.replace(/,/g, '').trim();
+    if (!normalized) return null;
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
+function toInt(value: unknown): number | null {
+  const n = toNumber(value);
+  if (n == null) return null;
+  return Math.trunc(n);
+}
+
+function dateFromValue(value: unknown): Date | null {
+  if (!value) return null;
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+  if (typeof value === 'string') {
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  if (typeof value === 'object' && value !== null) {
+    const maybe = value as { date?: unknown; from?: { date?: unknown }; to?: { date?: unknown } };
+    return (
+      dateFromValue(maybe.date) ||
+      dateFromValue(maybe.from?.date) ||
+      dateFromValue(maybe.to?.date)
+    );
+  }
+  return null;
+}
+
+function getVesselValue(vessel: any, key: string): unknown {
+  if (!vessel) return undefined;
+  if (key in vessel) return vessel[key];
+  if (vessel.data && key in vessel.data) return vessel.data[key];
+  return undefined;
+}
+
+function resolveComponentKey(
+  attachmentPath: string,
+  componentMap: Map<string, { id: string }>,
+): string | null {
+  const normalizedPath = normalizeForMatch(attachmentPath);
+  if (componentMap.has(normalizedPath)) return normalizedPath;
+
+  // Fallback fuzzy matching for naming differences like:
+  // "BoxCooler-PortAft" <-> "Box Cooler - Aft"
+  for (const key of componentMap.keys()) {
+    if (key.includes(normalizedPath) || normalizedPath.includes(key)) {
+      return key;
+    }
+  }
+
+  return null;
+}
+
 /** Extract report config fields from Rise-X work detail data for the VAMP
  *  report service (WorkOrder.metadata.reportConfig). */
 function buildReportConfig(workDetail: any): Record<string, unknown> {
@@ -87,6 +156,64 @@ function buildReportConfig(workDetail: any): Record<string, unknown> {
     repairAgentName: 'Franmarine Underwater Services',
     togglePhotoName: true,
   };
+}
+
+function buildVesselMetadata(vessel: any): string {
+  return JSON.stringify({
+    source: 'rise-x',
+    harvestedAt: new Date().toISOString(),
+    riseX: {
+      id: vessel?.id ?? null,
+      displayName: vessel?.displayName ?? null,
+      entityType: vessel?.entityType ?? null,
+      flowType: vessel?.flowType ?? null,
+      flowOriginId: vessel?.flowOriginId ?? null,
+      raw: vessel ?? null,
+    },
+  });
+}
+
+function buildWorkMetadata(workDetail: any, reportConfig: Record<string, unknown>): string {
+  const data = workDetail.data || {};
+  const attachments = Array.isArray(workDetail.attachments) ? workDetail.attachments : [];
+
+  return JSON.stringify({
+    source: 'rise-x',
+    harvestedAt: new Date().toISOString(),
+    workCode: workDetail.workCode ?? null,
+    riseXId: workDetail.id ?? null,
+    flowType: workDetail.flowType ?? null,
+    flowOriginId: workDetail.flowOriginId ?? null,
+    flowDisplayName: workDetail.flowDisplayName ?? null,
+    displayName: workDetail.displayName ?? null,
+    status: workDetail.status ?? null,
+    currentState: workDetail.currentState ?? null,
+    createdDate: workDetail.createdDate ?? null,
+    lastModified: workDetail.lastModified ?? null,
+    fmJobNumber: data.fmJobNumber ?? null,
+    purchaseOrderNumber: data.purchaseOrderNumber ?? null,
+    jobType: data.jobType ?? null,
+    inspectionType: data.inspectionType ?? null,
+    location: data.location ?? null,
+    workSchedule: data.workSchedule ?? null,
+    actualDelivery: data.actualDelivery ?? null,
+    vesselAvailability: data.vesselAvailability ?? null,
+    reportConfig,
+    report: data.report ?? null,
+    document: data.document ?? null,
+    review: data.review ?? null,
+    ims: data.ims ?? null,
+    imsFound: data.imsFound ?? null,
+    supportingWork: data.supportingWork ?? null,
+    confidential: data.confidential ?? null,
+    supervisor: data.supervisor ?? null,
+    invites: data.invites ?? null,
+    attachmentsSummary: {
+      count: attachments.length,
+      paths: [...new Set(attachments.map((a: any) => a?.path).filter(Boolean))],
+    },
+    rawData: data,
+  });
 }
 
 // ── Bootstrap owner user + organisation ─────────────────────────────
@@ -184,7 +311,7 @@ interface Attachment {
 }
 
 async function importWorkItem(workDetail: any, ctx: ImportContext) {
-  const workCode: string = workDetail.workCode;
+  const workCode: string = firstNonEmpty(workDetail.workCode, workDetail.id, 'UNKNOWN-WORK') as string;
   const vessel = workDetail.data?.ranVessel || workDetail.data?.vessel;
   if (!vessel) {
     console.log(`  SKIP ${workCode}: no vessel data`);
@@ -223,31 +350,57 @@ async function importWorkItem(workDetail: any, ctx: ImportContext) {
 
   // Build report config from Rise-X data
   const reportConfig = buildReportConfig(workDetail);
+  const vesselMetadata = buildVesselMetadata(vessel);
 
   // Full metadata including reportConfig
-  const metadata = JSON.stringify({
-    workCode,
-    riseXId: workDetail.id,
-    flowType,
-    flowDisplayName: workDetail.flowDisplayName,
-    fmJobNumber: workDetail.data?.fmJobNumber || null,
-    reportConfig,
-  });
+  const metadata = buildWorkMetadata(workDetail, reportConfig);
+
+  const scheduledStart =
+    dateFromValue(workDetail.data?.workSchedule?.forecastDate) ||
+    dateFromValue(workDetail.data?.vesselAvailability?.from) ||
+    dateFromValue(workDetail.createdDate);
+  const scheduledEnd =
+    dateFromValue(workDetail.data?.vesselAvailability?.to) ||
+    dateFromValue(workDetail.data?.workSchedule?.to);
+  const actualStart =
+    dateFromValue(workDetail.data?.actualDelivery?.startDateTime) ||
+    dateFromValue(workDetail.data?.actualDelivery?.from) ||
+    dateFromValue(workDetail.createdDate);
+  const actualEnd =
+    dateFromValue(workDetail.data?.actualDelivery?.endDateTime) ||
+    (woStatus === 'COMPLETED' ? dateFromValue(workDetail.lastModified) : null);
 
   // ── Core data inside a transaction ──────────────────────────────
   const txResult = await prisma.$transaction(
     async (tx) => {
       // 1. Vessel
+      const vesselPayload = {
+        name: vesselName,
+        imoNumber: firstNonEmpty(getVesselValue(vessel, 'imoNumber'), getVesselValue(vessel, 'imo')),
+        mmsi: firstNonEmpty(getVesselValue(vessel, 'mmsi'), getVesselValue(vessel, 'mmsiNumber')),
+        callSign: firstNonEmpty(getVesselValue(vessel, 'callSign')),
+        flagState: firstNonEmpty(getVesselValue(vessel, 'flagState'), getVesselValue(vessel, 'flag')),
+        grossTonnage: toNumber(getVesselValue(vessel, 'grossTonnage')),
+        lengthOverall: toNumber(getVesselValue(vessel, 'length')),
+        beam: toNumber(getVesselValue(vessel, 'beam')),
+        maxDraft: toNumber(getVesselValue(vessel, 'vesselDraft')),
+        minDraft: toNumber(getVesselValue(vessel, 'vesselDraft')),
+        yearBuilt: toInt(getVesselValue(vessel, 'yearBuilt')),
+        homePort: firstNonEmpty(getVesselValue(vessel, 'portOfRegistry')),
+        classificationSociety: firstNonEmpty(getVesselValue(vessel, 'class')),
+        metadata: vesselMetadata,
+      };
+
       const dbVessel = await tx.vessel.upsert({
         where: { externalId: vesselExternalId },
-        update: { name: vesselName },
+        update: vesselPayload,
         create: {
           organisationId: ctx.orgId,
           externalId: vesselExternalId,
           source: 'rise-x',
-          name: vesselName,
           vesselType,
           status: 'ACTIVE',
+          ...vesselPayload,
         },
       });
 
@@ -268,6 +421,26 @@ async function importWorkItem(workDetail: any, ctx: ImportContext) {
               name: compName,
               category: inferCategory(compName),
               sortOrder: ga.index ?? i,
+              metadata: JSON.stringify({
+                source: 'rise-x',
+                riseXComponentId: ga.id ?? null,
+                riseXComponentName: ga.name ?? ga.GAComponent ?? null,
+                raw: ga,
+              }),
+            },
+          });
+        } else {
+          dbComp = await tx.vesselComponent.update({
+            where: { id: dbComp.id },
+            data: {
+              sortOrder: ga.index ?? i,
+              category: inferCategory(compName),
+              metadata: JSON.stringify({
+                source: 'rise-x',
+                riseXComponentId: ga.id ?? null,
+                riseXComponentName: ga.name ?? ga.GAComponent ?? null,
+                raw: ga,
+              }),
             },
           });
         }
@@ -286,16 +459,13 @@ async function importWorkItem(workDetail: any, ctx: ImportContext) {
           type: woType,
           status: woStatus,
           location,
-          scheduledStart: workDetail.createdDate
-            ? new Date(workDetail.createdDate)
-            : null,
-          actualStart: workDetail.createdDate
-            ? new Date(workDetail.createdDate)
-            : null,
+          description: firstNonEmpty(workDetail.data?.workInstruction, workDetail.data?.jobType, workDetail.displayName),
+          scheduledStart,
+          scheduledEnd,
+          actualStart,
+          actualEnd,
           completedAt:
-            woStatus === 'COMPLETED' && workDetail.lastModified
-              ? new Date(workDetail.lastModified)
-              : null,
+            woStatus === 'COMPLETED' ? dateFromValue(workDetail.lastModified) : null,
           metadata,
         },
       });
@@ -390,7 +560,11 @@ async function importWorkItem(workDetail: any, ctx: ImportContext) {
             coverage: avgCoverage,
             description: ga.diverSupervisorComments || null,
             recommendation: ga.expertInspectorComments || null,
-            metadata: JSON.stringify(frData),
+            metadata: JSON.stringify({
+              source: 'rise-x',
+              frRatingData: frData,
+              rawComponent: ga,
+            }),
           };
 
           const dbFinding = existingFinding
@@ -495,8 +669,9 @@ async function importWorkItem(workDetail: any, ctx: ImportContext) {
       }
       const fileSize = fs.statSync(destPath).size;
 
-      const normalizedPath = normalizeForMatch(attPath);
-      const matchingFinding = txResult.findingMap.get(normalizedPath);
+      const matchedKey = resolveComponentKey(attPath, txResult.componentMap);
+      if (!matchedKey) continue;
+      const matchingFinding = txResult.findingMap.get(matchedKey);
 
       // Create Media record (idempotent)
       const existing = await prisma.media.findFirst({
@@ -531,10 +706,10 @@ async function importWorkItem(workDetail: any, ctx: ImportContext) {
       }
 
       // Track this photo URL for the matching GA component's WorkFormEntry
-      if (!photosByComponent.has(normalizedPath)) {
-        photosByComponent.set(normalizedPath, []);
+      if (!photosByComponent.has(matchedKey)) {
+        photosByComponent.set(matchedKey, []);
       }
-      photosByComponent.get(normalizedPath)!.push(mediaUrl);
+      photosByComponent.get(matchedKey)!.push(mediaUrl);
     }
   }
 

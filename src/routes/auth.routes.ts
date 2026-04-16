@@ -78,6 +78,16 @@ router.post('/refresh', asyncHandler(async (req: Request, res: Response) => {
   res.json({ success: true, data: { accessToken: result.accessToken } });
 }));
 
+router.post('/switch-organisation', authenticate, asyncHandler(async (req: Request, res: Response) => {
+  const { organisationId } = req.body;
+  if (!organisationId) {
+    throw new AppError(400, 'VALIDATION_ERROR', 'organisationId is required');
+  }
+  const result = await authService.switchOrganisation(req.user!.userId, organisationId);
+  setAuthCookies(res, result.accessToken, result.refreshToken);
+  res.json({ success: true, data: { accessToken: result.accessToken, user: result.user, organisation: result.organisation } });
+}));
+
 router.post('/logout', optionalAuth, (_req: Request, res: Response) => {
   const cookieOptions = getCookieOptions();
   res.clearCookie('accessToken', cookieOptions);

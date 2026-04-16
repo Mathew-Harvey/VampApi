@@ -9,13 +9,11 @@ const router = Router();
 router.get('/', authenticate, asyncHandler(async (req, res) => {
   const memberships = await prisma.organisationUser.findMany({
     where: { userId: req.user!.userId },
-    select: { organisationId: true },
+    include: { organisation: true },
   });
-  const orgIds = memberships.map((m) => m.organisationId);
-  const orgs = await prisma.organisation.findMany({
-    where: { id: { in: orgIds } },
-    orderBy: { name: 'asc' },
-  });
+  const orgs = memberships
+    .map((m) => ({ ...m.organisation, role: m.role }))
+    .sort((a, b) => a.name.localeCompare(b.name));
   res.json({ success: true, data: orgs });
 }));
 

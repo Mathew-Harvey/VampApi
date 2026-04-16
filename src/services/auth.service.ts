@@ -361,6 +361,46 @@ export const authService = {
     return bcrypt.hash(password, SALT_ROUNDS);
   },
 
+  async switchOrganisation(userId: string, organisationId: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { organisations: { include: { organisation: true } } },
+    });
+    if (!user || !user.isActive) {
+      throw new AppError(401, 'INVALID_USER', 'User not found or inactive');
+    }
+
+    const orgUser = user.organisations.find((ou) => ou.organisationId === organisationId);
+    if (!orgUser) {
+      throw new AppError(403, 'NOT_MEMBER', 'You are not a member of this organisation');
+    }
+
+    const permissions = resolvePermissions(orgUser.role, orgUser.permissions);
+
+    const tokenPayload: TokenPayload = {
+      userId: user.id,
+      email: user.email,
+      organisationId: orgUser.organisationId,
+      role: orgUser.role,
+      permissions,
+    };
+
+    return {
+      accessToken: generateAccessToken(tokenPayload),
+      refreshToken: generateRefreshToken(user.id),
+      user: {
+        id: user.id, email: user.email, firstName: user.firstName,
+        lastName: user.lastName, phone: user.phone, avatarUrl: user.avatarUrl,
+        isActive: user.isActive, lastLoginAt: user.lastLoginAt,
+        createdAt: user.createdAt, updatedAt: user.updatedAt,
+      },
+      organisation: {
+        id: orgUser.organisation.id, name: orgUser.organisation.name,
+        type: orgUser.organisation.type,
+      },
+    };
+  },
+
   async changePassword(userId: string, currentPassword: string, newPassword: string) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new AppError(404, 'NOT_FOUND', 'User not found');

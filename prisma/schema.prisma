@@ -16,6 +16,7 @@ model Organisation {
   contactPhone String?
   address      String?
   logoUrl      String?
+  isDeleted    Boolean            @default(false)
   createdAt    DateTime           @default(now())
   updatedAt    DateTime           @updatedAt
   invitations  Invitation[]

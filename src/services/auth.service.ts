@@ -169,12 +169,14 @@ export const authService = {
       throw new AppError(401, 'INVALID_CREDENTIALS', 'Invalid email or password');
     }
 
-    let orgUser = user.organisations.find((ou) => ou.isDefault);
+    const activeOrgs = user.organisations.filter((ou) => !ou.organisation.isDeleted);
+
+    let orgUser = activeOrgs.find((ou) => ou.isDefault);
     if (organisationId) {
-      orgUser = user.organisations.find((ou) => ou.organisationId === organisationId);
+      orgUser = activeOrgs.find((ou) => ou.organisationId === organisationId);
     }
     if (!orgUser) {
-      orgUser = user.organisations[0];
+      orgUser = activeOrgs[0];
     }
     if (!orgUser) {
       throw new AppError(403, 'NO_ORGANISATION', 'User has no organisation membership');
@@ -322,7 +324,8 @@ export const authService = {
         throw new AppError(401, 'INVALID_TOKEN', 'User not found or inactive');
       }
 
-      const orgUser = user.organisations.find((ou) => ou.isDefault) || user.organisations[0];
+      const activeOrgs = user.organisations.filter((ou) => !ou.organisation.isDeleted);
+      const orgUser = activeOrgs.find((ou) => ou.isDefault) || activeOrgs[0];
       if (!orgUser) throw new AppError(403, 'NO_ORGANISATION', 'No organisation');
 
       const perms = resolvePermissions(orgUser.role, orgUser.permissions);
@@ -354,7 +357,10 @@ export const authService = {
     });
     if (!user) throw new AppError(404, 'NOT_FOUND', 'User not found');
     const { passwordHash, ...profile } = user;
-    return profile;
+    return {
+      ...profile,
+      organisations: profile.organisations.filter((ou) => !ou.organisation.isDeleted),
+    };
   },
 
   async hashPassword(password: string): Promise<string> {
@@ -370,7 +376,7 @@ export const authService = {
       throw new AppError(401, 'INVALID_USER', 'User not found or inactive');
     }
 
-    const orgUser = user.organisations.find((ou) => ou.organisationId === organisationId);
+    const orgUser = user.organisations.find((ou) => ou.organisationId === organisationId && !ou.organisation.isDeleted);
     if (!orgUser) {
       throw new AppError(403, 'NOT_MEMBER', 'You are not a member of this organisation');
     }

@@ -6,6 +6,7 @@ vi.mock('../../src/config/database', () => {
     $connect: vi.fn().mockResolvedValue(undefined),
     $disconnect: vi.fn().mockResolvedValue(undefined),
     $queryRaw: vi.fn().mockResolvedValue([{ 1: 1 }]),
+    $transaction: vi.fn(),
     organisation: {
       create: vi.fn(),
       findUnique: vi.fn(),
@@ -15,6 +16,10 @@ vi.mock('../../src/config/database', () => {
       create: vi.fn(),
       findUnique: vi.fn(),
       findMany: vi.fn().mockResolvedValue([]),
+      deleteMany: vi.fn(),
+    },
+    invitation: {
+      deleteMany: vi.fn(),
     },
     user: {
       findUnique: vi.fn(),
@@ -255,6 +260,124 @@ describe('Organisation Routes', () => {
       expect(updateCall[0].data).not.toHaveProperty('id');
       expect(updateCall[0].data).not.toHaveProperty('createdAt');
       expect(updateCall[0].data.name).toBe('Safe Update');
+    });
+  });
+
+  describe('DELETE /api/v1/organisations/:id', () => {
+    it('returns 403 for non-admin role', async () => {
+      const res = await request(app)
+        .delete('/api/v1/organisations/org1')
+        .set('Authorization', `Bearer ${viewerToken}`);
+
+      expect(res.status).toBe(403);
+    });
+
+    it('returns 403 for deleting a different org', async () => {
+      const res = await request(app)
+        .delete('/api/v1/organisations/org2')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(403);
+      expect(res.body.error.message).toContain('current organisation');
+    });
+
+    it('returns 404 for already-deleted org', async () => {
+      (prisma.organisation.findUnique as any).mockResolvedValue({ id: 'org1', name: 'Test', isDeleted: true });
+
+      const res = await request(app)
+        .delete('/api/v1/organisations/org1')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(404);
+    });
+
+    it('soft-deletes org and returns next org tokens when user has another org', async () => {
+      (prisma.organisation.findUnique as any).mockResolvedValue({ id: 'org1', name: 'Alpha Org', isDeleted: false });
+      (prisma.$transaction as any).mockResolvedValue([{}, {}, {}]);
+      (prisma.organisationUser.findMany as any).mockResolvedValue([
+        {
+          organisationId: 'org2', role: 'VIEWER', permissions: '[]',
+          organisation: { id: 'org2', name: 'Beta Org', type: 'SERVICE_PROVIDER', isDeleted: false },
+        },
+      ]);
+
+      const res = await request(app)
+        .delete('/api/v1/organisations/org1')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.action).toBe('switch');
+      expect(res.body.data.accessToken).toBeTruthy();
+      expect(res.body.data.organisation.id).toBe('org2');
+      expect(res.body.data.organisation.name).toBe('Beta Org');
+      expect(res.body.data.message).toContain('Alpha Org');
+    });
+
+    it('soft-deletes org and returns logout signal when no other orgs', async () => {
+      (prisma.organisation.findUnique as any).mockResolvedValue({ id: 'org1', name: 'Only Org', isDeleted: false });
+      (prisma.$transaction as any).mockResolvedValue([{}, {}, {}]);
+      (prisma.organisationUser.findMany as any).mockResolvedValue([]);
+
+      const res = await request(app)
+        .delete('/api/v1/organisations/org1')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.action).toBe('logout');
+      expect(res.body.data.accessToken).toBeUndefined();
+      expect(res.body.data.message).toContain('Only Org');
+    });
+
+    it('allows ECOSYSTEM_ADMIN to delete org', async () => {
+      (prisma.organisation.findUnique as any).mockResolvedValue({ id: 'org1', name: 'Eco Org', isDeleted: false });
+      (prisma.$transaction as any).mockResolvedValue([{}, {}, {}]);
+      (prisma.organisationUser.findMany as any).mockResolvedValue([]);
+
+      const res = await request(app)
+        .delete('/api/v1/organisations/org1')
+        .set('Authorization', `Bearer ${ecosystemAdminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.action).toBe('logout');
+    });
+
+    it('skips deleted orgs when finding next org to switch to', async () => {
+      (prisma.organisation.findUnique as any).mockResolvedValue({ id: 'org1', name: 'Alpha', isDeleted: false });
+      (prisma.$transaction as any).mockResolvedValue([{}, {}, {}]);
+      (prisma.organisationUser.findMany as any).mockResolvedValue([
+        {
+          organisationId: 'org-deleted', role: 'VIEWER', permissions: '[]',
+          organisation: { id: 'org-deleted', name: 'Deleted Org', type: 'VESSEL_OPERATOR', isDeleted: true },
+        },
+        {
+          organisationId: 'org3', role: 'OPERATOR', permissions: '[]',
+          organisation: { id: 'org3', name: 'Active Org', type: 'SERVICE_PROVIDER', isDeleted: false },
+        },
+      ]);
+
+      const res = await request(app)
+        .delete('/api/v1/organisations/org1')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.action).toBe('switch');
+      expect(res.body.data.organisation.id).toBe('org3');
+      expect(res.body.data.organisation.name).toBe('Active Org');
+    });
+  });
+
+  describe('GET /api/v1/organisations/:id rejects deleted org', () => {
+    it('returns 404 for deleted org', async () => {
+      (prisma.organisationUser.findUnique as any).mockResolvedValue({
+        role: 'ORGANISATION_ADMIN',
+        organisation: { id: 'org1', name: 'Deleted', isDeleted: true, _count: { users: 0, vessels: 0, workOrders: 0 } },
+      });
+
+      const res = await request(app)
+        .get('/api/v1/organisations/org1')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(404);
     });
   });
 });

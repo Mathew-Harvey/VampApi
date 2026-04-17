@@ -198,4 +198,92 @@ export const vesselShareService = {
     });
     return shares.map((s) => s.vesselId);
   },
+
+  /**
+   * IDs of every vessel the user is implicitly allowed to read because they
+   * hold an active work-order assignment against that vessel.  This lets
+   * collaborators view vessels in other organisations that they're
+   * contracted to work on without needing the owning org to hand-share
+   * each vessel.  Permission is READ-only — writes still require an
+   * explicit `vesselShare` row with WRITE permission.
+   *
+   * "Active" deliberately excludes COMPLETED and CANCELLED work orders so
+   * collaborators don't retain indefinite access to vessels whose jobs have
+   * long since finished.
+   */
+  async getAssignmentVesselIds(userId: string): Promise<string[]> {
+    const rows = await prisma.workOrderAssignment.findMany({
+      where: {
+        userId,
+        workOrder: {
+          isDeleted: false,
+          status: {
+            in: [
+              'DRAFT',
+              'PENDING_APPROVAL',
+              'APPROVED',
+              'IN_PROGRESS',
+              'AWAITING_REVIEW',
+              'UNDER_REVIEW',
+              'ON_HOLD',
+            ],
+          },
+        },
+      },
+      select: { workOrder: { select: { vesselId: true } } },
+    });
+    const ids = new Set<string>();
+    for (const row of rows) {
+      if (row.workOrder?.vesselId) ids.add(row.workOrder.vesselId);
+    }
+    return Array.from(ids);
+  },
+
+  /**
+   * Check whether `userId` has any route to view `vesselId` — either org
+   * ownership, fleet-wide visibility, an explicit share, or an active
+   * work-order assignment.
+   */
+  async canViewVessel(
+    vesselId: string,
+    userId: string,
+    organisationId: string,
+  ): Promise<boolean> {
+    const vessel = await prisma.vessel.findFirst({
+      where: { id: vesselId, isDeleted: false },
+      select: { organisationId: true },
+    });
+    if (!vessel) return false;
+    if (vessel.organisationId === organisationId) return true;
+    if (fleetOrgId() && vessel.organisationId === fleetOrgId()) return true;
+
+    const share = await prisma.vesselShare.findUnique({
+      where: { vesselId_userId: { vesselId, userId } },
+      select: { id: true },
+    });
+    if (share) return true;
+
+    const assignment = await prisma.workOrderAssignment.findFirst({
+      where: {
+        userId,
+        workOrder: {
+          vesselId,
+          isDeleted: false,
+          status: {
+            in: [
+              'DRAFT',
+              'PENDING_APPROVAL',
+              'APPROVED',
+              'IN_PROGRESS',
+              'AWAITING_REVIEW',
+              'UNDER_REVIEW',
+              'ON_HOLD',
+            ],
+          },
+        },
+      },
+      select: { id: true },
+    });
+    return Boolean(assignment);
+  },
 };

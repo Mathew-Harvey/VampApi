@@ -2,6 +2,7 @@ import prisma from '../config/database';
 import { AppError } from '../middleware/error';
 import { PaginationParams, buildPaginatedResponse } from '../utils/pagination';
 import { auditService } from './audit.service';
+import { vesselShareService } from './vessel-share.service';
 import { Prisma } from '@prisma/client';
 
 const fleetOrgId = () => process.env.FLEET_ORG_ID || '';
@@ -95,12 +96,12 @@ export const vesselService = {
     if (fleetOrgId()) orgIds.push(fleetOrgId());
 
     let sharedVesselIds: string[] = [];
+    let assignmentVesselIds: string[] = [];
     if (userId) {
-      const shares = await prisma.vesselShare.findMany({
-        where: { userId },
-        select: { vesselId: true },
-      });
-      sharedVesselIds = shares.map((s) => s.vesselId);
+      [sharedVesselIds, assignmentVesselIds] = await Promise.all([
+        vesselShareService.getSharedVesselIds(userId),
+        vesselShareService.getAssignmentVesselIds(userId),
+      ]);
     }
 
     const accessFilters: Prisma.VesselWhereInput[] = [
@@ -108,6 +109,12 @@ export const vesselService = {
     ];
     if (sharedVesselIds.length > 0) {
       accessFilters.push({ id: { in: sharedVesselIds } });
+    }
+    // Collaborators on active work orders get implicit read access to the
+    // vessel they're working on; include those in the list so the fleet
+    // grid is consistent with what `GET /vessels/:id` will serve.
+    if (assignmentVesselIds.length > 0) {
+      accessFilters.push({ id: { in: assignmentVesselIds } });
     }
 
     const where: Prisma.VesselWhereInput = {
@@ -144,9 +151,16 @@ export const vesselService = {
     ]);
 
     const sharedSet = new Set(sharedVesselIds);
+    const assignmentSet = new Set(assignmentVesselIds);
     const annotated = data.map((v) => ({
       ...v,
-      _shared: sharedSet.has(v.id),
+      // `_shared` flag covers both explicit shares and vessels reached via
+      // a work-order assignment — in both cases the vessel is not owned by
+      // the user's current org and the UI badges it "shared".
+      _shared:
+        v.organisationId !== organisationId &&
+        v.organisationId !== fleetOrgId() &&
+        (sharedSet.has(v.id) || assignmentSet.has(v.id)),
     }));
 
     return buildPaginatedResponse(annotated, total, params);
@@ -168,13 +182,38 @@ export const vesselService = {
     const isOrgOwned = vessel.organisationId === organisationId || vessel.organisationId === fleetOrgId();
 
     if (organisationId && !isOrgOwned) {
-      if (userId) {
-        const share = await prisma.vesselShare.findUnique({
-          where: { vesselId_userId: { vesselId: id, userId } },
+      if (!userId) throw new AppError(404, 'NOT_FOUND', 'Vessel not found');
+      // Accept either an explicit `vesselShare` row OR an active work-order
+      // assignment that references this vessel.  The latter makes the
+      // access model consistent with what the work-orders list already
+      // exposes — you can see any vessel you're contracted to work on.
+      const share = await prisma.vesselShare.findUnique({
+        where: { vesselId_userId: { vesselId: id, userId } },
+        select: { id: true },
+      });
+      if (!share) {
+        const assignment = await prisma.workOrderAssignment.findFirst({
+          where: {
+            userId,
+            workOrder: {
+              vesselId: id,
+              isDeleted: false,
+              status: {
+                in: [
+                  'DRAFT',
+                  'PENDING_APPROVAL',
+                  'APPROVED',
+                  'IN_PROGRESS',
+                  'AWAITING_REVIEW',
+                  'UNDER_REVIEW',
+                  'ON_HOLD',
+                ],
+              },
+            },
+          },
+          select: { id: true },
         });
-        if (!share) throw new AppError(404, 'NOT_FOUND', 'Vessel not found');
-      } else {
-        throw new AppError(404, 'NOT_FOUND', 'Vessel not found');
+        if (!assignment) throw new AppError(404, 'NOT_FOUND', 'Vessel not found');
       }
     }
     return vessel;

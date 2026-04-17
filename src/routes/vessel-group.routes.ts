@@ -30,27 +30,27 @@ router.put('/reorder', authenticate, requirePermission('VESSEL_GROUP_MANAGE'), v
 }));
 
 router.get('/:id', authenticate, requirePermission('VESSEL_VIEW'), asyncHandler(async (req, res) => {
-  const group = await vesselGroupService.getById(req.params.id, req.user!.organisationId);
+  const group = await vesselGroupService.getById(req.params.id as string, req.user!.organisationId);
   res.json({ success: true, data: group });
 }));
 
 router.put('/:id', authenticate, requirePermission('VESSEL_GROUP_MANAGE'), validate(updateVesselGroupSchema), asyncHandler(async (req, res) => {
-  const group = await vesselGroupService.update(req.params.id, req.body, req.user!.organisationId, req.user!.userId);
+  const group = await vesselGroupService.update(req.params.id as string, req.body, req.user!.organisationId, req.user!.userId);
   res.json({ success: true, data: group });
 }));
 
 router.delete('/:id', authenticate, requirePermission('VESSEL_GROUP_MANAGE'), asyncHandler(async (req, res) => {
-  await vesselGroupService.softDelete(req.params.id, req.user!.organisationId, req.user!.userId);
+  await vesselGroupService.softDelete(req.params.id as string, req.user!.organisationId, req.user!.userId);
   res.json({ success: true, data: { message: 'Vessel group deleted' } });
 }));
 
 router.post('/:id/vessels', authenticate, requirePermission('VESSEL_GROUP_MANAGE'), validate(addVesselsToGroupSchema), asyncHandler(async (req, res) => {
-  const result = await vesselGroupService.addVessels(req.params.id, req.body.vesselIds, req.user!.organisationId, req.user!.userId);
+  const result = await vesselGroupService.addVessels(req.params.id as string, req.body.vesselIds, req.user!.organisationId, req.user!.userId);
   res.status(201).json({ success: true, data: result });
 }));
 
 router.post('/:id/vessels/remove', authenticate, requirePermission('VESSEL_GROUP_MANAGE'), validate(removeVesselsFromGroupSchema), asyncHandler(async (req, res) => {
-  const result = await vesselGroupService.removeVessels(req.params.id, req.body.vesselIds, req.user!.organisationId, req.user!.userId);
+  const result = await vesselGroupService.removeVessels(req.params.id as string, req.body.vesselIds, req.user!.organisationId, req.user!.userId);
   res.json({ success: true, data: result });
 }));
 

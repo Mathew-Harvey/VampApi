@@ -68,6 +68,11 @@ vi.mock('../../src/config/database', () => {
       create: vi.fn(),
       update: vi.fn(),
     },
+    workOrderAssignment: {
+      findMany: vi.fn().mockResolvedValue([]),
+      findFirst: vi.fn().mockResolvedValue(null),
+      findUnique: vi.fn().mockResolvedValue(null),
+    },
     auditEntry: {
       findFirst: vi.fn().mockResolvedValue(null),
       create: vi.fn().mockResolvedValue({ id: 'audit-1' }),

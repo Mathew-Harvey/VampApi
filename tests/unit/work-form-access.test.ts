@@ -29,6 +29,11 @@ vi.mock('../../src/config/database', () => {
       findFirst: vi.fn(),
       count: vi.fn().mockResolvedValue(0),
     },
+    workOrderAssignment: {
+      findMany: vi.fn().mockResolvedValue([]),
+      findFirst: vi.fn().mockResolvedValue(null),
+      findUnique: vi.fn().mockResolvedValue(null),
+    },
     workFormEntry: {
       findMany: vi.fn().mockResolvedValue([]),
       findUnique: vi.fn(),

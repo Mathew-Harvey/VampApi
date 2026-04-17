@@ -16,6 +16,39 @@ const router = Router();
 
 const fleetOrgId = () => process.env.FLEET_ORG_ID || '';
 
+const ACTIVE_WORK_ORDER_STATUSES: any[] = [
+  'DRAFT',
+  'PENDING_APPROVAL',
+  'APPROVED',
+  'IN_PROGRESS',
+  'AWAITING_REVIEW',
+  'UNDER_REVIEW',
+  'ON_HOLD',
+];
+
+async function hasVesselAccess(vesselId: string, userId: string): Promise<boolean> {
+  const share = await prisma.vesselShare.findUnique({
+    where: { vesselId_userId: { vesselId, userId } },
+    select: { id: true },
+  });
+  if (share) return true;
+  // Mirror the vessel.service.getById rule: an active work-order assignment
+  // on this vessel is enough to read its components.  This keeps the
+  // access model consistent across vessel/component/work-order surfaces.
+  const assignment = await prisma.workOrderAssignment.findFirst({
+    where: {
+      userId,
+      workOrder: {
+        vesselId,
+        isDeleted: false,
+        status: { in: ACTIVE_WORK_ORDER_STATUSES },
+      },
+    },
+    select: { id: true },
+  });
+  return Boolean(assignment);
+}
+
 async function assertVesselAccess(req: Request, res: Response, vesselId: string): Promise<boolean> {
   const vessel = await prisma.vessel.findFirst({
     where: { id: vesselId, isDeleted: false },
@@ -23,11 +56,8 @@ async function assertVesselAccess(req: Request, res: Response, vesselId: string)
   });
   if (!vessel) { res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Vessel not found' } }); return false; }
   if (vessel.organisationId !== req.user!.organisationId && vessel.organisationId !== fleetOrgId()) {
-    // Also allow if the user has an explicit vessel share
-    const share = await prisma.vesselShare.findUnique({
-      where: { vesselId_userId: { vesselId, userId: req.user!.userId } },
-    });
-    if (!share) {
+    const allowed = await hasVesselAccess(vesselId, req.user!.userId);
+    if (!allowed) {
       res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Vessel not found' } });
       return false;
     }
@@ -42,11 +72,8 @@ async function assertComponentAccess(req: Request, res: Response, componentId: s
   });
   if (!comp || comp.vessel.isDeleted) { res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Component not found' } }); return false; }
   if (comp.vessel.organisationId !== req.user!.organisationId && comp.vessel.organisationId !== fleetOrgId()) {
-    // Also allow if the user has an explicit vessel share
-    const share = await prisma.vesselShare.findUnique({
-      where: { vesselId_userId: { vesselId: comp.vessel.id, userId: req.user!.userId } },
-    });
-    if (!share) {
+    const allowed = await hasVesselAccess(comp.vessel.id, req.user!.userId);
+    if (!allowed) {
       res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Component not found' } });
       return false;
     }

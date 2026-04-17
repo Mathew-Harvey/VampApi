@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import fs from 'fs';
 import path from 'path';
+import { inferVesselType } from './rise-x-vessel-type';
 
 const prisma = new PrismaClient();
 
@@ -393,7 +394,12 @@ async function importWorkItem(workDetail: any, ctx: ImportContext) {
 
   const vesselName = vessel.displayName || vessel.name || 'Unknown Vessel';
   const isRan = !!workDetail.data?.ranVessel;
-  const vesselType = isRan ? 'NAVAL' : 'COMMERCIAL';
+  const rawVesselTypeString = firstNonEmpty(
+    getVesselValue(vessel, 'type'),
+    getVesselValue(vessel, 'vesselType'),
+    getVesselValue(vessel, 'shipType'),
+  );
+  const vesselType = inferVesselType(rawVesselTypeString, vesselName, isRan);
   const flowType: string = workDetail.flowType || '';
   const woType = flowType.includes('biofouling') ? 'BIOFOULING_INSPECTION' : 'ENGINEERING_SERVICE';
   const location: string | null =
@@ -451,7 +457,10 @@ async function importWorkItem(workDetail: any, ctx: ImportContext) {
 
       const dbVessel = await tx.vessel.upsert({
         where: { externalId: vesselExternalId },
-        update: vesselPayload,
+        // Include vesselType on update so re-running the importer also
+        // heals any rows that were imported with the legacy NAVAL/COMMERCIAL
+        // placeholders (which fall through to the default 3D model).
+        update: { ...vesselPayload, vesselType },
         create: {
           organisationId: ctx.orgId,
           externalId: vesselExternalId,

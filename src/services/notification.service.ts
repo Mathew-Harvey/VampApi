@@ -1,4 +1,5 @@
 import prisma from '../config/database';
+import { AppError } from '../middleware/error';
 
 export const notificationService = {
   async create(userId: string, type: string, title: string, message: string, entityType?: string, entityId?: string) {
@@ -27,7 +28,7 @@ export const notificationService = {
 
   async markRead(id: string, userId: string) {
     const notification = await prisma.notification.findFirst({ where: { id, userId } });
-    if (!notification) throw new Error('Notification not found');
+    if (!notification) throw new AppError(404, 'NOT_FOUND', 'Notification not found');
     return prisma.notification.update({
       where: { id },
       data: { isRead: true, readAt: new Date() },

@@ -56,4 +56,9 @@ describe('isOriginAllowed', () => {
     expect(isOriginAllowed('http://localhost:5174', ['https://prod.com'])).toBe(true);
     process.env.NODE_ENV = oldEnv;
   });
+
+  it('treats trailing slashes as equivalent', () => {
+    expect(isOriginAllowed('https://app.example.com/', ['https://app.example.com'])).toBe(true);
+    expect(isOriginAllowed('https://app.example.com', ['https://app.example.com/'])).toBe(true);
+  });
 });

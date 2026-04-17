@@ -23,7 +23,14 @@ async function assertVesselAccess(req: Request, res: Response, vesselId: string)
   });
   if (!vessel) { res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Vessel not found' } }); return false; }
   if (vessel.organisationId !== req.user!.organisationId && vessel.organisationId !== fleetOrgId()) {
-    res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Vessel not found' } }); return false;
+    // Also allow if the user has an explicit vessel share
+    const share = await prisma.vesselShare.findUnique({
+      where: { vesselId_userId: { vesselId, userId: req.user!.userId } },
+    });
+    if (!share) {
+      res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Vessel not found' } });
+      return false;
+    }
   }
   return true;
 }
@@ -35,7 +42,14 @@ async function assertComponentAccess(req: Request, res: Response, componentId: s
   });
   if (!comp || comp.vessel.isDeleted) { res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Component not found' } }); return false; }
   if (comp.vessel.organisationId !== req.user!.organisationId && comp.vessel.organisationId !== fleetOrgId()) {
-    res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Component not found' } }); return false;
+    // Also allow if the user has an explicit vessel share
+    const share = await prisma.vesselShare.findUnique({
+      where: { vesselId_userId: { vesselId: comp.vessel.id, userId: req.user!.userId } },
+    });
+    if (!share) {
+      res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Component not found' } });
+      return false;
+    }
   }
   return true;
 }
@@ -75,21 +89,25 @@ router.delete('/components/:id', authenticate, asyncHandler(async (req, res) => 
 // === Sub-Components ===
 
 router.get('/components/:parentId/sub-components', authenticate, asyncHandler(async (req, res) => {
+  if (!await assertComponentAccess(req, res, req.params.parentId as string)) return;
   const subs = await vesselComponentService.listSubComponents(req.params.parentId as string);
   res.json({ success: true, data: subs });
 }));
 
 router.post('/components/:parentId/sub-components', authenticate, asyncHandler(async (req, res) => {
+  if (!await assertComponentAccess(req, res, req.params.parentId as string)) return;
   const parent = await vesselComponentService.addSubComponent(req.params.parentId as string, req.body);
   res.status(201).json({ success: true, data: parent });
 }));
 
 router.post('/components/:parentId/apply-template', authenticate, asyncHandler(async (req, res) => {
+  if (!await assertComponentAccess(req, res, req.params.parentId as string)) return;
   const result = await vesselComponentService.applyTemplate(req.params.parentId as string, req.body.templateName);
   res.json({ success: true, data: result });
 }));
 
 router.put('/components/:parentId/sub-components/reorder', authenticate, asyncHandler(async (req, res) => {
+  if (!await assertComponentAccess(req, res, req.params.parentId as string)) return;
   const subs = await vesselComponentService.reorderSubComponents(req.params.parentId as string, req.body.ordering);
   res.json({ success: true, data: subs });
 }));
@@ -158,11 +176,13 @@ router.get('/pdr-scale', authenticate, (_req: Request, res: Response) => {
 // === GA Zone Mapping ===
 
 router.get('/vessels/:vesselId/components/zone-mappings', authenticate, asyncHandler(async (req, res) => {
+  if (!await assertVesselAccess(req, res, req.params.vesselId as string)) return;
   const data = await vesselComponentService.getZoneMappings(req.params.vesselId as string);
   res.json({ success: true, data });
 }));
 
 router.get('/vessels/:vesselId/components/by-zone/:gaZoneId', authenticate, asyncHandler(async (req, res) => {
+  if (!await assertVesselAccess(req, res, req.params.vesselId as string)) return;
   const components = await vesselComponentService.listByZone(
     req.params.vesselId as string,
     req.params.gaZoneId as string,
@@ -171,6 +191,7 @@ router.get('/vessels/:vesselId/components/by-zone/:gaZoneId', authenticate, asyn
 }));
 
 router.put('/components/:id/zone', authenticate, asyncHandler(async (req, res) => {
+  if (!await assertComponentAccess(req, res, req.params.id as string)) return;
   const { gaZoneId } = req.body;
   if (!gaZoneId || typeof gaZoneId !== 'string') {
     res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'gaZoneId is required and must be a string' } });
@@ -181,11 +202,13 @@ router.put('/components/:id/zone', authenticate, asyncHandler(async (req, res) =
 }));
 
 router.delete('/components/:id/zone', authenticate, asyncHandler(async (req, res) => {
+  if (!await assertComponentAccess(req, res, req.params.id as string)) return;
   const component = await vesselComponentService.unmapFromZone(req.params.id as string);
   res.json({ success: true, data: component });
 }));
 
 router.put('/vessels/:vesselId/components/zone-mappings', authenticate, asyncHandler(async (req, res) => {
+  if (!await assertVesselAccess(req, res, req.params.vesselId as string)) return;
   const { mappings } = req.body;
   if (!Array.isArray(mappings)) {
     res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'mappings must be an array of { componentId, gaZoneId }' } });
@@ -200,6 +223,17 @@ router.put('/vessels/:vesselId/components/zone-mappings', authenticate, asyncHan
       res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'gaZoneId must be a string or null' } });
       return;
     }
+  }
+  // Verify every mapped component also belongs to the vessel (prevents caller
+  // from reassigning a foreign component into their own vessel's zone).
+  const componentIds = mappings.map((m: any) => m.componentId);
+  const vesselComponents = await prisma.vesselComponent.findMany({
+    where: { id: { in: componentIds }, vesselId: req.params.vesselId as string },
+    select: { id: true },
+  });
+  if (vesselComponents.length !== new Set(componentIds).size) {
+    res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'One or more componentId values do not belong to this vessel' } });
+    return;
   }
   const data = await vesselComponentService.bulkMapZones(req.params.vesselId as string, mappings);
   res.json({ success: true, data });
@@ -230,11 +264,13 @@ router.post('/iso-zones/suggest', authenticate, (req: Request, res: Response) =>
 // === Digital Twin — Fouling State & Work History ===
 
 router.get('/vessels/:vesselId/components/fouling-state', authenticate, asyncHandler(async (req, res) => {
+  if (!await assertVesselAccess(req, res, req.params.vesselId as string)) return;
   const data = await workFormService.getFoulingStateByVessel(req.params.vesselId as string);
   res.json({ success: true, data });
 }));
 
 router.get('/vessels/:vesselId/components/:componentId/work-history', authenticate, asyncHandler(async (req, res) => {
+  if (!await assertVesselAccess(req, res, req.params.vesselId as string)) return;
   const data = await workFormService.getComponentWorkHistory(
     req.params.vesselId as string,
     req.params.componentId as string,

@@ -1,5 +1,14 @@
 import { z } from 'zod';
 
+/**
+ * Accepts either an ISO 8601 datetime string (`2026-04-17T00:00:00Z`) or a
+ * bare date string (`2026-04-17`) from <input type="date"> pickers.
+ */
+const dateLike = z.string().refine(
+  (v) => !Number.isNaN(new Date(v).getTime()),
+  { message: 'Invalid date' },
+);
+
 export const createVesselSchema = z.object({
   name: z.string().min(1, 'Vessel name is required').max(200),
   imoNumber: z.string().optional().nullable(),
@@ -18,10 +27,10 @@ export const createVesselSchema = z.object({
   afsCoatingType: z.string().optional().nullable(),
   afsManufacturer: z.string().optional().nullable(),
   afsProductName: z.string().optional().nullable(),
-  afsApplicationDate: z.string().datetime().optional().nullable(),
+  afsApplicationDate: dateLike.optional().nullable(),
   afsServiceLife: z.number().int().positive().optional().nullable(),
-  lastDrydockDate: z.string().datetime().optional().nullable(),
-  nextDrydockDate: z.string().datetime().optional().nullable(),
+  lastDrydockDate: dateLike.optional().nullable(),
+  nextDrydockDate: dateLike.optional().nullable(),
   typicalSpeed: z.number().positive().optional().nullable(),
   tradingRoutes: z.string().optional().nullable(),
   operatingArea: z.string().optional().nullable(),

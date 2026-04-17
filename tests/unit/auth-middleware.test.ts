@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { authenticate, optionalAuth } from '../../src/middleware/auth';
-import { generateAccessToken } from '../../src/config/auth';
+import { generateAccessToken, generateRefreshToken } from '../../src/config/auth';
 
 function mockReq(overrides: Record<string, any> = {}) {
   return {
@@ -76,6 +76,16 @@ describe('authenticate', () => {
     authenticate(req, mockRes(), next);
     expect(req.user.email).toBe('header@test.com');
   });
+
+  it('returns 401 when a refresh token is presented (type-confusion guard)', () => {
+    const refreshToken = generateRefreshToken('user-1');
+    const req = mockReq({ headers: { authorization: `Bearer ${refreshToken}` } });
+    const res = mockRes();
+    const next = vi.fn();
+    authenticate(req, res, next);
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(next).not.toHaveBeenCalled();
+  });
 });
 
 describe('optionalAuth', () => {
@@ -98,6 +108,15 @@ describe('optionalAuth', () => {
 
   it('continues without error for invalid token', () => {
     const req = mockReq({ headers: { authorization: 'Bearer invalid' } });
+    const next = vi.fn();
+    optionalAuth(req, mockRes(), next);
+    expect(next).toHaveBeenCalled();
+    expect(req.user).toBeUndefined();
+  });
+
+  it('ignores a refresh token even when present (no req.user leak)', () => {
+    const refreshToken = generateRefreshToken('user-1');
+    const req = mockReq({ headers: { authorization: `Bearer ${refreshToken}` } });
     const next = vi.fn();
     optionalAuth(req, mockRes(), next);
     expect(next).toHaveBeenCalled();

@@ -336,6 +336,40 @@ export const emailService = {
     );
   },
 
+  async sendOrganisationInvite(params: {
+    toEmail: string;
+    inviterName: string;
+    organisationName: string;
+    role: string;
+    actionUrl: string;
+    isNewUser: boolean;
+  }) {
+    const safeOrg = escapeHtml(params.organisationName);
+    const safeInviter = escapeHtml(params.inviterName);
+    const safeRole = escapeHtml(params.role.replace(/_/g, ' ').toLowerCase());
+    const actionLabel = params.isNewUser ? 'Create your account' : 'Accept invitation';
+
+    const html = wrapEmail(`
+      <h2 style="margin: 0 0 8px; color: #0f172a; font-size: 20px;">You've been invited to join ${safeOrg}</h2>
+      <p style="color: #64748b; font-size: 14px; margin: 0 0 24px;">
+        <strong style="color: #0f172a;">${safeInviter}</strong> has invited you to join
+        <strong style="color: #0f172a;">${safeOrg}</strong> on MarineStream as <strong>${safeRole}</strong>.
+      </p>
+
+      <div style="text-align: center; margin: 24px 0;">
+        <a href="${params.actionUrl}" style="display: inline-block; background: #0ea5e9; color: white; padding: 12px 32px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 14px;">
+          ${actionLabel}
+        </a>
+      </div>
+
+      <p style="color: #94a3b8; font-size: 12px; margin-top: 24px; text-align: center;">
+        If you didn't expect this invitation, you can safely ignore this email.
+      </p>
+    `);
+
+    return sendEmail(params.toEmail, `${params.inviterName} invited you to ${params.organisationName}`, html);
+  },
+
   async sendPasswordReset(params: { toEmail: string; resetUrl: string }) {
     const html = wrapEmail(`
       <h2 style="margin: 0 0 8px; color: #0f172a; font-size: 20px;">Reset your password</h2>

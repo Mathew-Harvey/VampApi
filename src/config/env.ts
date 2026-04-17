@@ -13,8 +13,16 @@ const envSchema = z.object({
   DATABASE_URL: z.string().min(1),
   REDIS_URL: z.string().default('redis://localhost:6379'),
   JWT_SECRET: z.string().min(32),
+  // Optional separate secret for refresh tokens. Falls back to JWT_SECRET if
+  // not set so existing deployments keep working, but production deployments
+  // should set a distinct value.
+  JWT_REFRESH_SECRET: z.string().min(32).optional(),
   JWT_EXPIRY: z.string().default('15m'),
   REFRESH_TOKEN_EXPIRY: z.string().default('7d'),
+  // Cookie lifetime (seconds) for the access-token cookie. Keep close to the
+  // JWT expiry so the browser stops sending an already-expired cookie.
+  ACCESS_COOKIE_MAX_AGE_SECONDS: z.coerce.number().int().positive().default(15 * 60),
+  REFRESH_COOKIE_MAX_AGE_SECONDS: z.coerce.number().int().positive().default(7 * 24 * 60 * 60),
   S3_BUCKET: z.string().default('marinestream-media'),
   S3_REGION: z.string().default('ap-southeast-2'),
   S3_ACCESS_KEY: z.string().default(''),

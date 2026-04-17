@@ -45,12 +45,28 @@ router.post('/sync/work-order/:workOrderId', authenticate, asyncHandler(async (r
 }));
 
 router.get('/:id', authenticate, asyncHandler(async (req, res) => {
-  const media = await mediaService.getById((req.params.id as string));
+  const includeOrganisationScope = hasAnyPermission(req.user, 'WORK_ORDER_VIEW', 'VESSEL_VIEW');
+  const media = await mediaService.getForUser(
+    req.params.id as string,
+    req.user!.userId,
+    req.user!.organisationId,
+    includeOrganisationScope,
+  );
+  if (!media) {
+    res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Media not found' } });
+    return;
+  }
   res.json({ success: true, data: media });
 }));
 
 router.delete('/:id', authenticate, asyncHandler(async (req, res) => {
-  await mediaService.delete((req.params.id as string), req.user!.userId);
+  const canAdminAsOrg = hasAnyPermission(req.user, 'WORK_ORDER_EDIT', 'VESSEL_EDIT', 'ADMIN_FULL_ACCESS');
+  await mediaService.delete(
+    req.params.id as string,
+    req.user!.userId,
+    req.user!.organisationId,
+    canAdminAsOrg,
+  );
   res.json({ success: true, data: { message: 'Media deleted' } });
 }));
 

@@ -3,6 +3,15 @@ import { z } from 'zod';
 export const FOULING_SCALES = ['LOF', 'FR'] as const;
 export type FoulingScale = typeof FOULING_SCALES[number];
 
+/**
+ * Accepts either an ISO 8601 datetime string (`2026-04-17T00:00:00Z`) or a
+ * bare date string (`2026-04-17`) from <input type="date"> pickers.
+ */
+const dateLike = z.string().refine(
+  (v) => !Number.isNaN(new Date(v).getTime()),
+  { message: 'Invalid date' },
+);
+
 export const createWorkOrderSchema = z.object({
   vesselId: z.string().min(1, 'Vessel is required'),
   workflowId: z.string().optional().nullable(),
@@ -14,8 +23,8 @@ export const createWorkOrderSchema = z.object({
   location: z.string().optional().nullable(),
   latitude: z.number().min(-90).max(90).optional().nullable(),
   longitude: z.number().min(-180).max(180).optional().nullable(),
-  scheduledStart: z.string().datetime().optional().nullable(),
-  scheduledEnd: z.string().datetime().optional().nullable(),
+  scheduledStart: dateLike.optional().nullable(),
+  scheduledEnd: dateLike.optional().nullable(),
   regulatoryRef: z.string().optional().nullable(),
   complianceFramework: z.array(z.string()).optional().default([]),
   metadata: z.record(z.unknown()).optional().nullable(),

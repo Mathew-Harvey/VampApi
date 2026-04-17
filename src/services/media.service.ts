@@ -3,6 +3,63 @@ import { AppError } from '../middleware/error';
 import { auditService } from './audit.service';
 import { storageService, MulterFile } from './storage.service';
 import { storageConfigService } from './storage-config.service';
+import { workOrderService } from './work-order.service';
+import { vesselShareService } from './vessel-share.service';
+
+const fleetOrgId = () => process.env.FLEET_ORG_ID || '';
+
+/**
+ * Shared access check for a single Media record.  Returns true if the caller:
+ *   - uploaded the media; or
+ *   - has view access to the attached work order (via org or assignment); or
+ *   - belongs to the owning organisation of the attached vessel; or
+ *   - has a VesselShare on the attached vessel.
+ *
+ * `includeOrganisationScope` mirrors the convention in workOrderService —
+ * callers without `WORK_ORDER_VIEW` must have an explicit assignment/share to
+ * see the media, but org admins with the permission see everything in their
+ * org's vessels & work orders.
+ */
+async function canAccessMedia(
+  mediaId: string,
+  userId: string,
+  organisationId: string,
+  includeOrganisationScope: boolean,
+): Promise<{ allowed: boolean; media: Awaited<ReturnType<typeof prisma.media.findUnique>> }> {
+  const media = await prisma.media.findUnique({ where: { id: mediaId } });
+  if (!media) return { allowed: false, media: null };
+
+  if (media.uploaderId === userId) return { allowed: true, media };
+
+  if (media.workOrderId) {
+    const canView = await workOrderService.canViewWorkOrder(
+      media.workOrderId,
+      userId,
+      organisationId,
+      includeOrganisationScope,
+    );
+    if (canView) return { allowed: true, media };
+  }
+
+  if (media.vesselId) {
+    const vessel = await prisma.vessel.findFirst({
+      where: { id: media.vesselId, isDeleted: false },
+      select: { organisationId: true },
+    });
+    if (vessel) {
+      if (
+        includeOrganisationScope &&
+        (vessel.organisationId === organisationId || vessel.organisationId === fleetOrgId())
+      ) {
+        return { allowed: true, media };
+      }
+      const share = await vesselShareService.getSharePermission(media.vesselId, userId);
+      if (share) return { allowed: true, media };
+    }
+  }
+
+  return { allowed: false, media };
+}
 
 export const mediaService = {
   async create(file: MulterFile, userId: string, metadata: Record<string, string>) {
@@ -173,17 +230,59 @@ export const mediaService = {
     };
   },
 
-  async getById(id: string) {
-    const media = await prisma.media.findUnique({ where: { id } });
-    if (!media) throw new AppError(404, 'NOT_FOUND', 'Media not found');
+  /**
+   * Fetch a single media record.  Enforces that the caller has access via
+   * upload ownership, associated work-order view permission, or vessel org /
+   * share — see `canAccessMedia`.  Returns `null` (treated as 404 at the
+   * route layer) if the caller has no path to the file.
+   */
+  async getForUser(
+    id: string,
+    userId: string,
+    organisationId: string,
+    includeOrganisationScope: boolean,
+  ) {
+    const { allowed, media } = await canAccessMedia(id, userId, organisationId, includeOrganisationScope);
+    if (!allowed || !media) return null;
     return media;
   },
 
-  async delete(id: string, userId: string) {
+  async delete(
+    id: string,
+    userId: string,
+    organisationId: string,
+    canAdminAsOrg: boolean,
+  ) {
     const media = await prisma.media.findUnique({ where: { id } });
     if (!media) throw new AppError(404, 'NOT_FOUND', 'Media not found');
-    if (media.uploaderId !== userId) {
-      throw new AppError(403, 'FORBIDDEN', 'You can only delete your own media');
+
+    // Uploader can always delete their own file.  Org admins with
+    // WORK_ORDER_EDIT (or VESSEL_EDIT, via the `canAdminAsOrg` flag passed in
+    // from the route) can also delete media in their org's work orders or
+    // vessels.  Anyone else is rejected with 403.
+    const isUploader = media.uploaderId === userId;
+    let hasOrgAccess = false;
+    if (!isUploader && canAdminAsOrg) {
+      if (media.workOrderId) {
+        hasOrgAccess = await workOrderService.canViewWorkOrder(
+          media.workOrderId, userId, organisationId, true,
+        );
+      }
+      if (!hasOrgAccess && media.vesselId) {
+        const vessel = await prisma.vessel.findFirst({
+          where: { id: media.vesselId, isDeleted: false },
+          select: { organisationId: true },
+        });
+        if (
+          vessel &&
+          (vessel.organisationId === organisationId || vessel.organisationId === fleetOrgId())
+        ) {
+          hasOrgAccess = true;
+        }
+      }
+    }
+    if (!isUploader && !hasOrgAccess) {
+      throw new AppError(403, 'FORBIDDEN', 'You do not have permission to delete this media');
     }
 
     await storageService.deleteStoredMedia({ storageKey: media.storageKey, url: media.url });

@@ -144,6 +144,35 @@ describe('createVesselSchema', () => {
     });
     expect(result.success).toBe(false);
   });
+
+  it('accepts a bare date string (YYYY-MM-DD) for drydock dates', () => {
+    // <input type="date"> gives us `2026-04-17` not a full ISO timestamp.
+    // Previously .datetime() rejected these, forcing update forms to fail
+    // with a cryptic validation error.
+    const result = createVesselSchema.safeParse({
+      name: 'MV Test', vesselType: 'CARGO_SHIP',
+      lastDrydockDate: '2026-04-17',
+      nextDrydockDate: '2027-04-17',
+      afsApplicationDate: '2025-01-01',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts a full ISO datetime string for drydock dates', () => {
+    const result = createVesselSchema.safeParse({
+      name: 'MV Test', vesselType: 'CARGO_SHIP',
+      lastDrydockDate: '2026-04-17T12:00:00.000Z',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('still rejects obviously garbage date strings', () => {
+    const result = createVesselSchema.safeParse({
+      name: 'MV Test', vesselType: 'CARGO_SHIP',
+      lastDrydockDate: 'not-a-date',
+    });
+    expect(result.success).toBe(false);
+  });
 });
 
 describe('updateVesselSchema', () => {
@@ -192,6 +221,23 @@ describe('createWorkOrderSchema', () => {
       vesselId: 'v1', title: 'Test', type: 'INSPECTION', foulingScale: 'LOF',
     });
     expect(result.success).toBe(true);
+  });
+
+  it('accepts bare date strings (YYYY-MM-DD) for scheduled dates', () => {
+    const result = createWorkOrderSchema.safeParse({
+      vesselId: 'v1', title: 'Test', type: 'INSPECTION',
+      scheduledStart: '2026-04-17',
+      scheduledEnd: '2026-04-18',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects garbage date strings', () => {
+    const result = createWorkOrderSchema.safeParse({
+      vesselId: 'v1', title: 'Test', type: 'INSPECTION',
+      scheduledStart: 'yesterday-ish',
+    });
+    expect(result.success).toBe(false);
   });
 });
 

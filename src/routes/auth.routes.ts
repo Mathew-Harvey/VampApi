@@ -1,12 +1,32 @@
 import { Router, Request, Response } from 'express';
+import rateLimit from 'express-rate-limit';
 import { authService } from '../services/auth.service';
 import { authenticate, optionalAuth } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { loginSchema, registerSchema, forgotPasswordSchema, resetPasswordSchema, changePasswordSchema } from '../schemas/user.schema';
 import { asyncHandler } from '../utils/async-handler';
 import { AppError } from '../middleware/error';
+import { env } from '../config/env';
 
 const router = Router();
+
+const isTest = process.env.NODE_ENV === 'test';
+const noopLimiter = (_req: Request, _res: Response, next: (err?: unknown) => void) => next();
+
+/**
+ * Extra-strict limiter for password-reset requests. Forgot-password is a vector
+ * for enumeration + outbound email spam, so we cap much more aggressively than
+ * the shared /auth limiter.
+ */
+const forgotPasswordLimiter = isTest
+  ? noopLimiter
+  : rateLimit({
+      windowMs: 60 * 60 * 1000, // 1 hour
+      max: 5,                   // 5 requests/ip/hour
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: { success: false, error: { code: 'RATE_LIMITED', message: 'Too many password reset attempts, please try again later' } },
+    });
 
 function getCookieOptions() {
   const isProd = process.env.NODE_ENV === 'production';
@@ -23,13 +43,16 @@ function getCookieOptions() {
 
 function setAuthCookies(res: Response, accessToken: string, refreshToken: string) {
   const baseCookieOptions = getCookieOptions();
+  // Cookie lifetimes are driven by env so they always match the JWT's own
+  // `exp` claim. Previously the cookie lived 24h while the access token
+  // expired in 15m, so browsers kept sending already-expired cookies.
   res.cookie('accessToken', accessToken, {
     ...baseCookieOptions,
-    maxAge: 24 * 60 * 60 * 1000,
+    maxAge: env.ACCESS_COOKIE_MAX_AGE_SECONDS * 1000,
   });
   res.cookie('refreshToken', refreshToken, {
     ...baseCookieOptions,
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    maxAge: env.REFRESH_COOKIE_MAX_AGE_SECONDS * 1000,
   });
 }
 
@@ -53,14 +76,14 @@ router.post('/login', validate(loginSchema), asyncHandler(async (req: Request, r
   res.json({ success: true, data: { accessToken: result.accessToken, user: result.user, organisation: result.organisation } });
 }));
 
-router.post('/forgot-password', validate(forgotPasswordSchema), asyncHandler(async (req: Request, res: Response) => {
+router.post('/forgot-password', forgotPasswordLimiter, validate(forgotPasswordSchema), asyncHandler(async (req: Request, res: Response) => {
   try {
-    const result = await authService.forgotPassword(req.body.email);
-    res.json({ success: true, data: result });
+    await authService.forgotPassword(req.body.email);
   } catch {
-    // Always return 200 for forgot-password (don't reveal email existence)
-    res.json({ success: true, data: { message: 'If an account exists, a reset link has been sent' } });
+    // Always return the same 200 response whether or not the email exists
+    // or the email-send succeeded — callers must not be able to enumerate.
   }
+  res.json({ success: true, data: { message: 'If an account exists, a reset link has been sent' } });
 }));
 
 router.post('/reset-password', validate(resetPasswordSchema), asyncHandler(async (req: Request, res: Response) => {

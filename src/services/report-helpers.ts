@@ -197,12 +197,23 @@ export function unwrapMediaRef(value: unknown): unknown {
   return value;
 }
 
+import { signMediaUrl } from '../config/media-signing';
+
 export function toAbsoluteMediaUrl(url: string): string {
   if (!url) return url;
-  if (/^https?:\/\//i.test(url) || url.startsWith('data:') || url.startsWith('blob:')) return url;
-  const apiBase = env.API_URL.replace(/\/+$/, '');
-  const normalizedPath = url.startsWith('/') ? url : `/${url}`;
-  return `${apiBase}${normalizedPath}`;
+  if (url.startsWith('data:') || url.startsWith('blob:')) return url;
+  let absolute: string;
+  if (/^https?:\/\//i.test(url)) {
+    absolute = url;
+  } else {
+    const apiBase = env.API_URL.replace(/\/+$/, '');
+    const normalizedPath = url.startsWith('/') ? url : `/${url}`;
+    absolute = `${apiBase}${normalizedPath}`;
+  }
+  // Sign /uploads/ URLs so `<img>` tags in report HTML / emails load without
+  // needing to forward the caller's access token.  The signer leaves other
+  // URLs (S3, external CDNs, etc.) untouched.
+  return signMediaUrl(absolute);
 }
 
 export function resolveAttachmentSource(

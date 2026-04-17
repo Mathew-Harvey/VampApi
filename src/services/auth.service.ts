@@ -261,8 +261,6 @@ export const authService = {
 
     return {
       message: 'If an account exists, a reset link has been sent',
-      // Include token in dev/test mode for easy testing
-      ...(process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test' ? { token } : {}),
     };
   },
 

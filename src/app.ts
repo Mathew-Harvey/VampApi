@@ -7,6 +7,7 @@ import rateLimit from 'express-rate-limit';
 import fs from 'fs';
 import path from 'path';
 import { notFound, errorHandler } from './middleware/error';
+import { verifyMediaAccess } from './middleware/media-access';
 
 // Routes
 import authRoutes from './routes/auth.routes';
@@ -62,7 +63,7 @@ const sensitiveLimiter = isTest
 
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 
 // Logging
@@ -70,8 +71,17 @@ if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('short'));
 }
 
-// Static files (uploads) — served from configurable local media path
-app.use('/uploads', (req, res, next) => {
+// Static files (uploads) — served from configurable local media path.
+//
+// Access is gated behind `verifyMediaAccess` so UUID-based media URLs can't
+// be discovered or shared anonymously.  It accepts either:
+//   - an HMAC-signed URL that the server itself emits for <img> tags in
+//     cross-origin/report HTML; or
+//   - a normal access token (header, cookie, or ?token=) for SPA fetches.
+//
+// The underlying directory is resolved per request so runtime reconfiguration
+// of the local media path takes effect without restarting the server.
+app.use('/uploads', verifyMediaAccess, (req, res, next) => {
   express.static(storageConfigService.getLocalMediaPath())(req, res, next);
 });
 

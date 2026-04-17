@@ -2,6 +2,7 @@ import prisma from '../config/database';
 import { AppError } from '../middleware/error';
 import { auditService } from './audit.service';
 import { env } from '../config/env';
+import { signMediaUrl } from '../config/media-signing';
 
 const ENTRY_UPDATE_FIELDS = [
   'isoZone',
@@ -434,13 +435,21 @@ export const workFormService = {
   },
 };
 
-/** Resolve a relative path like /uploads/x.jpg to a full URL using the current API_URL. */
+/**
+ * Resolve a relative path like /uploads/x.jpg to a full URL using the current
+ * API_URL and append a short-lived HMAC signature so the frontend can load the
+ * image without forwarding the caller's access token.
+ */
 function toPublicMediaUrl(url: string): string {
-  if (/^https?:\/\//i.test(url)) return url;
-  const normalizedPath = url.startsWith('/') ? url : `/${url}`;
-  const apiBase = (env.API_URL || '').replace(/\/+$/, '');
-  if (!apiBase) return normalizedPath;
-  return `${apiBase}${normalizedPath}`;
+  let absolute: string;
+  if (/^https?:\/\//i.test(url)) {
+    absolute = url;
+  } else {
+    const normalizedPath = url.startsWith('/') ? url : `/${url}`;
+    const apiBase = (env.API_URL || '').replace(/\/+$/, '');
+    absolute = apiBase ? `${apiBase}${normalizedPath}` : normalizedPath;
+  }
+  return signMediaUrl(absolute);
 }
 
 /** Strip any baked-in absolute API origin, keeping only the path (e.g. /uploads/x.jpg). */

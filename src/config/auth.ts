@@ -46,16 +46,21 @@ export function generateRefreshToken(userId: string): string {
  * as an access token.
  */
 export function verifyToken(token: string): TokenPayload {
-  const decoded = jwt.verify(token, env.JWT_SECRET) as Partial<AccessTokenClaims> & { type?: string };
+  // Verify + decode.  We deliberately type the result as a loose record
+  // because we want to reject `type: 'refresh'` explicitly — a refresh
+  // token should never satisfy this function.  Using `Partial<AccessTokenClaims>`
+  // would narrow `type` to `'access' | undefined` and make the refresh check
+  // a tautology.
+  const decoded = jwt.verify(token, env.JWT_SECRET) as Record<string, unknown>;
   if (decoded.type === 'refresh') {
     throw new Error('Refresh tokens cannot be used as access tokens');
   }
   return {
-    userId: decoded.userId as string,
-    email: decoded.email as string,
-    organisationId: decoded.organisationId as string,
-    role: decoded.role as string,
-    permissions: Array.isArray(decoded.permissions) ? decoded.permissions : [],
+    userId: typeof decoded.userId === 'string' ? decoded.userId : '',
+    email: typeof decoded.email === 'string' ? decoded.email : '',
+    organisationId: typeof decoded.organisationId === 'string' ? decoded.organisationId : '',
+    role: typeof decoded.role === 'string' ? decoded.role : '',
+    permissions: Array.isArray(decoded.permissions) ? (decoded.permissions as string[]) : [],
   };
 }
 

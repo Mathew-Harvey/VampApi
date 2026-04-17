@@ -52,7 +52,9 @@ router.post('/invite', authenticate, requirePermission('USER_INVITE'), validate(
     prisma.user.findUnique({ where: { email: emailLower }, select: { id: true } }),
   ]);
 
-  const inviterName = inviter ? `${inviter.firstName} ${inviter.lastName}` : (inviter?.email ?? 'A team member');
+  const inviterName = inviter
+    ? `${inviter.firstName} ${inviter.lastName}`.trim() || inviter.email
+    : 'A team member';
   const organisationName = organisation?.name ?? 'your organisation';
 
   // Build the one-click invitation URL.  If the invitee is already a user, we

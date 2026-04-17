@@ -34,6 +34,50 @@ router.get('/', authenticate, asyncHandler(async (req, res) => {
   res.json({ success: true, data: users.map((ou) => ({ ...ou.user, role: ou.role, permissions: ou.permissions })) });
 }));
 
+// List pending (not-yet-accepted, not-yet-expired) invitations for the current
+// organisation.  Exposed to anyone who can invite users so admins can see what
+// they sent and chase up unanswered invites.  Work-order-scoped invitations
+// are intentionally excluded — those belong on the relevant work order page.
+router.get('/invitations', authenticate, requirePermission('USER_INVITE'), asyncHandler(async (req, res) => {
+  const invitations = await prisma.invitation.findMany({
+    where: {
+      organisationId: req.user!.organisationId,
+      acceptedAt: null,
+      expiresAt: { gt: new Date() },
+      workOrderId: null,
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+  res.json({
+    success: true,
+    // Never surface the raw token — the invite code (== id) is what admins
+    // need to share manually.
+    data: invitations.map(({ token: _t, ...inv }) => ({
+      ...inv,
+      inviteCode: inv.id.toUpperCase(),
+    })),
+  });
+}));
+
+// Revoke a pending invitation for the current organisation.
+router.delete('/invitations/:id', authenticate, requirePermission('USER_MANAGE'), asyncHandler(async (req, res) => {
+  const invitation = await prisma.invitation.findFirst({
+    where: {
+      id: req.params.id as string,
+      organisationId: req.user!.organisationId,
+      acceptedAt: null,
+      workOrderId: null,
+    },
+  });
+  if (!invitation) {
+    res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Invitation not found' } });
+    return;
+  }
+
+  await prisma.invitation.delete({ where: { id: invitation.id } });
+  res.json({ success: true, data: { message: 'Invitation revoked' } });
+}));
+
 router.post('/invite', authenticate, requirePermission('USER_INVITE'), validate(inviteUserSchema), asyncHandler(async (req, res) => {
   const emailLower = (req.body.email as string).trim().toLowerCase();
   const invitation = await prisma.invitation.create({

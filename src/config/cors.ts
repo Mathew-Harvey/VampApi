@@ -17,10 +17,11 @@ export function getAllowedOrigins(): string[] {
 
 export function isOriginAllowed(origin: string | undefined, allowedOrigins?: string[]): boolean {
   if (!origin) return true; // same-origin / Postman
-  const allowed = allowedOrigins ?? getAllowedOrigins();
-  // Normalise the incoming origin the same way we normalise configured ones so
-  // `https://example.com/` and `https://example.com` are treated as equal.
+  // Normalise both the incoming origin AND the configured allowlist so
+  // `https://example.com/` and `https://example.com` are treated as equal
+  // regardless of which side has the trailing slash.
   const normalised = stripTrailingSlashes(origin);
+  const allowed = (allowedOrigins ?? getAllowedOrigins()).map(stripTrailingSlashes);
   if (allowed.includes(normalised)) return true;
   // In development, allow any localhost port
   if (process.env.NODE_ENV !== 'production' && /^https?:\/\/localhost(:\d+)?$/.test(normalised)) return true;

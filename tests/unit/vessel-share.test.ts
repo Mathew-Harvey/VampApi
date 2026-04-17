@@ -28,10 +28,13 @@ const mockShare = {
 };
 
 vi.mock('../../src/config/database', () => {
-  const mockPrisma = {
+  const mockPrisma: any = {
     $connect: vi.fn().mockResolvedValue(undefined),
     $disconnect: vi.fn().mockResolvedValue(undefined),
     $queryRaw: vi.fn().mockResolvedValue([{ 1: 1 }]),
+    // audit.service wraps each write in a SERIALIZABLE $transaction.  We need
+    // a working mock or every mutating endpoint returns 500.
+    $transaction: vi.fn(async (fn: any) => (typeof fn === 'function' ? fn(mockPrisma) : fn)),
     vessel: {
       findFirst: vi.fn(),
       findMany: vi.fn().mockResolvedValue([]),

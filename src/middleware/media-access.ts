@@ -21,7 +21,12 @@ import {
 export function verifyMediaAccess(req: Request, res: Response, next: NextFunction): void {
   const sig = req.query?.[MEDIA_SIGNATURE_QUERY_PARAM];
   const exp = req.query?.[MEDIA_EXPIRY_QUERY_PARAM];
-  if (sig && exp && verifyMediaSignature(req.path, sig, exp)) {
+  // When this middleware is mounted via `app.use('/uploads', ...)`, `req.path`
+  // is relative to the mount (e.g. `/foo.jpg`).  Signed URLs are generated
+  // from the full pathname (`/uploads/foo.jpg`), so we must reconstruct the
+  // full path via `req.baseUrl + req.path` to compare like with like.
+  const fullPath = `${req.baseUrl || ''}${req.path}`;
+  if (sig && exp && verifyMediaSignature(fullPath, sig, exp)) {
     next();
     return;
   }

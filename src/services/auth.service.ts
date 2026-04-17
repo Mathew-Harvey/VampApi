@@ -139,7 +139,7 @@ export const authService = {
 
     return {
       accessToken: generateAccessToken(tokenPayload),
-      refreshToken: generateRefreshToken(user.id),
+      refreshToken: generateRefreshToken(user.id, orgUser.organisationId),
       user: {
         id: user.id, email: user.email, firstName: user.firstName,
         lastName: user.lastName, phone: user.phone, avatarUrl: user.avatarUrl,
@@ -193,7 +193,7 @@ export const authService = {
     };
 
     const accessToken = generateAccessToken(tokenPayload);
-    const refreshToken = generateRefreshToken(user.id);
+    const refreshToken = generateRefreshToken(user.id, orgUser.organisationId);
 
     await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
 
@@ -308,7 +308,7 @@ export const authService = {
     return { message: 'Password has been reset successfully' };
   },
 
-  async refreshAccessToken(refreshTokenStr: string) {
+  async refreshAccessToken(refreshTokenStr: string, clientOrganisationHint?: string) {
     try {
       const decoded = verifyRefreshToken(refreshTokenStr);
       if (decoded.type !== 'refresh') throw new Error('Invalid token type');
@@ -323,7 +323,24 @@ export const authService = {
       }
 
       const activeOrgs = user.organisations.filter((ou) => !ou.organisation.isDeleted);
-      const orgUser = activeOrgs.find((ou) => ou.isDefault) || activeOrgs[0];
+      // Resolve which organisation this refresh should produce a token for,
+      // in priority order:
+      //   1. The org pinned into the refresh token itself (new tokens do this).
+      //   2. A client-provided hint matching a membership — this lets
+      //      clients with legacy refresh tokens (no `organisationId` claim)
+      //      stay pinned to whichever org the UI thinks it's showing.
+      //      The server still requires the user to be a member, so the
+      //      hint is never trusted beyond that.
+      //   3. The default-flagged membership, or first available.
+      let orgUser = decoded.organisationId
+        ? activeOrgs.find((ou) => ou.organisationId === decoded.organisationId)
+        : undefined;
+      if (!orgUser && clientOrganisationHint) {
+        orgUser = activeOrgs.find((ou) => ou.organisationId === clientOrganisationHint);
+      }
+      if (!orgUser) {
+        orgUser = activeOrgs.find((ou) => ou.isDefault) || activeOrgs[0];
+      }
       if (!orgUser) throw new AppError(403, 'NO_ORGANISATION', 'No organisation');
 
       const perms = resolvePermissions(orgUser.role, orgUser.permissions);
@@ -338,7 +355,10 @@ export const authService = {
 
       return {
         accessToken: generateAccessToken(tokenPayload),
-        refreshToken: generateRefreshToken(user.id),
+        // Rotate the refresh token with the resolved org so subsequent
+        // refreshes stay pinned to the same org, even after the old claim
+        // would otherwise have expired.
+        refreshToken: generateRefreshToken(user.id, orgUser.organisationId),
       };
     } catch (error) {
       if (error instanceof AppError) {
@@ -391,7 +411,7 @@ export const authService = {
 
     return {
       accessToken: generateAccessToken(tokenPayload),
-      refreshToken: generateRefreshToken(user.id),
+      refreshToken: generateRefreshToken(user.id, orgUser.organisationId),
       user: {
         id: user.id, email: user.email, firstName: user.firstName,
         lastName: user.lastName, phone: user.phone, avatarUrl: user.avatarUrl,

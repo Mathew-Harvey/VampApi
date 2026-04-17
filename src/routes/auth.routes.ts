@@ -96,7 +96,13 @@ router.post('/refresh', asyncHandler(async (req: Request, res: Response) => {
   if (!refreshToken) {
     throw new AppError(401, 'NO_TOKEN', 'No refresh token');
   }
-  const result = await authService.refreshAccessToken(refreshToken);
+  // Accept an optional `organisationId` hint from the client so a browser
+  // holding a legacy refresh token can still keep its active-org context
+  // across a page reload.  Membership is verified server-side.
+  const hint = typeof req.body?.organisationId === 'string'
+    ? req.body.organisationId
+    : undefined;
+  const result = await authService.refreshAccessToken(refreshToken, hint);
   setAuthCookies(res, result.accessToken, result.refreshToken);
   res.json({ success: true, data: { accessToken: result.accessToken } });
 }));

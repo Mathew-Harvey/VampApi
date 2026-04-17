@@ -113,7 +113,7 @@ router.delete('/:id', authenticate, requireRole('ORGANISATION_ADMIN', 'ECOSYSTEM
         message: `Organisation "${org.name}" has been deleted`,
         action: 'switch',
         accessToken: generateAccessToken(tokenPayload),
-        refreshToken: generateRefreshToken(req.user!.userId),
+        refreshToken: generateRefreshToken(req.user!.userId, activeMembership.organisationId),
         organisation: {
           id: activeMembership.organisation.id,
           name: activeMembership.organisation.name,

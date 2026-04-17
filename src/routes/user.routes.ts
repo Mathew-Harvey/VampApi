@@ -164,7 +164,7 @@ router.post('/invitations/:id/accept', authenticate, asyncHandler(async (req, re
     data: {
       message: 'Invitation accepted',
       accessToken: generateAccessToken(tokenPayload),
-      refreshToken: generateRefreshToken(req.user!.userId),
+      refreshToken: generateRefreshToken(req.user!.userId, orgUser.organisationId),
       organisation: {
         id: orgUser.organisation.id,
         name: orgUser.organisation.name,

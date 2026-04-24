@@ -27,6 +27,19 @@ const VESSEL_UPDATE_ALLOWLIST = new Set<string>([
 ]);
 
 /**
+ * Build an audit-safe snapshot of a vessel row.  `iconImage` is a base64
+ * data URL that can comfortably hit ~250 KB; dumping it into both
+ * `previousData` and `newData` on every update would balloon the audit
+ * table without adding any auditable value.  We replace it with a short
+ * marker so reviewers can still see the field was touched.
+ */
+function auditSafeVessel<T extends { iconImage?: string | null } | null | undefined>(v: T): T {
+  if (!v || typeof v !== 'object') return v;
+  if (!('iconImage' in v) || v.iconImage == null) return v;
+  return { ...v, iconImage: '[image omitted]' } as T;
+}
+
+/**
  * Normalise inbound vessel payloads so the columns (which are TEXT in the
  * database) always receive JSON-stringified or correctly-typed values.
  *
@@ -234,7 +247,7 @@ export const vesselService = {
       entityId: vessel.id,
       action: 'CREATE',
       description: `Created vessel "${vessel.name}"`,
-      newData: vessel as any,
+      newData: auditSafeVessel(vessel) as any,
     });
 
     return vessel;
@@ -274,8 +287,8 @@ export const vesselService = {
       entityId: vessel.id,
       action: 'UPDATE',
       description: `Updated vessel "${vessel.name}"`,
-      previousData: existing as any,
-      newData: vessel as any,
+      previousData: auditSafeVessel(existing) as any,
+      newData: auditSafeVessel(vessel) as any,
       changedFields: Object.keys(sanitized),
     });
 

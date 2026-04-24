@@ -289,6 +289,78 @@ router.get('/stats', authenticate, asyncHandler(async (_req, res) => {
   });
 }));
 
+// ---------------------------------------------------------------------------
+// GET /browse — list directories for the folder-picker UI
+// ---------------------------------------------------------------------------
+router.get('/browse', authenticate, adminOnly, asyncHandler(async (req, res) => {
+  const isWindows = process.platform === 'win32';
+  const home = isWindows ? (process.env.USERPROFILE || 'C:\\Users') : (process.env.HOME || '/');
+  let target = (req.query.path as string) || home;
+
+  target = path.resolve(target);
+
+  // On Windows, handle drive root listing
+  if (isWindows && target === path.parse(target).root && !fs.existsSync(target)) {
+    target = home;
+  }
+
+  let parentPath: string | null = null;
+  const parsed = path.parse(target);
+  if (target !== parsed.root) {
+    parentPath = path.dirname(target);
+  }
+
+  const dirs: { name: string; path: string }[] = [];
+  try {
+    const entries = await fsp.readdir(target, { withFileTypes: true });
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue;
+      if (entry.name.startsWith('.') || entry.name.startsWith('$')) continue;
+      dirs.push({ name: entry.name, path: path.join(target, entry.name) });
+    }
+    dirs.sort((a, b) => a.name.localeCompare(b.name));
+  } catch {
+    // Can't read the directory — return empty list
+  }
+
+  // Quick-access locations
+  const quickAccess: { label: string; path: string }[] = [];
+  if (isWindows) {
+    const userProfile = process.env.USERPROFILE;
+    if (userProfile) {
+      quickAccess.push(
+        { label: 'Desktop', path: path.join(userProfile, 'Desktop') },
+        { label: 'Documents', path: path.join(userProfile, 'Documents') },
+      );
+      const oneDrive = process.env.OneDrive || process.env.OneDriveConsumer || process.env.OneDriveCommercial;
+      if (oneDrive) {
+        quickAccess.push({ label: 'OneDrive', path: oneDrive });
+      }
+    }
+    for (const drive of ['C', 'D', 'E', 'F']) {
+      const drivePath = `${drive}:\\`;
+      if (fs.existsSync(drivePath)) {
+        quickAccess.push({ label: `${drive}: Drive`, path: drivePath });
+      }
+    }
+  } else {
+    quickAccess.push(
+      { label: 'Home', path: home },
+      { label: 'Root', path: '/' },
+    );
+  }
+
+  res.json({
+    success: true,
+    data: {
+      currentPath: target,
+      parentPath,
+      directories: dirs,
+      quickAccess,
+    },
+  });
+}));
+
 interface TestCheck {
   name: string;
   passed: boolean;

@@ -6,7 +6,7 @@ import { asyncHandler } from '../utils/async-handler';
 const router = Router();
 
 router.get('/overview', authenticate, asyncHandler(async (req, res) => {
-  const data = await dashboardService.getOverview(req.user!.organisationId);
+  const data = await dashboardService.getOverview(req.user!.organisationId, req.user!.userId);
   res.json({ success: true, data });
 }));
 

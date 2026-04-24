@@ -116,8 +116,9 @@ export const workFormService = {
     for (const key of ENTRY_UPDATE_FIELDS) {
       if (key in data) {
         if (key === 'attachments') {
-          const arr = (Array.isArray(data[key]) ? data[key] : safeParseJsonArray(data[key])).map(toRelativePath);
-          updateData[key] = JSON.stringify(arr);
+          const raw = Array.isArray(data[key]) ? data[key] : safeParseJsonArray(data[key]);
+          const normalized = raw.map(normalizeAttachmentForStorage).filter((x: unknown): x is AttachmentStorage => x !== null);
+          updateData[key] = JSON.stringify(normalized);
         } else {
           updateData[key] = data[key];
         }
@@ -271,7 +272,9 @@ export const workFormService = {
     const entry = await prisma.workFormEntry.findUnique({ where: { id: entryId } });
     if (!entry) throw new AppError(404, 'NOT_FOUND', 'Form entry not found');
 
-    const attachments: string[] = safeParseJsonArray(entry.attachments).map(toRelativePath);
+    const attachments = safeParseJsonArray(entry.attachments)
+      .map(normalizeAttachmentForStorage)
+      .filter((x): x is AttachmentStorage => x !== null);
     if (index >= 0 && index < attachments.length) {
       attachments.splice(index, 1);
     }
@@ -416,8 +419,10 @@ export const workFormService = {
     });
     if (!media) throw new AppError(404, 'NOT_FOUND', 'Media not found');
 
-    const attachments: string[] = safeParseJsonArray(entry.attachments).map(toRelativePath);
-    attachments.push(toRelativePath(media.url));
+    const attachments = safeParseJsonArray(entry.attachments)
+      .map(normalizeAttachmentForStorage)
+      .filter((x): x is AttachmentStorage => x !== null);
+    attachments.push({ kind: 'url', url: toRelativePath(media.url) });
 
     const updated = await prisma.workFormEntry.update({
       where: { id: entryId },
@@ -428,12 +433,132 @@ export const workFormService = {
     const resolvedUrl = toPublicMediaUrl(media.url);
     return {
       ...updated,
-      attachments: attachments.map(toPublicMediaUrl),
+      attachments: attachments.map(toApiAttachment),
       mediaId: media.id,
       mediaUrl: resolvedUrl,
     };
   },
+
+  /**
+   * Append a client-local attachment ref (pointer to a file on the
+   * uploader's own laptop, accessed via the File System Access API).
+   * The server stores only the relative path + metadata; no bytes.
+   */
+  async addLocalAttachment(
+    entryId: string,
+    payload: { relativePath: string; label?: string | null; mimeType?: string | null; uploaderId: string },
+  ) {
+    const entry = await prisma.workFormEntry.findUnique({ where: { id: entryId } });
+    if (!entry) throw new AppError(404, 'NOT_FOUND', 'Form entry not found');
+
+    if (!payload.relativePath || typeof payload.relativePath !== 'string') {
+      throw new AppError(400, 'INVALID_PATH', 'relativePath is required');
+    }
+    // Prevent path-escape attempts — stored path must be a simple relative
+    // path with no `..` segments or absolute drive prefixes.
+    if (/(^|[\\/])\.\.([\\/]|$)/.test(payload.relativePath) || /^([a-zA-Z]:|\/)/.test(payload.relativePath)) {
+      throw new AppError(400, 'INVALID_PATH', 'relativePath must be a simple relative path');
+    }
+
+    const attachments = safeParseJsonArray(entry.attachments)
+      .map(normalizeAttachmentForStorage)
+      .filter((x): x is AttachmentStorage => x !== null);
+
+    const newAttachment: AttachmentStorage = {
+      kind: 'clientLocal',
+      relativePath: payload.relativePath,
+      label: payload.label ?? null,
+      mimeType: payload.mimeType ?? null,
+      uploaderId: payload.uploaderId,
+    };
+    attachments.push(newAttachment);
+
+    const updated = await prisma.workFormEntry.update({
+      where: { id: entryId },
+      data: { attachments: JSON.stringify(attachments) },
+      include: { vesselComponent: true },
+    });
+
+    return {
+      ...updated,
+      attachments: attachments.map(toApiAttachment),
+      newAttachment: toApiAttachment(newAttachment),
+    };
+  },
 };
+
+/**
+ * Shape of an attachment as persisted to the DB. We store a small
+ * discriminated union so legacy string entries (which are treated as
+ * `kind: 'url'`) and new client-local entries coexist.
+ */
+type AttachmentStorage =
+  | { kind: 'url'; url: string }
+  | {
+      kind: 'clientLocal';
+      relativePath: string;
+      label?: string | null;
+      mimeType?: string | null;
+      uploaderId?: string | null;
+    };
+
+/**
+ * Shape returned to the API consumer. URLs are public/signed; clientLocal
+ * entries are returned as-is (the client resolves them itself).
+ */
+type ApiAttachment =
+  | string
+  | {
+      kind: 'clientLocal';
+      relativePath: string;
+      label?: string | null;
+      mimeType?: string | null;
+      uploaderId?: string | null;
+    };
+
+/**
+ * Normalize a raw attachments entry (legacy string, legacy URL object, or
+ * structured clientLocal object) into the current storage shape. Returns
+ * `null` for malformed entries so they can be dropped.
+ */
+function normalizeAttachmentForStorage(raw: unknown): AttachmentStorage | null {
+  if (typeof raw === 'string') {
+    if (!raw) return null;
+    return { kind: 'url', url: toRelativePath(raw) };
+  }
+  if (raw && typeof raw === 'object') {
+    const obj = raw as Record<string, unknown>;
+    const kind = typeof obj.kind === 'string' ? obj.kind : null;
+    if (kind === 'clientLocal' && typeof obj.relativePath === 'string') {
+      return {
+        kind: 'clientLocal',
+        relativePath: obj.relativePath,
+        label: typeof obj.label === 'string' ? obj.label : null,
+        mimeType: typeof obj.mimeType === 'string' ? obj.mimeType : null,
+        uploaderId: typeof obj.uploaderId === 'string' ? obj.uploaderId : null,
+      };
+    }
+    if (kind === 'url' && typeof obj.url === 'string') {
+      return { kind: 'url', url: toRelativePath(obj.url) };
+    }
+    if (typeof obj.url === 'string') {
+      return { kind: 'url', url: toRelativePath(obj.url) };
+    }
+  }
+  return null;
+}
+
+/** Convert storage shape to the shape returned over the wire. */
+function toApiAttachment(a: AttachmentStorage): ApiAttachment {
+  if (a.kind === 'url') return toPublicMediaUrl(a.url);
+  return {
+    kind: 'clientLocal',
+    relativePath: a.relativePath,
+    label: a.label ?? null,
+    mimeType: a.mimeType ?? null,
+    uploaderId: a.uploaderId ?? null,
+  };
+}
 
 /**
  * Resolve a relative path like /uploads/x.jpg to a full URL using the current
@@ -464,7 +589,7 @@ function toRelativePath(url: string): string {
   return url;
 }
 
-function safeParseJsonArray(raw: unknown): string[] {
+function safeParseJsonArray(raw: unknown): unknown[] {
   if (Array.isArray(raw)) return raw;
   if (typeof raw !== 'string' || !raw) return [];
   try {
@@ -475,10 +600,19 @@ function safeParseJsonArray(raw: unknown): string[] {
   }
 }
 
-/** Parse attachments JSON, normalize legacy absolute URLs, and resolve to current API_URL. */
-function withParsedAttachments<T extends { attachments: unknown }>(entry: T): T & { attachments: string[] } {
+/**
+ * Parse attachments JSON, normalize legacy absolute URLs, and return a mixed
+ * array of signed public URLs (for server-hosted media) and clientLocal
+ * pointer objects (for files that only exist on a user's laptop).
+ */
+function withParsedAttachments<T extends { attachments: unknown }>(
+  entry: T,
+): T & { attachments: ApiAttachment[] } {
+  const normalized = safeParseJsonArray(entry.attachments)
+    .map(normalizeAttachmentForStorage)
+    .filter((x): x is AttachmentStorage => x !== null);
   return {
     ...entry,
-    attachments: safeParseJsonArray(entry.attachments).map((u) => toPublicMediaUrl(toRelativePath(u))),
+    attachments: normalized.map(toApiAttachment),
   };
 }

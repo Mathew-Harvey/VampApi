@@ -1,9 +1,11 @@
 import { Router, Request, Response } from 'express';
+import fs from 'fs';
 import { reportService } from '../services/report.service';
 import { authenticate } from '../middleware/auth';
 import { hasAnyPermission, requirePermission } from '../middleware/permissions';
 import { workOrderService } from '../services/work-order.service';
 import { asyncHandler } from '../utils/async-handler';
+import { resolveTemplatePath, REPORT_TEMPLATE_NAME, WORK_ORDER_TEMPLATE_NAME } from '../services/report-templates';
 
 const router = Router();
 
@@ -133,6 +135,35 @@ router.get('/context/:workOrderId', authenticate, asyncHandler(async (req, res) 
 
   const data = await reportService.getInspectionReportContext(req.params.workOrderId as string);
   res.json({ success: true, data });
+}));
+
+/**
+ * Return the raw Handlebars template source so the browser can render
+ * reports client-side with local photos inlined. Only a whitelist of
+ * template names is allowed to prevent arbitrary file reads.
+ */
+const ALLOWED_TEMPLATES: Record<string, string> = {
+  inspection: REPORT_TEMPLATE_NAME,
+  'work-order': WORK_ORDER_TEMPLATE_NAME,
+};
+
+router.get('/templates/:name', authenticate, requirePermission('REPORT_VIEW'), asyncHandler(async (req, res) => {
+  const name = (req.params.name as string) || '';
+  const templateFile = ALLOWED_TEMPLATES[name];
+  if (!templateFile) {
+    res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Unknown template' } });
+    return;
+  }
+
+  const templatePath = resolveTemplatePath(templateFile);
+  if (!templatePath) {
+    res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Template file not found' } });
+    return;
+  }
+
+  const source = fs.readFileSync(templatePath, 'utf-8');
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  res.send(source);
 }));
 
 router.get('/documents', authenticate, requirePermission('REPORT_VIEW'), asyncHandler(async (req, res) => {

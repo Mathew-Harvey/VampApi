@@ -311,9 +311,29 @@ router.get('/stats', authenticate, asyncHandler(async (_req, res) => {
 }));
 
 // ---------------------------------------------------------------------------
-// GET /browse — list directories for the folder-picker UI
+// GET /browse — list directories on the API server's disk.
+//
+// Intended for SELF-HOSTED deployments where the server admin needs to pick
+// a local media path. On Render, Heroku, Railway etc. the filesystem is
+// ephemeral AND wiped on every deploy, so this endpoint is pointless and
+// would just leak the platform's container paths. We 404 on those hosts.
+//
+// End users who want to save photos to THEIR OWN laptop use the File System
+// Access API in the browser (see localPhotoStorage.ts) — not this endpoint.
 // ---------------------------------------------------------------------------
 router.get('/browse', authenticate, canManageStorage, asyncHandler(async (req, res) => {
+  const isEphemeral = Boolean(process.env.RENDER) || Boolean(process.env.DYNO) || Boolean(process.env.RAILWAY_ENVIRONMENT);
+  if (isEphemeral) {
+    res.status(404).json({
+      success: false,
+      error: {
+        code: 'NOT_AVAILABLE',
+        message: 'Server-side folder browsing is disabled on ephemeral hosting. Use the browser folder picker to save photos to your own device instead.',
+      },
+    });
+    return;
+  }
+
   const isWindows = process.platform === 'win32';
   const home = isWindows ? (process.env.USERPROFILE || 'C:\\Users') : (process.env.HOME || '/');
   let target = (req.query.path as string) || home;

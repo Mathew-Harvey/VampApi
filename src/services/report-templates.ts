@@ -91,14 +91,34 @@ export function buildPhotoPages(entries: Array<{ component: string; attachments:
   const photoPages: Array<{ sectionName: string; photos: Array<{ src: string; caption: string }> }> = [];
 
   for (const entry of entries) {
-    let attachments: string[] = [];
+    let rawAttachments: unknown[] = [];
     try {
-      attachments = typeof entry.attachments === 'string' ? JSON.parse(entry.attachments) : Array.isArray(entry.attachments) ? entry.attachments : [];
+      rawAttachments = typeof entry.attachments === 'string'
+        ? JSON.parse(entry.attachments)
+        : Array.isArray(entry.attachments) ? entry.attachments : [];
     } catch { /* ignore */ }
 
-    if (attachments.length === 0) continue;
+    if (!Array.isArray(rawAttachments) || rawAttachments.length === 0) continue;
 
-    const photos = attachments.map((src: string, i: number) => ({
+    // Only server-hosted URL attachments can be rendered by the server-side
+    // report pipeline. Client-local attachments (photos on a user's laptop)
+    // are skipped here and handled by the browser renderer instead.
+    const urlStrings: string[] = [];
+    for (const att of rawAttachments) {
+      if (typeof att === 'string' && att) {
+        urlStrings.push(att);
+      } else if (att && typeof att === 'object') {
+        const obj = att as Record<string, unknown>;
+        if (obj.kind === 'url' && typeof obj.url === 'string' && obj.url) {
+          urlStrings.push(obj.url);
+        }
+        // clientLocal entries: silently skipped in server-rendered reports.
+      }
+    }
+
+    if (urlStrings.length === 0) continue;
+
+    const photos = urlStrings.map((src, i) => ({
       src: toAbsoluteMediaUrl(normalizeMediaUrl(src)),
       caption: `${entry.component} - Photo ${i + 1}`,
     }));

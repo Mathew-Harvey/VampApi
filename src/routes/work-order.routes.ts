@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { workOrderService } from '../services/work-order.service';
 import { workflowService } from '../services/workflow.service';
+import { workFormService } from '../services/work-form.service';
 import { authenticate } from '../middleware/auth';
 import { hasAnyPermission, requirePermission } from '../middleware/permissions';
 import { requireWorkOrderView, requireWorkOrderWrite } from '../middleware/work-order-access';
@@ -100,5 +101,47 @@ router.delete('/:id', authenticate, requirePermission('WORK_ORDER_DELETE'), asyn
   await workOrderService.softDelete((req.params.id as string), req.user!.organisationId, req.user!.userId);
   res.json({ success: true, data: { message: 'Work order deleted' } });
 }));
+
+/**
+ * Append a "client-local" attachment reference to a form entry. The file
+ * lives on the uploader's own laptop (via File System Access API) and the
+ * server stores only the relative path + metadata; no bytes are uploaded.
+ *
+ * Body: { relativePath: string; label?: string; mimeType?: string }
+ */
+router.post(
+  '/:id/form-entries/:entryId/attachments/local',
+  authenticate,
+  requireWorkOrderWrite('id'),
+  asyncHandler(async (req, res) => {
+    const entryId = req.params.entryId as string;
+    const { relativePath, label, mimeType } = req.body ?? {};
+
+    if (!relativePath || typeof relativePath !== 'string') {
+      res.status(400).json({ success: false, error: { code: 'INVALID_PATH', message: 'relativePath is required' } });
+      return;
+    }
+
+    // Verify the entry belongs to this work order so the URL can't be used
+    // to mutate an entry under a different work order.
+    const entry = await prisma.workFormEntry.findFirst({
+      where: { id: entryId, workOrderId: req.params.id as string },
+      select: { id: true },
+    });
+    if (!entry) {
+      res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Form entry not found for this work order' } });
+      return;
+    }
+
+    const result = await workFormService.addLocalAttachment(entryId, {
+      relativePath,
+      label: typeof label === 'string' ? label : null,
+      mimeType: typeof mimeType === 'string' ? mimeType : null,
+      uploaderId: req.user!.userId,
+    });
+
+    res.json({ success: true, data: result });
+  }),
+);
 
 export default router;

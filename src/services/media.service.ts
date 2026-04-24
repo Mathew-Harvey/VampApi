@@ -298,6 +298,7 @@ export const mediaService = {
   },
 
   async getWorkOrderMediaStatus(workOrderId: string) {
+    // Server-stored Media records for this work order.
     const media = await prisma.media.findMany({
       where: { workOrderId },
       select: {
@@ -309,20 +310,68 @@ export const mediaService = {
       },
     });
 
-    const localMedia = media.filter((m) => m.url.startsWith('/uploads/'));
+    // Client-local photos: scan form entries' attachments JSON for
+    // `{ kind: 'clientLocal', uploaderId, ... }` objects. These refer to
+    // files that only exist on the uploader's laptop (File System Access
+    // API) and are NOT accessible to other users.
+    const entries = await prisma.workFormEntry.findMany({
+      where: { workOrderId },
+      select: { attachments: true },
+    });
+
+    type ClientLocalSummary = { uploaderId: string | null; relativePath: string };
+    const clientLocal: ClientLocalSummary[] = [];
+    for (const e of entries) {
+      let arr: unknown[] = [];
+      try {
+        arr = typeof e.attachments === 'string' ? JSON.parse(e.attachments) : [];
+      } catch { /* ignore */ }
+      if (!Array.isArray(arr)) continue;
+      for (const a of arr) {
+        if (a && typeof a === 'object') {
+          const obj = a as Record<string, unknown>;
+          if (obj.kind === 'clientLocal' && typeof obj.relativePath === 'string') {
+            clientLocal.push({
+              uploaderId: typeof obj.uploaderId === 'string' ? obj.uploaderId : null,
+              relativePath: obj.relativePath,
+            });
+          }
+        }
+      }
+    }
+
+    // Legacy "local" = server disk uploads (storage backend = local)
+    const serverLocalMedia = media.filter((m) => m.url.startsWith('/uploads/'));
 
     const uploaderMap = new Map<string, { id: string; firstName: string; lastName: string; email: string }>();
-    for (const m of localMedia) {
+    for (const m of serverLocalMedia) {
       if (m.uploader && !uploaderMap.has(m.uploader.id)) {
         uploaderMap.set(m.uploader.id, m.uploader);
       }
     }
 
+    // For client-local refs, look up uploader details
+    const clientLocalUploaderIds = Array.from(
+      new Set(clientLocal.map((c) => c.uploaderId).filter((id): id is string => !!id)),
+    );
+    const clientLocalUploaders = clientLocalUploaderIds.length > 0
+      ? await prisma.user.findMany({
+          where: { id: { in: clientLocalUploaderIds } },
+          select: { id: true, firstName: true, lastName: true, email: true },
+        })
+      : [];
+
     return {
-      totalMediaCount: media.length,
-      localMediaCount: localMedia.length,
-      cloudMediaCount: media.length - localMedia.length,
-      hasLocalMedia: localMedia.length > 0,
+      totalMediaCount: media.length + clientLocal.length,
+      // Legacy (server-disk) local count — retained for backwards compat.
+      localMediaCount: serverLocalMedia.length,
+      cloudMediaCount: media.length - serverLocalMedia.length,
+      hasLocalMedia: serverLocalMedia.length > 0,
+      // New: photos stored only on the uploader's laptop.
+      clientLocalCount: clientLocal.length,
+      hasClientLocalMedia: clientLocal.length > 0,
+      clientLocalUploaders,
+      // Uploaders of server-local media (existing behaviour)
       uploaders: Array.from(uploaderMap.values()),
     };
   },

@@ -91,6 +91,15 @@ interface FormScreenshotMediaData {
   mediaId: string;
 }
 
+/** Payload for form:screenshot-client-local */
+interface FormScreenshotClientLocalData {
+  workOrderId: string;
+  entryId: string;
+  relativePath: string;
+  label?: string | null;
+  mimeType?: string | null;
+}
+
 /** Payload for form:screenshot-remove */
 interface FormScreenshotRemoveData {
   workOrderId: string;
@@ -493,6 +502,35 @@ export function initSignaling(httpServer: HTTPServer) {
           entryId,
           mediaId: updated.mediaId,
           mediaUrl: updated.mediaUrl,
+          attachments: updated.attachments,
+          userId: user.userId,
+        });
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        socket.emit('form:error', { code: 'SCREENSHOT_FAILED', message });
+      }
+    });
+
+    socket.on('form:screenshot-client-local', async ({ workOrderId, entryId, relativePath, label, mimeType }: FormScreenshotClientLocalData) => {
+      if (!isInFormRoom(workOrderId)) { socket.emit('form:error', { code: 'FORBIDDEN', message: 'Join the form room first' }); return; }
+      try {
+        if (!relativePath || typeof relativePath !== 'string') {
+          socket.emit('form:error', { code: 'SCREENSHOT_FAILED', message: 'relativePath is required' });
+          return;
+        }
+
+        const updated = await workFormService.addLocalAttachment(entryId, {
+          relativePath,
+          label: label ?? null,
+          mimeType: mimeType ?? null,
+          uploaderId: user.userId,
+        });
+
+        const formRoomId = `form-${workOrderId}`;
+        io.to(formRoomId).emit('form:screenshot-added', {
+          workOrderId,
+          entryId,
+          clientLocal: updated.newAttachment,
           attachments: updated.attachments,
           userId: user.userId,
         });

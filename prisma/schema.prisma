@@ -163,6 +163,11 @@ model Vessel {
   bfmpDocumentUrl       String?
   bfmpRevision          String?
   bfmpRevisionDate      DateTime?
+  // Small base64-encoded icon image (data URL) representing the vessel.
+  // Stored inline rather than in S3/CDN so a card/list view can render it
+  // without extra round-trips.  Uploads are resized client-side before
+  // being persisted — see `resizeImageToDataUrl` on the web client.
+  iconImage             String?
   metadata              String?
   isDeleted             Boolean                 @default(false)
   createdAt             DateTime                @default(now())

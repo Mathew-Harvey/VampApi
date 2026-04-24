@@ -36,6 +36,15 @@ export const createVesselSchema = z.object({
   operatingArea: z.string().optional().nullable(),
   climateZones: z.array(z.string()).optional().default([]),
   metadata: z.record(z.unknown()).optional().nullable(),
+  // Optional base64-encoded icon image stored as a `data:image/...;base64,...`
+  // URL.  We cap at ~350 KB of encoded text (~260 KB of raw image) to keep
+  // row sizes sane — the web client is expected to downscale before upload.
+  iconImage: z
+    .string()
+    .max(350_000, 'Icon image is too large (max ~256 KB after encoding)')
+    .regex(/^data:image\/(png|jpeg|jpg|webp);base64,/i, 'Icon image must be a data URL')
+    .optional()
+    .nullable(),
 });
 
 export const updateVesselSchema = createVesselSchema.partial();

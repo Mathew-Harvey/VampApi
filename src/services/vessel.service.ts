@@ -12,6 +12,7 @@ const STRING_FIELDS = [
   'homePort', 'classificationSociety', 'afsCoatingType', 'afsManufacturer',
   'afsProductName', 'tradingRoutes', 'operatingArea', 'bfmpDocumentUrl',
   'bfmpRevision', 'regulatoryRef', 'status', 'complianceStatus',
+  'iconImage',
 ] as const;
 
 const NUMBER_FIELDS = [

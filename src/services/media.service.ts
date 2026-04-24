@@ -296,6 +296,36 @@ export const mediaService = {
       description: `Deleted file "${media.originalName}"`,
     });
   },
+
+  async getWorkOrderMediaStatus(workOrderId: string) {
+    const media = await prisma.media.findMany({
+      where: { workOrderId },
+      select: {
+        id: true,
+        url: true,
+        uploader: {
+          select: { id: true, firstName: true, lastName: true, email: true },
+        },
+      },
+    });
+
+    const localMedia = media.filter((m) => m.url.startsWith('/uploads/'));
+
+    const uploaderMap = new Map<string, { id: string; firstName: string; lastName: string; email: string }>();
+    for (const m of localMedia) {
+      if (m.uploader && !uploaderMap.has(m.uploader.id)) {
+        uploaderMap.set(m.uploader.id, m.uploader);
+      }
+    }
+
+    return {
+      totalMediaCount: media.length,
+      localMediaCount: localMedia.length,
+      cloudMediaCount: media.length - localMedia.length,
+      hasLocalMedia: localMedia.length > 0,
+      uploaders: Array.from(uploaderMap.values()),
+    };
+  },
 };
 
 function safeJsonObject(raw: string | undefined): Record<string, unknown> {

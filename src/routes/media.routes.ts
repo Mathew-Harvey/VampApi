@@ -44,6 +44,17 @@ router.post('/sync/work-order/:workOrderId', authenticate, asyncHandler(async (r
   res.json({ success: true, data });
 }));
 
+router.get('/work-order/:workOrderId/status', authenticate, asyncHandler(async (req, res) => {
+  const workOrderId = req.params.workOrderId as string;
+  const canView = await canViewWorkOrderFromRequest(req, workOrderId);
+  if (!canView) {
+    res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Work order not found' } });
+    return;
+  }
+  const data = await mediaService.getWorkOrderMediaStatus(workOrderId);
+  res.json({ success: true, data });
+}));
+
 router.get('/:id', authenticate, asyncHandler(async (req, res) => {
   const includeOrganisationScope = hasAnyPermission(req.user, 'WORK_ORDER_VIEW', 'VESSEL_VIEW');
   const media = await mediaService.getForUser(

@@ -30,6 +30,15 @@ router.put('/:id', authenticate, asyncHandler(async (req, res, next) => {
   const { hasAnyPermission } = await import('../middleware/permissions');
   const hasOrgPerm = hasAnyPermission(req.user, 'VESSEL_EDIT');
   if (hasOrgPerm) return next();
+
+  // Icon-only updates are cosmetic and allowed for anyone with view
+  // access to the vessel.  Service-layer re-checks the view path so this
+  // can never be used to mutate other fields, regardless of payload
+  // shape that reaches it.
+  const bodyKeys = Object.keys(req.body || {});
+  const isIconOnlyUpdate = bodyKeys.length === 1 && bodyKeys[0] === 'iconImage';
+  if (isIconOnlyUpdate) return next();
+
   const { vesselShareService } = await import('../services/vessel-share.service');
   const sharePerm = await vesselShareService.getSharePermission(req.params.id as string, req.user!.userId);
   if (sharePerm === 'WRITE') return next();

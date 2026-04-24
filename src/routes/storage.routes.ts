@@ -10,7 +10,7 @@ import { asyncHandler } from '../utils/async-handler';
 
 const router = Router();
 
-const adminOnly = requirePermission('ADMIN_FULL_ACCESS');
+const canManageStorage = requirePermission('USER_MANAGE');
 
 // ---------------------------------------------------------------------------
 // GET /config — full configuration status with per-field guidance
@@ -31,9 +31,30 @@ router.get('/config/local-path-guide', authenticate, asyncHandler(async (_req, r
 }));
 
 // ---------------------------------------------------------------------------
+// GET /config/hosting — tell the frontend what environment the API runs in
+// ---------------------------------------------------------------------------
+router.get('/config/hosting', authenticate, asyncHandler(async (_req, res) => {
+  const isRender = Boolean(process.env.RENDER);
+  const isDocker = fs.existsSync('/.dockerenv');
+  const isEphemeral = isRender || Boolean(process.env.DYNO) || Boolean(process.env.RAILWAY_ENVIRONMENT);
+
+  res.json({
+    success: true,
+    data: {
+      platform: process.platform,
+      isEphemeral,
+      provider: isRender ? 'render' : process.env.DYNO ? 'heroku' : process.env.RAILWAY_ENVIRONMENT ? 'railway' : isDocker ? 'docker' : 'self-hosted',
+      localStorageWarning: isEphemeral
+        ? 'This server uses ephemeral storage — files are lost on every deploy. Use cloud storage (S3) for persistent photo storage.'
+        : null,
+    },
+  });
+}));
+
+// ---------------------------------------------------------------------------
 // PUT /config — update storage configuration
 // ---------------------------------------------------------------------------
-router.put('/config', authenticate, adminOnly, asyncHandler(async (req, res) => {
+router.put('/config', authenticate, canManageStorage, asyncHandler(async (req, res) => {
   const body = req.body as Partial<StorageConfig>;
 
   if (body.localMediaPath) {
@@ -80,7 +101,7 @@ router.put('/config', authenticate, adminOnly, asyncHandler(async (req, res) => 
 // ---------------------------------------------------------------------------
 // POST /config/test-s3 — test S3 connectivity with current or supplied creds
 // ---------------------------------------------------------------------------
-router.post('/config/test-s3', authenticate, adminOnly, asyncHandler(async (req, res) => {
+router.post('/config/test-s3', authenticate, canManageStorage, asyncHandler(async (req, res) => {
   const cfg = storageConfigService.get();
   const s3 = { ...cfg.s3, ...(req.body.s3 ?? {}) };
 
@@ -172,7 +193,7 @@ router.post('/config/test-s3', authenticate, adminOnly, asyncHandler(async (req,
 // ---------------------------------------------------------------------------
 // POST /config/test-local — validate a local path is writable
 // ---------------------------------------------------------------------------
-router.post('/config/test-local', authenticate, adminOnly, asyncHandler(async (req, res) => {
+router.post('/config/test-local', authenticate, canManageStorage, asyncHandler(async (req, res) => {
   const requestedPath = req.body.localMediaPath || storageConfigService.get().localMediaPath;
   const resolved = path.resolve(requestedPath);
 
@@ -292,7 +313,7 @@ router.get('/stats', authenticate, asyncHandler(async (_req, res) => {
 // ---------------------------------------------------------------------------
 // GET /browse — list directories for the folder-picker UI
 // ---------------------------------------------------------------------------
-router.get('/browse', authenticate, adminOnly, asyncHandler(async (req, res) => {
+router.get('/browse', authenticate, canManageStorage, asyncHandler(async (req, res) => {
   const isWindows = process.platform === 'win32';
   const home = isWindows ? (process.env.USERPROFILE || 'C:\\Users') : (process.env.HOME || '/');
   let target = (req.query.path as string) || home;

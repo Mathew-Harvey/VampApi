@@ -266,18 +266,36 @@ export const vesselService = {
     const existing = await prisma.vessel.findFirst({ where: { id, isDeleted: false } });
     if (!existing) throw new AppError(404, 'NOT_FOUND', 'Vessel not found');
 
+    const sanitized = buildVesselPayload(data, { forUpdate: true });
+    const sanitizedKeys = Object.keys(sanitized);
+
+    // Cosmetic-only paths: the vessel icon is user-visible chrome on the
+    // fleet grid and nothing the write-permission model was designed to
+    // protect.  Anyone with view access to a vessel (org ownership, fleet
+    // org, share at any permission, or an active work-order assignment)
+    // is allowed to upload/clear an icon for it.  Every other field still
+    // honours the strict org-ownership + WRITE-share check below.
+    const isIconOnlyUpdate = sanitizedKeys.length === 1 && sanitizedKeys[0] === 'iconImage';
+
     const isOrgOwned = existing.organisationId === organisationId || existing.organisationId === fleetOrgId();
     if (!isOrgOwned) {
-      const share = await prisma.vesselShare.findUnique({
-        where: { vesselId_userId: { vesselId: id, userId } },
-      });
-      if (!share || share.permission !== 'WRITE') {
-        throw new AppError(404, 'NOT_FOUND', 'Vessel not found');
+      if (isIconOnlyUpdate) {
+        const canView = await vesselShareService.canViewVessel(id, userId, organisationId);
+        if (!canView) throw new AppError(404, 'NOT_FOUND', 'Vessel not found');
+      } else {
+        const share = await prisma.vesselShare.findUnique({
+          where: { vesselId_userId: { vesselId: id, userId } },
+        });
+        if (!share || share.permission !== 'WRITE') {
+          throw new AppError(404, 'NOT_FOUND', 'Vessel not found');
+        }
       }
     }
-    if (existing.source === 'RISE_X') throw new AppError(403, 'FORBIDDEN', 'Synced fleet vessels are read-only');
-
-    const sanitized = buildVesselPayload(data, { forUpdate: true });
+    // RISE_X-synced vessels are read-only for everything EXCEPT the
+    // cosmetic icon, which the user is free to customise locally.
+    if (existing.source === 'RISE_X' && !isIconOnlyUpdate) {
+      throw new AppError(403, 'FORBIDDEN', 'Synced fleet vessels are read-only');
+    }
 
     const vessel = await prisma.vessel.update({ where: { id }, data: sanitized as any });
 
